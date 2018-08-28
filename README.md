@@ -1,1 +1,1 @@
-# SportyMusic
+# SpotyMusic
