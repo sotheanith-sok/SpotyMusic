@@ -1,11 +1,9 @@
-package controller;
+package ui.controller;
 
 import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.TextField;
-import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import javafx.util.Duration;
 
