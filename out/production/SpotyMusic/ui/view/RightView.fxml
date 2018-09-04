@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@styleSheets/RightView.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.RightViewController">
+   <children>
+      <TableView layoutX="212.0" layoutY="100.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <columns>
+          <TableColumn prefWidth="250.0" resizable="false" text="Song" />
+          <TableColumn prefWidth="100.0" text="Artist" />
+            <TableColumn prefWidth="100.0" text="Album" />
+            <TableColumn prefWidth="75.0" text="Length" />
+        </columns>
+      </TableView>
+   </children>
+</AnchorPane>
