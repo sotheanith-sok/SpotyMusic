@@ -28,7 +28,7 @@
                <children>
                   <FontAwesomeIconView glyphName="USER" glyphStyle=".fx-fill#999" size="1.3em">
                   </FontAwesomeIconView>
-                  <TextField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="33.0" prefWidth="180.0" promptText="Username" HBox.hgrow="ALWAYS">
+                  <TextField fx:id="txtUser" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="33.0" prefWidth="180.0" promptText="Username" HBox.hgrow="ALWAYS">
                      <HBox.margin>
                         <Insets left="3.0" />
                      </HBox.margin></TextField>
@@ -38,7 +38,7 @@
                <children>
                   <FontAwesomeIconView glyphName="LOCK" glyphStyle=".fx-fill#999" size="1.3em">
                   </FontAwesomeIconView>
-                  <PasswordField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="180.0" promptText="Password" HBox.hgrow="ALWAYS">
+                  <PasswordField fx:id="txtPass" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="180.0" promptText="Password" HBox.hgrow="ALWAYS">
                      <HBox.margin>
                         <Insets left="5.0" />
                      </HBox.margin>

@@ -17,31 +17,40 @@
             <Font name="Segoe UI Semibold" size="50.0" />
          </font>
       </Label>
+      <Text fill="WHITE" layoutX="349.0" layoutY="191.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Please Sign In or Register">
+         <font>
+            <Font name="Segoe UI Semilight" size="15.0" />
+         </font>
+      </Text>
       <VBox layoutX="330.0" layoutY="227.0" style="-fx-background-color: white;">
          <children>
             <HBox alignment="CENTER_LEFT" minHeight="-Infinity" minWidth="-Infinity" prefHeight="35.0" prefWidth="200.0">
                <children>
-                  <FontAwesomeIconView glyphName="USER" size="1.3em">
-                     <HBox.margin>
-                        <Insets left="3.0" right="3.0" />
-                     </HBox.margin>
+                  <FontAwesomeIconView glyphName="USER" glyphStyle=".fx-fill#999" size="1.3em">
                   </FontAwesomeIconView>
-                  <TextField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="33.0" prefWidth="177.0" promptText="Username" HBox.hgrow="ALWAYS" />
+                  <TextField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="33.0" prefWidth="180.0" promptText="Username" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="3.0" />
+                     </HBox.margin></TextField>
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="35.0" prefWidth="200.0">
                <children>
-                  <FontAwesomeIconView glyphName="LOCK" size="1.3em">
-                     <HBox.margin>
-                        <Insets left="4.0" right="4.0" />
-                     </HBox.margin>
+                  <FontAwesomeIconView glyphName="LOCK" glyphStyle=".fx-fill#999" size="1.3em">
                   </FontAwesomeIconView>
-                  <TextField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="33.0" prefWidth="177.0" promptText="Password" HBox.hgrow="ALWAYS" />
+                  <PasswordField maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="180.0" promptText="Password" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin>
+                  </PasswordField>
                </children>
             </HBox>
          </children>
+         <padding>
+            <Insets left="3.0" />
+         </padding>
       </VBox>
-      <VBox layoutX="330.0" layoutY="319.0" style="-fx-background-color: grey;">
+      <VBox layoutX="330.0" layoutY="325.0" style="-fx-background-color: grey;">
          <children>
             <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="35.0" prefWidth="200.0" text="Sign In" underline="true" />
             <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="35.0" prefWidth="200.0" text="Register" underline="true">
@@ -51,10 +60,5 @@
             </Button>
          </children>
       </VBox>
-      <Text fill="WHITE" layoutX="349.0" layoutY="191.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Please Sign In or Register">
-         <font>
-            <Font name="Segoe UI Semilight" size="15.0" />
-         </font>
-      </Text>
    </children>
 </AnchorPane>

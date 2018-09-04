@@ -1,4 +1,4 @@
 package controller;
 
-public class RightViewControlller {
+public class RightViewController {
 }
