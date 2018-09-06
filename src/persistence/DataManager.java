@@ -21,7 +21,7 @@ public class DataManager {
      */
     private static DataManager instance = new DataManager();
 
-    public DataManager getDataManager() {
+    public static DataManager getDataManager() {
         return instance;
     }
 
@@ -35,6 +35,19 @@ public class DataManager {
      * @throws NoSuchUserException if there is no user with the given username and password
      */
     public Library tryAuth(String username, String password) throws NoSuchUserException {
+        /*String testUser = "admin";
+        String testPass = "test";
+
+        if (username == testUser && password == testPass)
+        {
+
+        }
+        else
+        {
+            throw new NoSuchUserException();
+        }
+        */
+
         return null;
     }
 
