@@ -2,6 +2,8 @@ package connect;
 
 import javafx.collections.ObservableList;
 
+import java.util.concurrent.Future;
+
 /**
  * A <code>Playlist</code> is a list of {@link Song}s which are arbitrarily chosen by the user.
  *
@@ -31,4 +33,22 @@ public interface Playlist {
      * @return library containing playlist
      */
     Library getLibrary();
+
+    /**
+     * Adds the given Song to the Playlist. Returns a {@link Future} that resolves to a boolean indicating success.
+     *
+     * @param song the Song to add to the playlist
+     * @return Future resolving to success
+     * @throws SecurityException if the current user does not have permission to modify the library
+     */
+    Future<Boolean> addSong(Song song) throws SecurityException;
+
+    /**
+     * Removes the given Song from the Playlist. Returns a {@link Future} that resolves to a boolean indicating success.
+     *
+     * @param song the song to remove from the playlist
+     * @return future resolving to success
+     * @throws SecurityException if the current user does not have permission to modify the library
+     */
+    Future<Boolean> removeSong(Song song) throws SecurityException;
 }
