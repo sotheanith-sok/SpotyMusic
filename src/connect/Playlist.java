@@ -24,4 +24,11 @@ public interface Playlist {
      * @return list of songs
      */
     ObservableList<Song> getSongs();
+
+    /**
+     * Returns a reference to the {@link Library} that this Playlist is part of.
+     *
+     * @return library containing playlist
+     */
+    Library getLibrary();
 }

@@ -33,4 +33,11 @@ public interface Album {
     ObservableList<Song> getSongs();
 
     // TODO: album artwork?
+
+    /**
+     * Returns a reference to the {@link Library} that this Album is part of.
+     *
+     * @return library containing album
+     */
+    Library getLibrary();
 }

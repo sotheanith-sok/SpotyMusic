@@ -39,6 +39,13 @@ public interface Song {
     long getDuration();
 
     /**
+     * Returns a reference to the {@link Library} that this Song belongs to.
+     *
+     * @return reference to library containing song
+     */
+    Library getLibrary();
+
+    /**
      * Returns an {@link Future}  which resolves to an {@link AudioInputStream} which provides the audio sample data
      * of the Song.
      *
