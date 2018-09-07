@@ -89,16 +89,15 @@ public class DataManager {
     }
 
     /**
-     * Attempts to authenticate a user with the given username and password. Throws an exception if authentication
-     * fails. If an exception is not thrown, then the caller is to assume that authentication succeeded. Once a user
-     * is authenticated, the {@link #getCurrentUser()} and {@link #getCurrentLibrary()} methods can be used to retrieve
-     * the name of the current user, and that user's library.
+     * Attempts to authenticate a user with the given username and password. Returns a boolean indicating success.
+     * Once a user is authenticated, the {@link #getCurrentUser()} and {@link #getCurrentLibrary()} methods can be
+     * used to retrieve the name of the current user, and that user's library.
      *
      * @param username the username of a user
      * @param password the password of the user with the given username
-     * @throws NoSuchUserException if there is no user with the given username and password
+     * @return true on successful authentication
      */
-    public void tryAuth(String username, String password) throws NoSuchUserException {
+    public boolean tryAuth(String username, String password) {
         if (this.users.containsKey(username)) {
             User u = this.users.get(username);
             if (u.testPassword(password)) {
@@ -108,14 +107,11 @@ public class DataManager {
                 Thread t = new Thread((Runnable) this.currentLib);
                 t.setName("Library Loader");
                 t.start();
-
-            } else {
-                throw new NoSuchUserException("Unrecognized username / password combination");
+                return true;
             }
-
-        } else {
-            throw new NoSuchUserException("Unrecognized username / password combination");
         }
+
+        return false;
     }
 
     /**
