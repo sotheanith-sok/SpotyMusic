@@ -4,50 +4,57 @@ import connect.Album;
 import connect.Library;
 import connect.Playlist;
 import connect.Song;
+import javafx.collections.ObservableList;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.Future;
 
 public class LocalLibrary implements Library {
 
 
     @Override
-    public List<Album> getAlbums() {
+    public ObservableList<Album> getAlbums() {
         return null;
     }
 
     @Override
-    public List<String> getArtists() {
+    public ObservableList<String> getArtists() {
         return null;
     }
 
     @Override
-    public List<Album> getAlbumsByArtist(String artist) {
+    public ObservableList<Album> getAlbumsByArtist(String artist) {
         return null;
     }
 
     @Override
-    public List<Song> getSongsByArtist(String artist) {
+    public ObservableList<Song> getSongsByArtist(String artist) {
         return null;
     }
 
     @Override
-    public List<Song> getSongs() {
+    public ObservableList<Song> getSongs() {
         return null;
     }
 
     @Override
-    public List<Playlist> getPlaylists() {
+    public ObservableList<Playlist> getPlaylists() {
         return null;
     }
 
     @Override
-    public void importSong(File song) throws SecurityException {
-
+    public Future<Boolean> importSong(File song) throws SecurityException {
+        return null;
     }
 
     @Override
-    public void deleteSong(Song song) throws SecurityException {
+    public Future<Boolean> deleteSong(Song song) throws SecurityException {
+        return null;
+    }
 
+    @Override
+    public Future<Boolean> createPlaylist(String name) throws SecurityException {
+        return null;
     }
 }
