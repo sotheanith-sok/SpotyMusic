@@ -3,6 +3,7 @@ package connect;
 import javafx.collections.ObservableList;
 
 import java.io.File;
+import java.util.concurrent.Future;
 
 /**
  * <code>Library</code> is the primary interface that connects the UI to the persistence layer.
@@ -59,14 +60,25 @@ public interface Library {
      *
      * @param song a File representing the song to add
      * @throws SecurityException if the current user is not authorized to modify the library
+     * @return Future that resolves to success
      */
-    void importSong(File song) throws SecurityException;
+    Future<Boolean> importSong(File song) throws SecurityException;
 
     /**
      * Removes a song from the library.
      *
      * @param song the Song to remove from the library
-     * @throws SecurityException if the current suer is not authorized to modify the library
+     * @throws SecurityException if the current uer is not authorized to modify the library
+     * @return Future that resolves to success
      */
-    void deleteSong(Song song) throws SecurityException;
+    Future<Boolean> deleteSong(Song song) throws SecurityException;
+
+    /**
+     * Creates a new Playlist with the given name.
+     *
+     * @param name the name of the playlist to create
+     * @return a Future that resolves to a boolean indicating success
+     * @throws SecurityException if the current user is not authorized to modify the library
+     */
+    Future<Boolean> createPlaylist(String name) throws SecurityException;
 }
