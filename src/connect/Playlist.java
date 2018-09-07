@@ -1,6 +1,6 @@
 package connect;
 
-import java.util.List;
+import javafx.collections.ObservableList;
 
 /**
  * A <code>Playlist</code> is a list of {@link Song}s which are arbitrarily chosen by the user.
@@ -19,9 +19,9 @@ public interface Playlist {
     String getName();
 
     /**
-     * Returns a {@link List} of the {@link Song}s in the playlist.
+     * Returns a {@link ObservableList} of the {@link Song}s in the playlist.
      *
      * @return list of songs
      */
-    List<Song> getSongs();
+    ObservableList<Song> getSongs();
 }

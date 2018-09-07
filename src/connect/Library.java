@@ -1,6 +1,7 @@
 package connect;
 
-import java.util.List;
+import javafx.collections.ObservableList;
+
 import java.io.File;
 
 /**
@@ -10,48 +11,48 @@ import java.io.File;
  */
 public interface Library {
     /**
-     * Returns a {@link List} of {@link Album}s in the Library.
+     * Returns a {@link ObservableList} of {@link Album}s in the Library.
      *
      * @return list of Albums
      */
-    List<Album> getAlbums();
+    ObservableList<Album> getAlbums();
 
     /**
-     * Returns a {@link List} of the names of the artists of all of the songs in the Library.
+     * Returns a {@link ObservableList} of the names of the artists of all of the songs in the Library.
      *
      * @return list of artist names
      */
-    List<String> getArtists();
+    ObservableList<String> getArtists();
 
     /**
-     * Returns a {@link List} of {@link Album}s written by the artist with the given name.
+     * Returns a {@link ObservableList} of {@link Album}s written by the artist with the given name.
      *
      * @param artist the name of an artist
      * @return list of albums by the named artist
      */
-    List<Album> getAlbumsByArtist(String artist);
+    ObservableList<Album> getAlbumsByArtist(String artist);
 
     /**
-     * Returns a {@link List} containing all of the {@link Song}s written by the named artist.
+     * Returns a {@link ObservableList} containing all of the {@link Song}s written by the named artist.
      *
      * @param artist name of an artist
      * @return list of songs by the named artist
      */
-    List<Song> getSongsByArtist(String artist);
+    ObservableList<Song> getSongsByArtist(String artist);
 
     /**
-     * Returns a {@link List} containing all of the {@link Song}s in the library.
+     * Returns a {@link ObservableList} containing all of the {@link Song}s in the library.
      *
      * @return list of all songs
      */
-    List<Song> getSongs();
+    ObservableList<Song> getSongs();
 
     /**
-     * Returns a {@link List} containing all of the {@link Playlist}s in the library.
+     * Returns a {@link ObservableList} containing all of the {@link Playlist}s in the library.
      *
      * @return list of playlists
      */
-    List<Playlist> getPlaylists();
+    ObservableList<Playlist> getPlaylists();
 
     /**
      * Adds a song to the library.

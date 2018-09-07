@@ -1,6 +1,7 @@
 package connect;
 
 import javax.sound.sampled.AudioInputStream;
+import java.util.concurrent.Future;
 
 /**
  * The <code>Song</code> interface represents a single audio track in a {@link Library}.
@@ -38,9 +39,10 @@ public interface Song {
     long getDuration();
 
     /**
-     * Returns an {@link AudioInputStream} from which the audio stream of the Song can be read.
+     * Returns an {@link Future}  which resolves to an {@link AudioInputStream} which provides the audio sample data
+     * of the Song.
      *
-     * @return Audio stream
+     * @return Future resolving to AudioInputStream
      */
-    AudioInputStream getStream();
+    Future<AudioInputStream> getStream();
 }
