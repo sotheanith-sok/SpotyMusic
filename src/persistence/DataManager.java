@@ -79,6 +79,7 @@ public class DataManager {
      */
     private static DataManager instance = new DataManager();
 
+
     /**
      * Returns the singleton instance of DataManager.
      *
@@ -97,6 +98,9 @@ public class DataManager {
      * @param password the password of the user with the given username
      * @return true on successful authentication
      */
+
+    public Library tryAuth(String username, String password) throws NoSuchUserException {
+
     public boolean tryAuth(String username, String password) {
         if (this.users.containsKey(username)) {
             User u = this.users.get(username);
