@@ -1,6 +1,6 @@
 package connect;
 
-import java.util.List;
+import javafx.collections.ObservableList;
 
 /**
  * The <code>Album</code> interface represents a collection of {@link Song}s that are released as a group.
@@ -26,11 +26,18 @@ public interface Album {
     String getArtist();
 
     /**
-     * Returns a {@link List} containing all of the {@link Song}s that are part of the Album.
+     * Returns a {@link ObservableList} containing all of the {@link Song}s that are part of the Album.
      *
      * @return list of songs
      */
-    List<Song> getSongs();
+    ObservableList<Song> getSongs();
 
     // TODO: album artwork?
+
+    /**
+     * Returns a reference to the {@link Library} that this Album is part of.
+     *
+     * @return library containing album
+     */
+    Library getLibrary();
 }
