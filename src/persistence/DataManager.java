@@ -22,7 +22,7 @@ import java.util.concurrent.FutureTask;
  * @author Nicholas Utz
  */
 public class DataManager {
-    private static final File userFile = new File("/SpotyMusic/users.json");
+    private static final File userFile = new File("SpotyMusic/users.json");
 
     private Map<String, User> users;
 
@@ -42,7 +42,7 @@ public class DataManager {
      *
      * @throws IOException if there is a problem loading data from the file system
      */
-    private void init() throws IOException {
+    public void init() throws IOException {
         if (userFile.exists()) {
             Thread t = new Thread(new Runnable(){
                 @Override
@@ -62,8 +62,10 @@ public class DataManager {
             t.start();
 
         } else {
+            System.out.println("Creating users.json at " + userFile.getAbsolutePath());
             try {
                 // create stub user file
+                (new File(userFile.getParent())).mkdir();
                 userFile.createNewFile();
                 this.saveUsers();
 

@@ -1,4 +1,8 @@
 package ui.Components;
 
-public class Router {
+import javafx.scene.Parent;
+
+public class Router extends Parent {
+
+
 }
