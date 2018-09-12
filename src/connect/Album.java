@@ -1,6 +1,7 @@
 package connect;
 
 import javafx.collections.ObservableList;
+import utils.ComposedComparator;
 
 import java.util.Comparator;
 
@@ -43,15 +44,17 @@ public interface Album {
      */
     Library getLibrary();
 
+    /** A {@link Comparator} that compares Albums by their title. */
+    Comparator<Album> TITLE_COMPARATOR = Comparator.comparing(Album::getTitle);
+
+    /** A {@link Comparator} that compares Albums by their artist. */
+    Comparator<Album> ARTIST_COMPARATOR = Comparator.comparing(Album::getArtist);
+
     /**
-     * A {@link Comparator} that compares {@link Album}s by title, then by artist.
+     * A {@link Comparator} that compares Albums by artist, then by title.
+     *
+     * Sorting a collection of Albums with this comparator results in albums being grouped by artist, and sorted
+     * alphabetically.
      */
-    class AlbumComparator implements Comparator<Album> {
-        @Override
-        public int compare(Album o1, Album o2) {
-            int c = o1.getTitle().compareTo(o2.getTitle());
-            if (c == 0) return o1.getArtist().compareTo(o2.getArtist());
-            return c;
-        }
-    }
+    Comparator<Album> GROUPING_COMPARATOR = new ComposedComparator<Album>(ARTIST_COMPARATOR, TITLE_COMPARATOR);
 }
