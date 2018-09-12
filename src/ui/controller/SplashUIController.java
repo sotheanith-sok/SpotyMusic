@@ -15,7 +15,6 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 import persistence.DataManager;
-import persistence.NoSuchUserException;
 
 public class SplashUIController {
 
@@ -38,6 +37,9 @@ public class SplashUIController {
 
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
         {
+            DM.tryAuth(txtUser.getText(), txtPass.getText());
+            //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
+            /*
             try
             {
                 DM.tryAuth(txtUser.getText(), txtPass.getText());
@@ -56,6 +58,7 @@ public class SplashUIController {
                 txtPass.setText("");
                 txtUser.requestFocus();
             }
+            */
         }
         else
         {
