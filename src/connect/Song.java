@@ -1,5 +1,7 @@
 package connect;
 
+import utils.ComposedComparator;
+
 import javax.sound.sampled.AudioInputStream;
 import java.util.Comparator;
 import java.util.concurrent.Future;
@@ -54,17 +56,22 @@ public interface Song {
      */
     Future<AudioInputStream> getStream();
 
+    /** A {@link Comparator} that compares Songs based on their title. */
+    Comparator<Song> TITLE_COMPARATOR = Comparator.comparing(Song::getTitle);
+
+    /** A {@link Comparator} that compares Songs based on their artist. */
+    Comparator<Song> ARTIST_COMPARATOR = Comparator.comparing(Song::getArtist);
+
+    /** A {@link Comparator} that compares Songs based on their album. */
+    Comparator<Song> ALBUM_COMPARATOR = Comparator.comparing(Song::getAlbumTitle);
+
     /**
-     * A {@link Comparator} that compares {@link Song}s by title, then album, then artist.
+     * A {@link Comparator} that compares Songs based on their artist, then album, then title.
+     *
+     * Sorting a list of Songs with this comparator results in songs from the same album being grouped
+     * together, and sorted alphabetically. Albums by the same artist are also grouped and sorted alphabetically.
      */
-    class SongComparator implements Comparator<Song> {
-        @Override
-        public int compare(Song o1, Song o2) {
-            int c = o1.getTitle().compareTo(o2.getTitle());
-            if (c != 0) return c;
-            c = o1.getAlbumTitle().compareTo(o2.getAlbumTitle());
-            if (c != 0) return c;
-            return o1.getArtist().compareTo(o2.getArtist());
-        }
-    }
+    Comparator<Song> GROUPING_COMPARATOR = new ComposedComparator<Song>(
+            ARTIST_COMPARATOR, ALBUM_COMPARATOR, TITLE_COMPARATOR
+    );
 }
