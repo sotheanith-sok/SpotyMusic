@@ -22,12 +22,25 @@ import java.util.concurrent.FutureTask;
  * @author Nicholas Utz
  */
 public class DataManager {
-    private static final File userFile = new File("/SpotyMusic/users.json");
+    /** A {@link File} that represents the root directory for all SpotyMusic data. */
+    public static final File rootDirectory = new File("SpotyMusic/");
 
+    /** A {@link File} that represents the users.json file. */
+    public static final File userFile = new File("SpotyMusic/users.json");
+
+    /** A {@link File} representing the root of the media directory. */
+    public static final File mediaRoot = new File("SpotyMusic/Media/");
+
+    /** A {@link File} representing the library directory. */
+    public static final File libRoot = new File("SpotyMusic/Libraries/");
+
+    /** Stores all loaded users. */
     private Map<String, User> users;
 
+    /** The current {@link User}. */
     private User currentUser = null;
 
+    /** A {@link Future} that resolves to the {@link Library} of the current {@link User}. */
     private Future<Library> currentLib = null;
 
     /**
@@ -39,10 +52,8 @@ public class DataManager {
 
     /**
      * Initializes the DataManager.
-     *
-     * @throws IOException if there is a problem loading data from the file system
      */
-    private void init() throws IOException {
+    private void init(){
         if (userFile.exists()) {
             Thread t = new Thread(new Runnable(){
                 @Override
@@ -64,6 +75,7 @@ public class DataManager {
         } else {
             try {
                 // create stub user file
+                if (!(rootDirectory.exists() && rootDirectory.isDirectory())) rootDirectory.mkdir();
                 userFile.createNewFile();
                 this.saveUsers();
 
@@ -113,6 +125,18 @@ public class DataManager {
         }
 
         return false;
+    }
+
+    /**
+     * Creates and saves a new {@link User} with the given username and password.
+     *
+     * @param username the username of the new user to create
+     * @param password the password of the new user
+     */
+    public void registerUser(String username, String password) {
+        if (this.users.containsKey(username)) throw new IllegalArgumentException("User exists");
+        this.users.put(username, new User(username, password));
+        this.saveUsers();
     }
 
     /**
