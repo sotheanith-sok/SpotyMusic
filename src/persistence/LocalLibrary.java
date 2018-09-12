@@ -1,46 +1,107 @@
 package persistence;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import connect.Album;
 import connect.Library;
 import connect.Playlist;
 import connect.Song;
 import javafx.collections.ObservableList;
+import utils.ObservableListImpl;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
+/**
+ * An implementation of {@link Library} for libraries located on the local system.
+ */
 public class LocalLibrary implements Library {
 
+    protected ObservableList<LocalSong> songs;
+    private ObservableList<LocalAlbum> albums;
+    private ObservableList<String> artists;
+    private ObservableList<LocalPlaylist> playlists;
+
+    private HashMap<String, ObservableList<LocalSong>> artistSongs;
+    private HashMap<String, ObservableList<LocalAlbum>> artistAlbums;
+
+    /**
+     * Creates a new LocalLibrary with the given songs and playlists.
+     *
+     * @param songs songs in the library
+     * @param playlists playlists in the library
+     */
+    public LocalLibrary(List<LocalSong> songs, Map<String, List<LocalSong>> playlists) {
+        this.songs = new ObservableListImpl<>(songs);
+        this.artists = new ObservableListImpl<>();
+        this.playlists = new ObservableListImpl<>();
+        HashMap<String, LocalAlbum> albums = new HashMap<>();
+
+        for (LocalSong s : this.songs) {
+            // assign LocalSong instances to this library
+            s.setLibrary(this);
+            // build list of albums
+            if (!albums.containsKey(s.getAlbumTitle())) albums.put(s.getAlbumTitle(), new LocalAlbum(s.getAlbumTitle(), s.getArtist(), this));
+            // build list of artists
+            if (!this.artists.contains(s.getArtist())) this.artists.add(s.getArtist());
+        }
+        this.albums = new ObservableListImpl<>(albums.values());
+
+        // build playlists and add them to the library
+        for (Map.Entry<String, List<LocalSong>> e : playlists.entrySet()) {
+            this.playlists.add(new LocalPlaylist(e.getKey(), e.getValue(), this));
+        }
+
+        // these are used to cache the FilteredLists that back *byArtist retrieval
+        this.artistSongs = new HashMap<>();
+        this.artistAlbums = new HashMap<>();
+    }
 
     @Override
-    public ObservableList<Album> getAlbums() {
-        return null;
+    public ObservableList<? extends Album> getAlbums() {
+        return this.albums;
     }
 
     @Override
     public ObservableList<String> getArtists() {
-        return null;
+        return this.artists;
     }
 
     @Override
-    public ObservableList<Album> getAlbumsByArtist(String artist) {
-        return null;
+    public ObservableList<? extends Album> getAlbumsByArtist(String artist) {
+        if (this.artistAlbums.containsKey(artist)) {
+            return this.artistAlbums.get(artist);
+
+        } else {
+            ObservableList<LocalAlbum> artistAlbums = this.albums.filtered(album -> album.getArtist().equals(artist));
+            this.artistAlbums.put(artist, artistAlbums);
+            return artistAlbums;
+        }
     }
 
     @Override
-    public ObservableList<Song> getSongsByArtist(String artist) {
-        return null;
+    public ObservableList<? extends Song> getSongsByArtist(String artist) {
+        if (this.artistSongs.containsKey(artist)) {
+            return this.artistSongs.get(artist);
+
+        } else {
+            ObservableList<LocalSong> artistSongs = this.songs.filtered(song -> song.getArtist().equals(artist));
+            this.artistSongs.put(artist, artistSongs);
+            return artistSongs;
+        }
     }
 
     @Override
-    public ObservableList<Song> getSongs() {
-        return null;
+    public ObservableList<? extends Song> getSongs() {
+        return this.songs;
     }
 
     @Override
-    public ObservableList<Playlist> getPlaylists() {
-        return null;
+    public ObservableList<? extends Playlist> getPlaylists() {
+        return this.playlists;
     }
 
     @Override
@@ -56,5 +117,28 @@ public class LocalLibrary implements Library {
     @Override
     public Future<Boolean> createPlaylist(String name) throws SecurityException {
         return null;
+    }
+
+    /**
+     * Writes the contents of this library to the gievn {@link JsonGenerator}.
+     * Used internally by {@link persistence.writers.LibraryWriter}.
+     *
+     * @param gen a JsonGenerator to use as output
+     * @throws IOException if there is an exception while writing
+     */
+    public void saveLibrary(JsonGenerator gen) throws IOException {
+        gen.writeStartObject();
+        gen.writeArrayFieldStart("songs");
+        for (LocalSong s : this.songs) {
+            gen.writeNumber(s.getId());
+        }
+        gen.writeEndArray();
+        gen.writeArrayFieldStart("playlists");
+        for (LocalPlaylist pl : this.playlists) {
+            pl.savePlaylist(gen);
+        }
+        gen.writeEndArray();
+
+        gen.writeEndObject();
     }
 }

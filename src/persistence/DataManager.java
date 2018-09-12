@@ -2,7 +2,9 @@ package persistence;
 
 import connect.Library;
 import persistence.loaders.LibraryLoader;
+import persistence.loaders.MediaLoader;
 import persistence.loaders.UserLoader;
+import persistence.writers.MediaWriter;
 import persistence.writers.UserWriter;
 
 import java.io.File;
@@ -31,8 +33,16 @@ public class DataManager {
     /** A {@link File} representing the root of the media directory. */
     public static final File mediaRoot = new File("SpotyMusic/Media/");
 
+    /** A {@link File} representing the media index file. */
+    public static final File mediaIndex = new File("SpotyMusic/Media/index.json");
+
     /** A {@link File} representing the library directory. */
     public static final File libRoot = new File("SpotyMusic/Libraries/");
+
+    /** A {@link Map} containing all of ths songs in the local library, irrespective of users. */
+    private Map<Integer, LocalSong> songs;
+
+    private int largestId = 0;
 
     /** Stores all loaded users. */
     private Map<String, User> users;
@@ -54,6 +64,10 @@ public class DataManager {
      * Initializes the DataManager.
      */
     public void init(){
+        if (!rootDirectory.exists()) rootDirectory.mkdir();
+        if (!mediaRoot.exists()) mediaRoot.mkdir();
+        if (!libRoot.exists()) libRoot.mkdir();
+
         if (userFile.exists()) {
             Thread t = new Thread(new Runnable(){
                 @Override
@@ -75,7 +89,6 @@ public class DataManager {
         } else {
             try {
                 // create stub user file
-                if (!(rootDirectory.exists() && rootDirectory.isDirectory())) rootDirectory.mkdir();
                 userFile.createNewFile();
                 this.saveUsers();
 
@@ -84,13 +97,27 @@ public class DataManager {
                 // handle exception?
             }
         }
+
+        // wrap in Collections.synchronizedList() if there are thread issues
+        this.songs = new HashMap<>();
+        if (mediaIndex.exists()) {
+            this.loadMedia();
+
+        } else {
+            try {
+                mediaIndex.createNewFile();
+                this.saveMedia();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
      * Instance of DataManager. There is only and always a single instance of DataManager.
      */
     private static DataManager instance = new DataManager();
-
 
     /**
      * Returns the singleton instance of DataManager.
@@ -116,7 +143,7 @@ public class DataManager {
             if (u.testPassword(password)) {
                 this.currentUser = u;
                 // start loading the user's library
-                this.currentLib = new FutureTask<>(new LibraryLoader(new File("/SpotyMusic/Libraries/" + username + ".json")));
+                this.currentLib = new FutureTask<>(new LibraryLoader(new File("/SpotyMusic/Libraries/" + username + ".json"), this.songs));
                 Thread t = new Thread((Runnable) this.currentLib);
                 t.setName("Library Loader");
                 t.start();
@@ -186,4 +213,35 @@ public class DataManager {
 
         System.out.println("Loaded " + users.size() + " from users.json");
     }
+
+    /**
+     * Loads the {@link #mediaIndex} file.
+     */
+    private void loadMedia() {
+        Thread t = new Thread(new MediaLoader(mediaIndex, this.new OnSongLoaded()));
+        t.setName("Media Loader");
+        t.start();
+    }
+
+    /**
+     * Writes the {@link #mediaIndex} file.
+     */
+    private void saveMedia() {
+        Thread t = new Thread(new MediaWriter(mediaIndex, new LinkedList<LocalSong>(this.songs.values())));
+        t.setName("Media Writer");
+        t.start();
+    }
+
+    /**
+     * Callback handler for {@link MediaLoader}.
+     */
+    private class OnSongLoaded implements MediaLoader.SongLoadedHandler {
+       @Override
+        public void onSongLoaded(LocalSong song) {
+            int id = song.getId();
+            songs.put(id, song);
+            if (id > largestId) largestId = id;
+        }
+    }
+
 }
