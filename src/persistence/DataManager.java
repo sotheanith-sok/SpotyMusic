@@ -53,7 +53,7 @@ public class DataManager {
     /**
      * Initializes the DataManager.
      */
-    private void init(){
+    public void init(){
         if (userFile.exists()) {
             Thread t = new Thread(new Runnable(){
                 @Override
