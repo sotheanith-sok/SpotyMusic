@@ -16,7 +16,7 @@ public interface Library {
      *
      * @return list of Albums
      */
-    ObservableList<Album> getAlbums();
+    ObservableList<? extends Album> getAlbums();
 
     /**
      * Returns a {@link ObservableList} of the names of the artists of all of the songs in the Library.
@@ -31,7 +31,7 @@ public interface Library {
      * @param artist the name of an artist
      * @return list of albums by the named artist
      */
-    ObservableList<Album> getAlbumsByArtist(String artist);
+    ObservableList<? extends Album> getAlbumsByArtist(String artist);
 
     /**
      * Returns a {@link ObservableList} containing all of the {@link Song}s written by the named artist.
@@ -39,21 +39,21 @@ public interface Library {
      * @param artist name of an artist
      * @return list of songs by the named artist
      */
-    ObservableList<Song> getSongsByArtist(String artist);
+    ObservableList<? extends Song> getSongsByArtist(String artist);
 
     /**
      * Returns a {@link ObservableList} containing all of the {@link Song}s in the library.
      *
      * @return list of all songs
      */
-    ObservableList<Song> getSongs();
+    ObservableList<? extends Song> getSongs();
 
     /**
      * Returns a {@link ObservableList} containing all of the {@link Playlist}s in the library.
      *
      * @return list of playlists
      */
-    ObservableList<Playlist> getPlaylists();
+    ObservableList<? extends Playlist> getPlaylists();
 
     /**
      * Adds a song to the library.

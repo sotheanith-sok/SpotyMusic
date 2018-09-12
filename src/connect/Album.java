@@ -2,6 +2,8 @@ package connect;
 
 import javafx.collections.ObservableList;
 
+import java.util.Comparator;
+
 /**
  * The <code>Album</code> interface represents a collection of {@link Song}s that are released as a group.
  *
@@ -30,7 +32,7 @@ public interface Album {
      *
      * @return list of songs
      */
-    ObservableList<Song> getSongs();
+    ObservableList<? extends Song> getSongs();
 
     // TODO: album artwork?
 
@@ -40,4 +42,16 @@ public interface Album {
      * @return library containing album
      */
     Library getLibrary();
+
+    /**
+     * A {@link Comparator} that compares {@link Album}s by title, then by artist.
+     */
+    class AlbumComparator implements Comparator<Album> {
+        @Override
+        public int compare(Album o1, Album o2) {
+            int c = o1.getTitle().compareTo(o2.getTitle());
+            if (c == 0) return o1.getArtist().compareTo(o2.getArtist());
+            return c;
+        }
+    }
 }

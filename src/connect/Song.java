@@ -1,6 +1,7 @@
 package connect;
 
 import javax.sound.sampled.AudioInputStream;
+import java.util.Comparator;
 import java.util.concurrent.Future;
 
 /**
@@ -52,4 +53,18 @@ public interface Song {
      * @return Future resolving to AudioInputStream
      */
     Future<AudioInputStream> getStream();
+
+    /**
+     * A {@link Comparator} that compares {@link Song}s by title, then album, then artist.
+     */
+    class SongComparator implements Comparator<Song> {
+        @Override
+        public int compare(Song o1, Song o2) {
+            int c = o1.getTitle().compareTo(o2.getTitle());
+            if (c != 0) return c;
+            c = o1.getAlbumTitle().compareTo(o2.getAlbumTitle());
+            if (c != 0) return c;
+            return o1.getArtist().compareTo(o2.getArtist());
+        }
+    }
 }
