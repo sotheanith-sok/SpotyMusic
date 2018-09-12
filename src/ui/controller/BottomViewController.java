@@ -4,15 +4,39 @@ import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.text.*;
 import javafx.util.Duration;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BottomViewController implements Initializable {
+   // song progress
    @FXML
-   Text text;
+   Slider songScrubbingSilder;
+
+   // song title
+   @FXML
+   Text songTitle;
+
+   // playback control buttons
+   @FXML
+   Button previousSongBtn;
+   @FXML
+   Button playPauseSongBtn;
+   @FXML
+   Button nextSongBtn;
+
+   // volume slider
+   @FXML
+   Slider volumeSlider;
+
 
    /**
     * Called to initialize a controller after its root element has been
@@ -24,18 +48,16 @@ public class BottomViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-      String s="Title of the song should go here";
-      final Animation animation=new Transition() {
-         {
-            setCycleDuration(Duration.millis(7000));
-         }
-         @Override
-         protected void interpolate(double frac) {
-            final int length=s.length();
-            final int n=Math.round(length*(float)frac);
-            text.setText(s.substring(0,n));
-         }
-      };
-      animation.play();
+
+      // song scrubbing
+      songScrubbingSilder.setOnMouseClicked(e -> System.out.println("Song scrubbing clicked"));
+
+      // previous song button
+      previousSongBtn.setOnMouseClicked(e -> System.out.println("Previous button clicked"));
+      playPauseSongBtn.setOnMouseClicked(e -> System.out.println("Play/pause button clicked"));
+      nextSongBtn.setOnMouseClicked(e -> System.out.println("Next button clicked"));
+
+      // volume slider
+      volumeSlider.setOnMouseClicked(e -> System.out.println("Volume slider clicked"));
    }
 }
