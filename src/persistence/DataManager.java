@@ -12,9 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 
 /**
  * The <code>DataManager</code> class is the primary interface for accessing persistent storage.
@@ -37,6 +35,11 @@ public class DataManager {
 
     /** A {@link File} representing the library directory. */
     public static final File libRoot = new File("SpotyMusic/Libraries/");
+
+    /**
+     * An {@link ExecutorService} to handle asynchronous operations.
+     */
+    protected ExecutorService executor;
 
     /** A {@link Map} containing all of ths songs in the local library, irrespective of users. */
     private Map<Integer, LocalSong> songs;
@@ -63,53 +66,26 @@ public class DataManager {
      * Initializes the DataManager.
      */
     public void init(){
+        this.executor = new ThreadPoolExecutor(2, 4, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(10));
+
         if (!rootDirectory.exists()) rootDirectory.mkdir();
         if (!mediaRoot.exists()) mediaRoot.mkdir();
         if (!libRoot.exists()) libRoot.mkdir();
 
+        this.users = new ConcurrentHashMap<>();
         if (userFile.exists()) {
-            Thread t = new Thread(new Runnable(){
-                @Override
-                public void run() {
-                    try {
-                        DataManager.getDataManager().loadUsers();
-
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            t.setName("User Loader");
-            t.start();
+            this.loadUsers();
 
         } else {
-            try {
-                // create stub user file
-                userFile.createNewFile();
-                this.saveUsers();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                // handle exception?
-            }
+            this.saveUsers();
         }
 
-        // wrap in Collections.synchronizedList() if there are thread issues
-        this.songs = new HashMap<>();
+        this.songs = new ConcurrentHashMap<>();
         if (mediaIndex.exists()) {
             this.loadMedia();
 
         } else {
-            try {
-                mediaIndex.createNewFile();
-                this.saveMedia();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            this.saveMedia();
         }
     }
 
@@ -142,10 +118,7 @@ public class DataManager {
             if (u.testPassword(password)) {
                 this.currentUser = u;
                 // start loading the user's library
-                this.currentLib = new FutureTask<>(new LibraryLoader(new File("/SpotyMusic/Libraries/" + username + ".json"), this.songs));
-                Thread t = new Thread((Runnable) this.currentLib);
-                t.setName("Library Loader");
-                t.start();
+                this.currentLib = this.executor.submit(new LibraryLoader(new File("/SpotyMusic/Libraries/" + username + ".json"), this.songs));
                 return true;
             }
         }
@@ -188,47 +161,29 @@ public class DataManager {
      * Saves the current list of {@link User}s to this user file.
      */
     private void saveUsers() {
-        List<User> users = new LinkedList<>();
-        users.addAll(this.users.values());
-        Thread t = new Thread(new UserWriter(userFile, users));
-        t.setName("User Writer");
-        t.start();
+        List<User> users = new LinkedList<>(this.users.values());
+        this.executor.submit(new UserWriter(userFile, users));
     }
 
     /**
-     * Loads {@link User}s from the default user file. This method reads from the file system synchronously, and thus
-     * should be called in the context of a worker thread.
-     *
-     * @throws InterruptedException if the thread is interrupted while reading
-     * @throws ExecutionException If there is an exception while loading users
+     * Loads {@link User}s from the default user file.
      */
-    private void loadUsers() throws InterruptedException, ExecutionException {
-        FutureTask<List<User>> loadTask = new FutureTask(new UserLoader(userFile));
-        loadTask.run();
-        List<User> users = loadTask.get();
-        for (User u : users) {
-            this.users.put(u.getUsername(), u);
-        }
-
-        System.out.println("Loaded " + users.size() + " from users.json");
+    private void loadUsers() {
+        this.executor.submit(new UserLoader(userFile, this.new OnUserLoaded()));
     }
 
     /**
      * Loads the {@link #mediaIndex} file.
      */
     private void loadMedia() {
-        Thread t = new Thread(new MediaLoader(mediaIndex, this.new OnSongLoaded()));
-        t.setName("Media Loader");
-        t.start();
+        this.executor.submit(new MediaLoader(mediaIndex, this.new OnSongLoaded()));
     }
 
     /**
      * Writes the {@link #mediaIndex} file.
      */
     private void saveMedia() {
-        Thread t = new Thread(new MediaWriter(mediaIndex, new LinkedList<LocalSong>(this.songs.values())));
-        t.setName("Media Writer");
-        t.start();
+        this.executor.submit(new MediaWriter(mediaIndex, new LinkedList<LocalSong>(this.songs.values())));
     }
 
     /**
@@ -243,4 +198,15 @@ public class DataManager {
         }
     }
 
+    /**
+     * Callback handler for {@link UserLoader}.
+     */
+    private class OnUserLoaded implements UserLoader.UserLoadedHandler {
+        @Override
+        public void onUserLoaded(User user) {
+            synchronized (DataManager.this) {
+                users.put(user.getUsername(), user);
+            }
+        }
+    }
 }
