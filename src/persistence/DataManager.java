@@ -158,6 +158,16 @@ public class DataManager {
     }
 
     /**
+     * Starts a {@link FileImportTask} that imports the given file into SpotyMusic's file system.
+     * The resulting {@link LocalSong} is automatically added to the library of the current user.
+     *
+     * @param file the file to import
+     */
+    public Future<?> importFile(File file) {
+        return this.executor.submit(new FileImportTask(file, this.new OnFileImported()));
+    }
+
+    /**
      * Saves the current list of {@link User}s to this user file.
      */
     private void saveUsers() {
@@ -206,6 +216,25 @@ public class DataManager {
         public void onUserLoaded(User user) {
             synchronized (DataManager.this) {
                 users.put(user.getUsername(), user);
+            }
+        }
+    }
+
+    private class OnFileImported implements FileImportTask.FileImportedHandler {
+        @Override
+        public void onFileImported(String title, String artist, String album, long duration, File path) {
+            int id = ++largestId;
+            LocalSong newSong = new LocalSong(title, artist, album, duration, path, id);
+            songs.put(id, newSong);
+            try {
+                ((LocalLibrary) getCurrentLibrary().get(10, TimeUnit.SECONDS)).addSong(newSong);
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (TimeoutException e) {
+                e.printStackTrace();
             }
         }
     }
