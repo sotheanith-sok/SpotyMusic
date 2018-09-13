@@ -22,6 +22,7 @@ public class LocalLibrary implements Library {
 
     protected ObservableList<LocalSong> songs;
     private ObservableList<LocalAlbum> albums;
+    private Map<String, LocalAlbum> album_map;
     private ObservableList<String> artists;
     private ObservableList<LocalPlaylist> playlists;
 
@@ -49,6 +50,7 @@ public class LocalLibrary implements Library {
             if (!this.artists.contains(s.getArtist())) this.artists.add(s.getArtist());
         }
         this.albums = new ObservableListImpl<>(albums.values());
+        this.album_map = albums;
 
         // build playlists and add them to the library
         for (Map.Entry<String, List<LocalSong>> e : playlists.entrySet()) {
@@ -58,6 +60,18 @@ public class LocalLibrary implements Library {
         // these are used to cache the FilteredLists that back *byArtist retrieval
         this.artistSongs = new HashMap<>();
         this.artistAlbums = new HashMap<>();
+    }
+
+    protected void addSong(LocalSong song) {
+        this.songs.add(song);
+        if (!this.album_map.containsKey(song.getAlbumTitle())) {
+            LocalAlbum newAlbum = new LocalAlbum(song.getAlbumTitle(), song.getArtist(), this);
+            this.album_map.put(newAlbum.getTitle(), newAlbum);
+            this.albums.add(newAlbum);
+        }
+        if (!this.artists.contains(song.getArtist())) {
+            this.artists.add(song.getArtist());
+        }
     }
 
     @Override
@@ -106,7 +120,7 @@ public class LocalLibrary implements Library {
 
     @Override
     public Future<Boolean> importSong(File song) throws SecurityException {
-        return null;
+        return (Future<Boolean>) DataManager.getDataManager().importFile(song);
     }
 
     @Override
