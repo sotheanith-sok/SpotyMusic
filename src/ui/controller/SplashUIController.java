@@ -15,8 +15,11 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 import persistence.DataManager;
+<<<<<<< HEAD
 
 import java.io.IOException;
+=======
+>>>>>>> d645fa4fa7458cd53fc8e76aa2bbbd606cf3191f
 
 public class SplashUIController {
 
@@ -38,10 +41,28 @@ public class SplashUIController {
     void clickedSignOn() {
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
         {
-          if(DM.tryAuth(txtUser.getText(), txtPass.getText()))
-          {
-               //try auth and router handling needs to happen
-          }
+            DM.tryAuth(txtUser.getText(), txtPass.getText());
+            //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
+            /*
+            try
+            {
+                DM.tryAuth(txtUser.getText(), txtPass.getText());
+                //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
+            }
+            catch (NoSuchUserException ex)
+            {
+                Alert noSuchUserAlert =  new Alert(Alert.AlertType.INFORMATION);
+                noSuchUserAlert.setTitle("User Not Found");
+                noSuchUserAlert.setHeaderText("Login Error");
+                String message = "Please enter a valid Username and Password.";
+                noSuchUserAlert.setContentText(message);
+                noSuchUserAlert.show();
+
+                txtUser.setText("");
+                txtPass.setText("");
+                txtUser.requestFocus();
+            }
+            */
         }
         else
         {
