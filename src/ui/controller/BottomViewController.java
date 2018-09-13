@@ -1,18 +1,11 @@
 package ui.controller;
 
-import javafx.animation.Animation;
-import javafx.animation.Transition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.text.*;
-import javafx.util.Duration;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
