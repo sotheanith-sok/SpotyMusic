@@ -7,8 +7,10 @@ import connect.Library;
 import connect.Song;
 
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 /**
@@ -57,7 +59,7 @@ public class LocalSong implements Song {
      * Returns the ID number of this song.
      * ID numbers should be unique within a {@link DataManager}
      *
-     * @return
+     * @return song ID number
      */
     public int getId() {
         return this.id;
@@ -90,7 +92,7 @@ public class LocalSong implements Song {
 
     @Override
     public Future<AudioInputStream> getStream() {
-        return null;
+        return DataManager.getDataManager().executor.submit(this.new GetStreamTask());
     }
 
     /**
@@ -150,5 +152,15 @@ public class LocalSong implements Song {
         gen.writeNumberField("duration", this.duration);
         gen.writeNumberField("id", this.id);
         gen.writeEndObject();
+    }
+
+    /**
+     * GetStreamTask asynchronously retrieves an {@link AudioInputStream} for a {@link LocalSong}.
+     */
+    class GetStreamTask implements Callable<AudioInputStream> {
+        @Override
+        public AudioInputStream call() throws Exception {
+            return AudioSystem.getAudioInputStream(path);
+        }
     }
 }
