@@ -23,22 +23,34 @@
               <tabs>
                   <Tab closable="false" text="Queue">
                     <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: red;" />
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: red;">
+                           <children>
+                              <fx:include source="QueueView.fxml" fx:id="queueView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                           </children></AnchorPane>
                     </content>
                   </Tab>
                 <Tab closable="false" text="Playlist">
                   <content>
-                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: blue;" />
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: blue;">
+                           <children>
+                              <fx:include source="PlaylistListView.fxml" fx:id="playlistListView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                           </children></AnchorPane>
                   </content>
                 </Tab>
                 <Tab closable="false" text="Album">
                   <content>
-                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: green;" />
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: green;">
+                           <children>
+                              <fx:include source="AlbumListView.fxml" fx:id="albumListView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                           </children></AnchorPane>
                   </content>
                 </Tab>
                   <Tab closable="false" text="Artist">
                     <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: yellow;" />
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" style="-fx-background-color: yellow;">
+                           <children>
+                              <fx:include source="ArtistListView.fxml" fx:id="artistListView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                           </children></AnchorPane>
                     </content>
                   </Tab>
               </tabs>

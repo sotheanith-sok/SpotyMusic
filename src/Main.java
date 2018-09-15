@@ -10,7 +10,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception{
         DataManager.getDataManager().init();
-        Parent root = FXMLLoader.load(getClass().getResource("ui/view/SplashUI.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("ui/view/MainView.fxml"));
         primaryStage.setTitle("Spusic");
         primaryStage.setScene(new Scene(root, 800, 600));
         primaryStage.show();

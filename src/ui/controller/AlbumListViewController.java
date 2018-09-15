@@ -50,9 +50,6 @@ public class AlbumListViewController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources){
 
-        ObservableList<String> data = FXCollections.observableArrayList("Blah", "i think this works");
-        albumTableView.setItems(data);
-
         //setting the columns
         albumName.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
         artistName.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
