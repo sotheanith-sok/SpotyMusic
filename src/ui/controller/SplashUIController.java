@@ -36,8 +36,7 @@ public class SplashUIController {
     void clickedSignOn() {
 
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
-        {
-            DM.tryAuth(txtUser.getText(), txtPass.getText());
+        {   DM.tryAuth(txtUser.getText(), txtPass.getText());
             //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
             /*
             try

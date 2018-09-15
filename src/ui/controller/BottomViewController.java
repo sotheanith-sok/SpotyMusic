@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BottomViewController implements Initializable {
+   private MainViewController mainViewController;
    // song progress
    @FXML
    Slider songScrubbingSilder;
@@ -48,7 +49,6 @@ public class BottomViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-
       // song scrubbing
       songScrubbingSilder.setOnMouseClicked(e -> System.out.println("Song scrubbing clicked"));
 
@@ -59,5 +59,14 @@ public class BottomViewController implements Initializable {
 
       // volume slider
       volumeSlider.setOnMouseClicked(e -> System.out.println("Volume slider clicked"));
+   }
+
+   /**
+    * Called to set the reference to the MainViewController
+    * @param mainViewController
+    */
+   public void setMainViewController(MainViewController mainViewController){
+      this.mainViewController=mainViewController;
+      System.out.println(mainViewController);
    }
 }
