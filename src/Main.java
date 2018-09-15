@@ -10,6 +10,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception{
         DataManager.getDataManager().init();
+        //System.out.println(DataManager.getDataManager().getCurrentLibrary().get().getSongs().size());
         Parent root = FXMLLoader.load(getClass().getResource("ui/view/MainView.fxml"));
         primaryStage.setTitle("Spusic");
         Scene scene=new Scene(root, 800, 600);
