@@ -7,8 +7,7 @@ import persistence.DataManager;
 import persistence.User;
 
 import java.io.File;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.IOException;
 import java.util.concurrent.*;
 
 /**
@@ -20,49 +19,58 @@ import java.util.concurrent.*;
  * @author Nicholas Utz
  * @see DataManager
  */
-public class UserLoader implements Callable<List<User>> {
+public class UserLoader implements Runnable {
 
     private final File userFile;
+    private final UserLoadedHandler handler;
 
     /**
      * Creates a new <code>UserLoader</code> that will load users from the given {@link File}.
      *
      * @param userFile the file from which to load user data
      */
-    public UserLoader(File userFile) {
+    public UserLoader(File userFile, UserLoadedHandler handler) {
         this.userFile = userFile;
+        this.handler = handler;
     }
 
     @Override
-    public List<User> call() throws Exception {
-        List<User> result = new LinkedList<>();
+    public void run() {
+        try {
+            if (!this.userFile.exists()) this.userFile.createNewFile();
 
-        // instantiate a Jackson JSON parser
-        JsonFactory jsonFactory = new JsonFactory();
-        JsonParser parser = jsonFactory.createParser(this.userFile);
+            // instantiate a Jackson JSON parser
+            JsonFactory jsonFactory = new JsonFactory();
+            JsonParser parser = jsonFactory.createParser(this.userFile);
 
-        // iterate over JSON tokens
-        JsonToken token = parser.currentToken();
-        for (;;) {
-            if (token == JsonToken.START_ARRAY) {
-                // expected to be the first token.
+            // iterate over JSON tokens
+            JsonToken token = parser.currentToken();
+            for (;;) {
+                if (token == JsonToken.START_ARRAY) {
+                    // expected to be the first token.
 
-            } else if (token == JsonToken.START_OBJECT) {
-                // beginning of a user entry
-                User entry = User.load(parser);
-                if (entry != null) result.add(entry);
+                } else if (token == JsonToken.START_OBJECT) {
+                    // beginning of a user entry
+                    User entry = User.load(parser);
+                    if (entry != null) this.handler.onUserLoaded(entry);
 
-            } else if (token == JsonToken.END_ARRAY) {
-                // end of user list
-                break;
+                } else if (token == JsonToken.END_ARRAY) {
+                    // end of user list
+                    break;
+                }
+
+                // iterate to next token
+                token = parser.nextToken();
             }
 
-            // iterate to next token
-            token = parser.nextToken();
+            // close parser, and return parsed data
+            parser.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 
-        // close parser, and return parsed data
-        parser.close();
-        return result;
+    public interface UserLoadedHandler {
+        void onUserLoaded(User user);
     }
 }

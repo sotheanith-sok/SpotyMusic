@@ -1,6 +1,9 @@
 package connect;
 
 import javafx.collections.ObservableList;
+import utils.ComposedComparator;
+
+import java.util.Comparator;
 
 /**
  * The <code>Album</code> interface represents a collection of {@link Song}s that are released as a group.
@@ -30,7 +33,7 @@ public interface Album {
      *
      * @return list of songs
      */
-    ObservableList<Song> getSongs();
+    ObservableList<? extends Song> getSongs();
 
     // TODO: album artwork?
 
@@ -40,4 +43,18 @@ public interface Album {
      * @return library containing album
      */
     Library getLibrary();
+
+    /** A {@link Comparator} that compares Albums by their title. */
+    Comparator<Album> TITLE_COMPARATOR = Comparator.comparing(Album::getTitle);
+
+    /** A {@link Comparator} that compares Albums by their artist. */
+    Comparator<Album> ARTIST_COMPARATOR = Comparator.comparing(Album::getArtist);
+
+    /**
+     * A {@link Comparator} that compares Albums by artist, then by title.
+     *
+     * Sorting a collection of Albums with this comparator results in albums being grouped by artist, and sorted
+     * alphabetically.
+     */
+    Comparator<Album> GROUPING_COMPARATOR = new ComposedComparator<Album>(ARTIST_COMPARATOR, TITLE_COMPARATOR);
 }

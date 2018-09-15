@@ -36,7 +36,28 @@ public class SplashUIController {
     void clickedSignOn() {
 
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
-        {
+        {   DM.tryAuth(txtUser.getText(), txtPass.getText());
+            //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
+            /*
+            try
+            {
+                DM.tryAuth(txtUser.getText(), txtPass.getText());
+                //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
+            }
+            catch (NoSuchUserException ex)
+            {
+                Alert noSuchUserAlert =  new Alert(Alert.AlertType.INFORMATION);
+                noSuchUserAlert.setTitle("User Not Found");
+                noSuchUserAlert.setHeaderText("Login Error");
+                String message = "Please enter a valid Username and Password.";
+                noSuchUserAlert.setContentText(message);
+                noSuchUserAlert.show();
+
+                txtUser.setText("");
+                txtPass.setText("");
+                txtUser.requestFocus();
+            }
+            */
         }
         else
         {

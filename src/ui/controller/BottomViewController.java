@@ -4,15 +4,39 @@ import javafx.animation.Animation;
 import javafx.animation.Transition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.text.*;
 import javafx.util.Duration;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BottomViewController implements Initializable {
    private MainViewController mainViewController;
+   // song progress
+   @FXML
+   Slider songScrubbingSilder;
 
+   // song title
+   @FXML
+   Text songTitle;
+
+   // playback control buttons
+   @FXML
+   Button previousSongBtn;
+   @FXML
+   Button playPauseSongBtn;
+   @FXML
+   Button nextSongBtn;
+
+   // volume slider
+   @FXML
+   Slider volumeSlider;
 
 
    /**
@@ -25,7 +49,16 @@ public class BottomViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
+      // song scrubbing
+      songScrubbingSilder.setOnMouseClicked(e -> System.out.println("Song scrubbing clicked"));
 
+      // previous song button
+      previousSongBtn.setOnMouseClicked(e -> System.out.println("Previous button clicked"));
+      playPauseSongBtn.setOnMouseClicked(e -> System.out.println("Play/pause button clicked"));
+      nextSongBtn.setOnMouseClicked(e -> System.out.println("Next button clicked"));
+
+      // volume slider
+      volumeSlider.setOnMouseClicked(e -> System.out.println("Volume slider clicked"));
    }
 
    /**
