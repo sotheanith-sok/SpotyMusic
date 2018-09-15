@@ -9,7 +9,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@styleSheets/BottomView.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.BottomViewController">
+<AnchorPane prefHeight="150.0" prefWidth="600.0" stylesheets="@styleSheets/BottomView.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.BottomViewController">
    <children>
       <GridPane prefHeight="145.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
@@ -25,7 +25,7 @@
          <children>
             <HBox alignment="CENTER" prefHeight="85.0" prefWidth="314.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                <children>
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0">
+                  <Button fx:id="previousSongBtn" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Previous">
                      <HBox.margin>
                         <Insets right="10.0" />
                      </HBox.margin>
@@ -37,7 +37,7 @@
                         </ImageView>
                      </graphic>
                   </Button>
-                  <Button graphicTextGap="2.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0">
+                  <Button fx:id="playPauseSongBtn" graphicTextGap="2.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Play/Pause">
                      <graphic>
                         <ImageView>
                            <image>
@@ -45,7 +45,7 @@
                            </image>
                         </ImageView>
                      </graphic></Button>
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0">
+                  <Button fx:id="nextSongBtn" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Next">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
@@ -64,8 +64,8 @@
             </HBox>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="4">
                <children>
-                  <Slider layoutX="27.0" layoutY="58.0" prefHeight="64.0" prefWidth="471.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="27.0" AnchorPane.rightAnchor="102.0" AnchorPane.topAnchor="0.0" />
-                  <Text fx:id="text" layoutX="163.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Title of The Next song should go here" />
+                  <Slider fx:id="songScrubbingSilder" layoutX="27.0" layoutY="58.0" prefHeight="64.0" prefWidth="471.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="27.0" AnchorPane.rightAnchor="102.0" AnchorPane.topAnchor="0.0" />
+                  <Text fx:id="songTitle" layoutX="227.0" layoutY="54.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Title of Song " />
                </children>
             </AnchorPane>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="3">
@@ -75,7 +75,7 @@
             </AnchorPane>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="3" GridPane.rowIndex="1">
                <children>
-                  <Slider layoutX="29.0" layoutY="15.0" orientation="VERTICAL" prefHeight="46.0" prefWidth="18.0" AnchorPane.bottomAnchor="18.0" AnchorPane.leftAnchor="29.0" AnchorPane.rightAnchor="28.0" AnchorPane.topAnchor="15.0" />
+                  <Slider fx:id="volumeSlider" blockIncrement="0.0" layoutX="29.0" layoutY="15.0" majorTickUnit="25.0" minorTickCount="1" orientation="VERTICAL" prefHeight="46.0" prefWidth="18.0" showTickLabels="true" showTickMarks="true" value="70.0" AnchorPane.bottomAnchor="18.0" AnchorPane.leftAnchor="29.0" AnchorPane.rightAnchor="28.0" AnchorPane.topAnchor="15.0" />
                </children>
             </AnchorPane>
          </children>

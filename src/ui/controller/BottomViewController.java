@@ -4,62 +4,59 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
-import javafx.scene.text.*;
+import javafx.scene.text.Text;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BottomViewController implements Initializable {
-   private MainViewController mainViewController;
-   // song progress
-   @FXML
-   Slider songScrubbingSilder;
+    // song progress
+    @FXML
+    Slider songScrubbingSilder;
+    // song title
+    @FXML
+    Text songTitle;
+    // playback control buttons
+    @FXML
+    Button previousSongBtn;
+    @FXML
+    Button playPauseSongBtn;
+    @FXML
+    Button nextSongBtn;
+    // volume slider
+    @FXML
+    Slider volumeSlider;
 
-   // song title
-   @FXML
-   Text songTitle;
+    private MainViewController parentViewController;
 
-   // playback control buttons
-   @FXML
-   Button previousSongBtn;
-   @FXML
-   Button playPauseSongBtn;
-   @FXML
-   Button nextSongBtn;
+    /**
+     * Called to initialize a controller after its root element has been
+     * completely processed.
+     *
+     * @param location  The location used to resolve relative paths for the root object, or
+     *                  <tt>null</tt> if the location is not known.
+     * @param resources The resources used to localize the root object, or <tt>null</tt> if
+     */
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // song scrubbing
+        songScrubbingSilder.setOnMouseClicked(e -> System.out.println("Song scrubbing clicked"));
 
-   // volume slider
-   @FXML
-   Slider volumeSlider;
+        // previous song button
+        previousSongBtn.setOnMouseClicked(e -> System.out.println("Previous button clicked"));
+        playPauseSongBtn.setOnMouseClicked(e -> System.out.println("Play/pause button clicked"));
+        nextSongBtn.setOnMouseClicked(e -> System.out.println("Next button clicked"));
 
+        // volume slider
+        volumeSlider.setOnMouseClicked(e -> System.out.println("Volume slider clicked"));
+    }
 
-   /**
-    * Called to initialize a controller after its root element has been
-    * completely processed.
-    *
-    * @param location  The location used to resolve relative paths for the root object, or
-    *                  <tt>null</tt> if the location is not known.
-    * @param resources The resources used to localize the root object, or <tt>null</tt> if
-    */
-   @Override
-   public void initialize(URL location, ResourceBundle resources) {
-      // song scrubbing
-      songScrubbingSilder.setOnMouseClicked(e -> System.out.println("Song scrubbing clicked"));
-
-      // previous song button
-      previousSongBtn.setOnMouseClicked(e -> System.out.println("Previous button clicked"));
-      playPauseSongBtn.setOnMouseClicked(e -> System.out.println("Play/pause button clicked"));
-      nextSongBtn.setOnMouseClicked(e -> System.out.println("Next button clicked"));
-
-      // volume slider
-      volumeSlider.setOnMouseClicked(e -> System.out.println("Volume slider clicked"));
-   }
-
-   /**
-    * Called to set the reference to the MainViewController
-    * @param mainViewController
-    */
-   public void setMainViewController(MainViewController mainViewController){
-      this.mainViewController=mainViewController;
-      System.out.println(mainViewController);
-   }
+    /**
+     * Called to set the reference to the MainViewController
+     *
+     * @param mainViewController
+     */
+    public void setParentViewController(MainViewController mainViewController) {
+        parentViewController = mainViewController;
+    }
 }

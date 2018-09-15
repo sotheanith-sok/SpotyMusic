@@ -1,61 +1,106 @@
 package ui.controller;
 
 import connect.Song;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import stub.SongStub;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.input.MouseButton;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 
+/**
+ *
+ */
 public class QueueViewController implements Initializable {
-    @FXML private TableView<Song> tableView;
+    @FXML
+    private TableView<Song> tableView;
+    @FXML
+    private TableColumn<Song, String> titleCol;
+    @FXML
+    private TableColumn<Song, String> artistCol;
+    @FXML
+    private TableColumn<Song, String> albumCol;
+    @FXML
+    private TableColumn<Song, Long> lengthCol;
 
-    @FXML private TableColumn<Song, String> titleCol;
-    @FXML private TableColumn<Song, String> artistCol;
-    @FXML private TableColumn<Song, String> albumCol;
-    @FXML private TableColumn<Song, Long> lengthCol;
+    private RightViewController parentViewController;
+
+    private ObservableList<Song> songObservableList;
 
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // use a 'stub' implementation - just a test class
 
-        // this will eventually be populated with songs from the library
-        ObservableList<Song> queueData = FXCollections.observableArrayList(
-                new SongStub("The Genesis", "Nas", "Illmatic", 94),
-                new SongStub("N.Y. State of Mind", "Nas", "Illmatic", 102),
-                new SongStub("Life's a Beach", "Nas", "Illmatic", 144),
-                new SongStub("Baby", "Justin Beiber", "Baby, Oh", 68),
-                new SongStub("Gangnam Style", "Psy", "Psy Hit Singles", 131),
-                new SongStub("Don't Stop Believing", "John Coltrane", "Don't Stop", 203)
-        );
+        //Create list
+        songObservableList = FXCollections.observableArrayList();
 
-        // let table cell know how to populate itself
-        titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-        artistCol.setCellValueFactory(new PropertyValueFactory<>("artist"));
-        albumCol.setCellValueFactory(new PropertyValueFactory<>("albumTitle"));
-        lengthCol.setCellValueFactory(new PropertyValueFactory<>("duration"));
+        //Bind properties of song to column
+        titleCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
+        artistCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
+        albumCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));
+        lengthCol.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getDuration()));
+        tableView.setItems(songObservableList);
 
-        tableView.setItems(queueData);
-        tableView.getColumns().setAll(titleCol, artistCol, albumCol, lengthCol);
+        //Add mouse click listener
+        tableView.setRowFactory(tv -> {
+            TableRow<Song> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY
+                        && event.getClickCount() == 2) {
+                    Song clickedRow = row.getItem();
+                    mouseClicked(clickedRow);
+                }
+            });
+            return row;
+        });
+
+
     }
 
-    /*
-    * Attributes for queue view song
-    * title
-    * artist
-    * album
-    * length
-    * */
+    /**
+     * Set a reference to the parent view controller of this controller.
+     *
+     * @param rightViewController a parent view controller.
+     */
+
+    public void setParentViewController(RightViewController rightViewController) {
+        parentViewController = rightViewController;
+    }
+
 
     /**
-     * observable list of songs
-     * cell factory tells table view how to render the list element
+     * This function will be call when a mouse click happen on a row of song.
+     *
+     * @param song song that was clicked on.
      */
+    public void mouseClicked(Song song) {
+        System.out.println(song);
+    }
+
+    /**
+     * Get the list of songs in this queue.
+     *
+     * @return the list of songs.
+     */
+    public ObservableList<Song> getSongObservableList() {
+        return songObservableList;
+    }
+
+    /**
+     * Set list of songs in this queue
+     *
+     * @param songObservableList a new list of songs.
+     */
+    public void setSongObservableList(ObservableList<Song> songObservableList) {
+        this.songObservableList = songObservableList;
+        tableView.setItems(songObservableList);
+    }
 }

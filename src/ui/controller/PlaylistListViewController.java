@@ -1,17 +1,16 @@
 package ui.controller;
 
 import connect.Playlist;
-import javafx.beans.property.SimpleStringProperty;
+import connect.Song;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import stub.PlaylistStub;
+
 import java.net.URL;
-import javafx.fxml.FXML;
-import javafx.scene.input.MouseEvent;
-import persistence.DataManager;
 import java.util.ResourceBundle;
 
 /**
@@ -23,59 +22,86 @@ public class PlaylistListViewController implements Initializable {
      * listview of type Playlist
      */
     @FXML
-     ListView<Playlist> playlistList;
+    private ListView<Playlist> listView;
+
+    private RightViewController parentViewController;
+
+    private ObservableList<Playlist> playlistObservableList;
 
     /**
      * override the initialize, so listview of playlists can be generated
-     * @param location location to resolve relative path
+     *
+     * @param location  location to resolve relative path
      * @param resources resources used for root object
      */
     @Override
-    public void initialize(URL location, ResourceBundle resources){
-
+    public void initialize(URL location, ResourceBundle resources) {
+        playlistObservableList = FXCollections.observableArrayList(new PlaylistStub("1"), new PlaylistStub("2"), new PlaylistStub("3"));
 
         /**
          * on mouse click, calls method selectPlaylist
          */
-        playlistList.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                selectPlaylist();
+        listView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                mouseClicked(listView.getSelectionModel().getSelectedItem());
             }
         });
 
         /**
          * a list of all the playlists are generated onto the view
          */
-        playlistList.setCellFactory(lv->new ListCell<Playlist>(){
+        listView.setCellFactory(lv -> new ListCell<Playlist>() {
             @Override
-            public void updateItem(Playlist item, boolean empty){
+            public void updateItem(Playlist item, boolean empty) {
                 super.updateItem(item, empty);
-                if(empty){
+                if (empty) {
                     //sets text to null if there is no information
                     setText(null);
-                }else{
+                } else {
                     //gets Playlist name string and sets the text to it
                     setText(item.getName());
                 }
             }
         });
+
+        listView.setItems(playlistObservableList);
+
     }
 
     /**
      * once mouse is clicked, the highlighted playlist is selected
      */
-    public void selectPlaylist(){
-        //select a song list based on the playlist
-//        DataManager.getDataManager().getCurrentLibrary().
+    public void mouseClicked(Playlist playlist) {
+
+        parentViewController.showDetailView(PanelType.PLAYLIST, (ObservableList<Song>) playlist.getSongs());
     }
 
     /**
-     * add playlist data
-     * @param a observable list of type Playlist
+     * Set reference to the parent view controller of this object.
+     *
+     * @param rightViewController parent view controller.
      */
-    public void addPlaylistData(ObservableList<Playlist> a){
-        playlistList.setItems(a);
+
+    public void setParentViewController(RightViewController rightViewController) {
+        parentViewController = rightViewController;
     }
 
+    /**
+     * Get the list of playlist in this view.
+     *
+     * @return the current list of playlist.
+     */
+    public ObservableList<Playlist> getPlaylistObservableList() {
+        return playlistObservableList;
+    }
+
+    /**
+     * Set the list of playlist for this view.
+     *
+     * @param playlistObservableList a new list of playlist.
+     */
+    public void setPlaylistObservableList(ObservableList<Playlist> playlistObservableList) {
+        this.playlistObservableList = playlistObservableList;
+        listView.setItems(playlistObservableList);
+    }
 }
