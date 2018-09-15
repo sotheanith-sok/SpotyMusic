@@ -1,18 +1,12 @@
 package ui.controller;
 
-import connect.Playlist;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
-import javafx.fxml.Initializable;
-import javafx.scene.control.ListCell;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.control.ListView;
-import java.net.URL;
 import javafx.fxml.FXML;
-import javafx.scene.input.MouseEvent;
-import persistence.DataManager;
+import javafx.fxml.Initializable;
+import javafx.scene.control.ListView;
+
+import java.net.URL;
 import java.util.ResourceBundle;
 
 /**
@@ -24,43 +18,60 @@ public class ArtistListViewController implements Initializable {
      * a listview
      */
     @FXML
-    private ListView artistView;
+    private ListView<String> listView;
+
+    private RightViewController parentViewController;
+
+    private ObservableList<String> artistObservableList;
 
 
     /**
      * override the initialize, so listview of artists can be generated
-     * @param location location to resolve relative path
+     *
+     * @param location  location to resolve relative path
      * @param resources resources used for root object
      */
     @Override
-    public void initialize(URL location, ResourceBundle resources){
+    public void initialize(URL location, ResourceBundle resources) {
+        artistObservableList = FXCollections.observableArrayList("1", "2", "3");
 
         //on mouse click, calls method selectArtist
-        artistView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                selectArtist();
-            }
+        listView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2)
+                mouseClicked(listView.getSelectionModel().getSelectedItem());
         });
-
+        listView.setItems(artistObservableList);
     }
 
     /**
      * when mouse is clicked, highlighted artist is selected
      */
-    public void selectArtist(){
-        //select artist based on mouse click, this will show songs made by that artist
+    public void mouseClicked(String artist) {
+        parentViewController.showDetailView(PanelType.ARTIST, artist);
+    }
 
-        System.out.println("Selected Item from Artist Table View");
+
+    public void setParentViewController(RightViewController rightViewController) {
+        parentViewController = rightViewController;
     }
 
     /**
-     * adds artist data
-     * @param a Observable list of type String
+     * Get list of artists.
+     *
+     * @return list of artists
      */
-    public void addArtistData(ObservableList<String> a){
-        artistView.setItems(a);
+    public ObservableList<String> getArtistObservableList() {
+        return artistObservableList;
     }
 
+    /**
+     * Set list of artists
+     *
+     * @param artistObservableList a new artist list
+     */
+    public void setArtistObservableList(ObservableList<String> artistObservableList) {
+        this.artistObservableList = artistObservableList;
+        listView.setItems(artistObservableList);
+    }
 }
 

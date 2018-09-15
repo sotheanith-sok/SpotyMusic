@@ -46,7 +46,7 @@
                 </HBox>
                 <AnchorPane prefHeight="369.0" prefWidth="600.0" GridPane.columnSpan="2147483647" GridPane.rowSpan="2147483647">
                     <children>
-                        <TableView fx:id="albumTableView" layoutY="14.0" onMouseClicked="#selectAlbum" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="-0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <TableView fx:id="tableView" layoutY="14.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="-0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <columns>
                                 <TableColumn fx:id="albumName" maxWidth="1.7976931348623157E308" prefWidth="290.0" text="Album Name" />
                                 <TableColumn fx:id="artistName" prefWidth="309.0" text="Artist Name" />
