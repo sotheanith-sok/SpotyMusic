@@ -13,10 +13,9 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class LeftViewController implements Initializable {
-   @FXML
-   ListView profileList;
-   @FXML
-   Button button;
+   private MainViewController mainViewController;
+
+
 
    /**
     * Called to initialize a controller after its root element has been
@@ -28,14 +27,15 @@ public class LeftViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-      ObservableList<String> names = FXCollections.observableArrayList(
-              "Julia", "Ian", "Sue", "Matthew", "Hannah", "Stephan", "Denise");
-      profileList.setItems(names);
-   button.setOnMouseClicked(new EventHandler<MouseEvent>() {
-      @Override
-      public void handle(MouseEvent event) {
-         System.out.println("MOUSE Clicked");
-      }
-   });
+
+   }
+
+   /**
+    * Called to set the reference to the MainViewController
+    * @param mainViewController
+    */
+   public void setMainViewController(MainViewController mainViewController){
+      this.mainViewController=mainViewController;
+      System.out.println(mainViewController);
    }
 }

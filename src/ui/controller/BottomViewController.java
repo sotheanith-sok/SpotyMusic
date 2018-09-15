@@ -11,8 +11,9 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BottomViewController implements Initializable {
-   @FXML
-   Text text;
+   private MainViewController mainViewController;
+
+
 
    /**
     * Called to initialize a controller after its root element has been
@@ -24,18 +25,15 @@ public class BottomViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-      String s="Title of the song should go here";
-      final Animation animation=new Transition() {
-         {
-            setCycleDuration(Duration.millis(7000));
-         }
-         @Override
-         protected void interpolate(double frac) {
-            final int length=s.length();
-            final int n=Math.round(length*(float)frac);
-            text.setText(s.substring(0,n));
-         }
-      };
-      animation.play();
+
+   }
+
+   /**
+    * Called to set the reference to the MainViewController
+    * @param mainViewController
+    */
+   public void setMainViewController(MainViewController mainViewController){
+      this.mainViewController=mainViewController;
+      System.out.println(mainViewController);
    }
 }
