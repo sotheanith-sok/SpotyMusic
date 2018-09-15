@@ -65,6 +65,7 @@ public class LocalLibrary implements Library {
 
     protected void addSong(LocalSong song) {
         this.songs.add(song);
+        song.setLibrary(this);
         if (!this.album_map.containsKey(song.getAlbumTitle())) {
             LocalAlbum newAlbum = new LocalAlbum(song.getAlbumTitle(), song.getArtist(), this);
             this.album_map.put(newAlbum.getTitle(), newAlbum);
@@ -73,6 +74,7 @@ public class LocalLibrary implements Library {
         if (!this.artists.contains(song.getArtist())) {
             this.artists.add(song.getArtist());
         }
+        DataManager.getDataManager().saveLibrary();
     }
 
     @Override
