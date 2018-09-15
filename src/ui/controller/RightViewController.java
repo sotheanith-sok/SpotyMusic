@@ -1,5 +1,8 @@
 package ui.controller;
 
+import connect.Album;
+import connect.Library;
+import connect.Playlist;
 import connect.Song;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -17,6 +20,7 @@ import java.util.ResourceBundle;
  */
 public class RightViewController implements Initializable {
     private MainViewController parentViewController;
+
     @FXML
     private QueueViewController queueViewController;
     @FXML
@@ -28,6 +32,8 @@ public class RightViewController implements Initializable {
 
     @FXML
     private AnchorPane playlistsView, artistsView, albumsView;
+
+    private Library currentLibrary;
 
     /**
      * Called to initialize a controller after its root element has been
@@ -56,8 +62,9 @@ public class RightViewController implements Initializable {
 
     /**
      * Facade function used to show detail view. It will be call from ArtistViewController
+     *
      * @param panelType which panel is being call from
-     * @param string name of the artist
+     * @param string    name of the artist
      */
 
     public void showDetailView(PanelType panelType, String string) {
@@ -70,7 +77,8 @@ public class RightViewController implements Initializable {
 
     /**
      * Facade function used to show detail view. It will be called from PlaylistListViewController and AlbumListViewController.
-     * @param panelType which panel is being call from
+     *
+     * @param panelType          which panel is being call from
      * @param songObservableList collection of songs.
      */
 
@@ -87,6 +95,7 @@ public class RightViewController implements Initializable {
 
     /**
      * Used to remove detail view from a specific panel.
+     *
      * @param panelType which panel is being call from.
      */
     public void removeDetailView(PanelType panelType) {
@@ -105,7 +114,8 @@ public class RightViewController implements Initializable {
 
     /**
      * A private function used to create detail view.
-     * @param pane parent panel
+     *
+     * @param pane      parent panel
      * @param panelType panel type
      * @return detailViewController for the newly created detailView.
      */
@@ -127,6 +137,71 @@ public class RightViewController implements Initializable {
             e.printStackTrace();
         }
         return detailViewController;
+    }
+
+    /**
+     * Tell this view and its children views to show a new library.
+     *
+     * @param library a new library.
+     */
+    public void setCurrentLibrary(Library library) {
+        currentLibrary = library;
+        updateInfo();
+    }
+
+    /**
+     * This function is called when a new library is being set.
+     */
+    private void updateInfo() {
+        playlistListViewController.setPlaylistObservableList((ObservableList<Playlist>) currentLibrary.getPlaylists());
+        albumListViewController.setAlbumObservableList((ObservableList<Album>) currentLibrary.getAlbums());
+        artistListViewController.setArtistObservableList(currentLibrary.getArtists());
+    }
+
+    /**
+     * This function is called from a detail view when a song is being click on.
+     *
+     * @param song cliked on song.
+     */
+    public void addSongToQueue(Song song) {
+        queueViewController.getSongObservableList().add(song);
+    }
+
+    /**
+     * Get the reference to current song that's being play.
+     *
+     * @return current song.
+     */
+    public Song getCurrentSong() {
+        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+    }
+
+    /**
+     * Get the next song that will be play
+     *
+     * @return the next song.
+     */
+    public Song getPreviousSong() {
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()+1);
+        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+    }
+
+    /**
+     * Get the previous song.
+     *
+     * @return the previous song.
+     */
+    public Song getNextSong() {
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()-1);
+        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+    }
+
+    /**
+     * Play a specific song has been requested from the queueView.
+     * @param song that need to be play.
+     */
+    public void playASong(Song song){
+        parentViewController.playASong(song);
     }
 
 }

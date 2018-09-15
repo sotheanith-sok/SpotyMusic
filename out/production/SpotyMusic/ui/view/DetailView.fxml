@@ -25,7 +25,7 @@
                <children>
                   <AnchorPane prefHeight="80.0" prefWidth="81.0">
                      <children>
-                        <ImageView fitHeight="75.0" fitWidth="75.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                        <ImageView fx:id="image" fitHeight="75.0" fitWidth="75.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                            <image>
                               <Image url="@../../../resources/Placeholder.png" />
                            </image>
@@ -39,12 +39,12 @@
                   </AnchorPane>
                   <VBox alignment="CENTER_LEFT">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Playlist/Artist">
+                        <Text fx:id="type" strokeType="OUTSIDE" strokeWidth="0.0" text="Playlist/Artist">
                            <VBox.margin>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </VBox.margin>
                         </Text>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Name">
+                        <Text fx:id="name" strokeType="OUTSIDE" strokeWidth="0.0" text="Name">
                            <VBox.margin>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </VBox.margin>
@@ -54,7 +54,7 @@
                         </Text>
                         <HBox alignment="CENTER_LEFT">
                            <children>
-                              <Button mnemonicParsing="false" prefHeight="50.0" prefWidth="100.0" text="Play">
+                              <Button fx:id="playAll" mnemonicParsing="false" onMouseClicked="#playAll" prefHeight="50.0" prefWidth="100.0" text="Play All">
                                  <HBox.margin>
                                     <Insets bottom="10.0" left="10.0" />
                                  </HBox.margin>

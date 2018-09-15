@@ -20,6 +20,10 @@ import java.util.ResourceBundle;
  *
  */
 public class QueueViewController implements Initializable {
+    /**
+     * Keep track of which song from the list is being play.
+     */
+    int indexOfCurrentSong = 0;
     @FXML
     private TableView<Song> tableView;
     @FXML
@@ -30,11 +34,8 @@ public class QueueViewController implements Initializable {
     private TableColumn<Song, String> albumCol;
     @FXML
     private TableColumn<Song, Long> lengthCol;
-
     private RightViewController parentViewController;
-
     private ObservableList<Song> songObservableList;
-
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -82,7 +83,8 @@ public class QueueViewController implements Initializable {
      * @param song song that was clicked on.
      */
     public void mouseClicked(Song song) {
-        System.out.println(song);
+        indexOfCurrentSong=songObservableList.indexOf(song);
+        parentViewController.playASong(song);
     }
 
     /**
@@ -103,4 +105,24 @@ public class QueueViewController implements Initializable {
         this.songObservableList = songObservableList;
         tableView.setItems(songObservableList);
     }
+
+    /**
+     * The index of song currently playing inside this list.
+     *
+     * @return
+     */
+    public int getIndexOfCurrentSong() {
+        return indexOfCurrentSong;
+    }
+
+    public void setIndexOfCurrentSong(int indexOfCurrentSong) {
+        if (indexOfCurrentSong < 0) {
+            this.indexOfCurrentSong = songObservableList.size() - 1;
+        } else if (indexOfCurrentSong >= songObservableList.size()) {
+            this.indexOfCurrentSong = 0;
+        } else {
+            this.indexOfCurrentSong = indexOfCurrentSong;
+        }
+    }
+
 }
