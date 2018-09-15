@@ -4,8 +4,10 @@ import connect.Library;
 import persistence.loaders.LibraryLoader;
 import persistence.loaders.MediaLoader;
 import persistence.loaders.UserLoader;
+import persistence.writers.LibraryWriter;
 import persistence.writers.MediaWriter;
 import persistence.writers.UserWriter;
+import utils.DebouncedRunnable;
 
 import java.io.File;
 import java.util.HashMap;
@@ -39,7 +41,7 @@ public class DataManager {
     /**
      * An {@link ExecutorService} to handle asynchronous operations.
      */
-    protected ExecutorService executor;
+    protected ScheduledExecutorService executor;
 
     /** A {@link Map} containing all of ths songs in the local library, irrespective of users. */
     private Map<Integer, LocalSong> songs;
@@ -48,6 +50,12 @@ public class DataManager {
 
     /** Stores all loaded users. */
     private Map<String, User> users;
+
+    private DebouncedRunnable saveUsersTask;
+
+    private DebouncedRunnable saveMediaTask;
+
+    private DebouncedRunnable saveLibraryTask;
 
     /** The current {@link User}. */
     private User currentUser = null;
@@ -66,7 +74,26 @@ public class DataManager {
      * Initializes the DataManager.
      */
     public void init(){
-        this.executor = new ThreadPoolExecutor(2, 4, 30, TimeUnit.SECONDS, new ArrayBlockingQueue<>(10));
+        this.executor = new ScheduledThreadPoolExecutor(4);
+
+        this.saveUsersTask = new DebouncedRunnable(() -> {
+            List<User> users = new LinkedList<>(this.users.values());
+            UserWriter writer = new UserWriter(userFile, users);
+            writer.run();
+        }, 10, TimeUnit.SECONDS, this.executor);
+        this.saveMediaTask = new DebouncedRunnable(() -> {
+            MediaWriter writer = new MediaWriter(mediaIndex, new LinkedList<>(this.songs.values()));
+            writer.run();}, 30, TimeUnit.SECONDS, this.executor);
+        this.saveLibraryTask = new DebouncedRunnable(() -> {
+            try {
+                if (this.currentUser == null) return;
+                LocalLibrary lib = (LocalLibrary) this.getCurrentLibrary().get();
+                LibraryWriter writer = new LibraryWriter(new File("/SpotyMusic/Libraries/" + this.currentUser.getUsername() + ".json"), lib);
+                writer.run();
+
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }}, 30, TimeUnit.SECONDS, this.executor);
 
         if (!rootDirectory.exists()) rootDirectory.mkdir();
         if (!mediaRoot.exists()) mediaRoot.mkdir();
@@ -163,16 +190,15 @@ public class DataManager {
      *
      * @param file the file to import
      */
-    public Future<?> importFile(File file) {
-        return this.executor.submit(new FileImportTask(file, this.new OnFileImported()));
+    public Future<Boolean> importFile(File file) {
+        return this.executor.submit(new FileImportTask(file, this.new OnFileImported()), true);
     }
 
     /**
      * Saves the current list of {@link User}s to this user file.
      */
-    private void saveUsers() {
-        List<User> users = new LinkedList<>(this.users.values());
-        this.executor.submit(new UserWriter(userFile, users));
+    public void saveUsers() {
+        this.saveUsersTask.run();
     }
 
     /**
@@ -192,8 +218,15 @@ public class DataManager {
     /**
      * Writes the {@link #mediaIndex} file.
      */
-    private void saveMedia() {
-        this.executor.submit(new MediaWriter(mediaIndex, new LinkedList<LocalSong>(this.songs.values())));
+    public void saveMedia() {
+        this.saveMediaTask.run();
+    }
+
+    /**
+     * Saves the library of the current user.
+     */
+    public Future<Boolean> saveLibrary() {
+        return this.saveLibraryTask.run();
     }
 
     /**
@@ -220,6 +253,9 @@ public class DataManager {
         }
     }
 
+    /**
+     * An implementation of {@link persistence.FileImportTask.FileImportedHandler}.
+     */
     private class OnFileImported implements FileImportTask.FileImportedHandler {
         @Override
         public void onFileImported(String title, String artist, String album, long duration, File path) {
@@ -229,13 +265,11 @@ public class DataManager {
             try {
                 ((LocalLibrary) getCurrentLibrary().get(10, TimeUnit.SECONDS)).addSong(newSong);
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (TimeoutException e) {
+            } catch (InterruptedException | TimeoutException | ExecutionException e) {
                 e.printStackTrace();
             }
+
+            DataManager.this.saveMediaTask.run();
         }
     }
 }

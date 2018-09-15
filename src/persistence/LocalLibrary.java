@@ -11,6 +11,7 @@ import utils.ObservableListImpl;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -120,17 +121,19 @@ public class LocalLibrary implements Library {
 
     @Override
     public Future<Boolean> importSong(File song) throws SecurityException {
-        return (Future<Boolean>) DataManager.getDataManager().importFile(song);
+        return DataManager.getDataManager().importFile(song);
     }
 
     @Override
     public Future<Boolean> deleteSong(Song song) throws SecurityException {
-        return null;
+        this.songs.remove(song);
+        return DataManager.getDataManager().saveLibrary();
     }
 
     @Override
     public Future<Boolean> createPlaylist(String name) throws SecurityException {
-        return null;
+        this.playlists.add(new LocalPlaylist(name, new LinkedList<>(), this));
+        return DataManager.getDataManager().saveLibrary();
     }
 
     /**

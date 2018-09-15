@@ -10,6 +10,7 @@ import utils.ObservableListImpl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
@@ -53,18 +54,39 @@ public class LocalPlaylist implements Playlist, ListChangeListener<LocalSong> {
 
     @Override
     public Future<Boolean> addSong(Song song) throws SecurityException {
-        return null;
+        if (song instanceof LocalSong) {
+            this.songs.add((LocalSong) song);
+            return DataManager.getDataManager().saveLibrary();
+
+        } else {
+            // can't add song to playlist
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            future.complete(false);
+            return future;
+        }
     }
 
     @Override
     public Future<Boolean> removeSong(Song song) throws SecurityException {
-        return null;
+        if (song instanceof LocalSong) {
+            if (this.songs.contains(song)) {
+                this.songs.remove((LocalSong) song);
+                return DataManager.getDataManager().saveLibrary();
+            }
+
+        }
+        // can't song isn't in playlist
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        future.complete(true);
+        return future;
     }
 
     @Override
     public void onChanged(Change<? extends LocalSong> c) {
         if (c.wasRemoved()) {
             this.songs.removeAll(c.getRemoved());
+            // we can call saveLibrary even if whatever removed a song already did, because saveLibrary is debounced
+            DataManager.getDataManager().saveLibrary();
         }
     }
 
