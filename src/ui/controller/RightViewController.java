@@ -173,6 +173,7 @@ public class RightViewController implements Initializable {
      * @return current song.
      */
     public Song getCurrentSong() {
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong());
         return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
     }
 
@@ -182,7 +183,7 @@ public class RightViewController implements Initializable {
      * @return the next song.
      */
     public Song getPreviousSong() {
-        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()+1);
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() - 1);
         return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
     }
 
@@ -192,15 +193,16 @@ public class RightViewController implements Initializable {
      * @return the previous song.
      */
     public Song getNextSong() {
-        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()-1);
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() + 1);
         return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
     }
 
     /**
      * Play a specific song has been requested from the queueView.
+     *
      * @param song that need to be play.
      */
-    public void playASong(Song song){
+    public void playASong(Song song) {
         parentViewController.playASong(song);
     }
 

@@ -19,7 +19,7 @@
             <ColumnConstraints hgrow="SOMETIMES" maxWidth="96.0" minWidth="10.0" prefWidth="66.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints maxHeight="267.0" minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
+          <RowConstraints maxHeight="267.0" minHeight="10.0" percentHeight="20.0" prefHeight="60.0" vgrow="SOMETIMES" />
           <RowConstraints maxHeight="309.0" minHeight="10.0" prefHeight="85.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
@@ -37,7 +37,7 @@
                         </ImageView>
                      </graphic>
                   </Button>
-                  <Button fx:id="playPauseSongBtn" graphicTextGap="2.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Play/Pause">
+                  <Button fx:id="playPauseSongBtn" graphicTextGap="2.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="Play">
                      <graphic>
                         <ImageView>
                            <image>
@@ -65,12 +65,12 @@
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="4">
                <children>
                   <Slider fx:id="songScrubbingSilder" layoutX="27.0" layoutY="58.0" prefHeight="64.0" prefWidth="471.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="27.0" AnchorPane.rightAnchor="102.0" AnchorPane.topAnchor="0.0" />
-                  <Text fx:id="songTitle" layoutX="227.0" layoutY="54.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Title of Song " />
+                  <Text fx:id="songTitle" layoutX="227.0" layoutY="54.0" strokeType="OUTSIDE" strokeWidth="0.0" />
                </children>
             </AnchorPane>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="3">
                <children>
-                  <Text layoutX="24.0" layoutY="73.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Timestamp" AnchorPane.bottomAnchor="56.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="23.3291015625" AnchorPane.topAnchor="57.0" />
+                  <Text fx:id="timestamp" layoutX="24.0" layoutY="73.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0/0" AnchorPane.bottomAnchor="56.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="23.3291015625" AnchorPane.topAnchor="57.0" />
                </children>
             </AnchorPane>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="3" GridPane.rowIndex="1">

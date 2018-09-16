@@ -11,6 +11,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.input.MouseButton;
+import stub.SongStub;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -41,7 +42,9 @@ public class QueueViewController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         //Create list
-        songObservableList = FXCollections.observableArrayList();
+        songObservableList = FXCollections.observableArrayList(new SongStub("Overtaken", "One Piece", "One Piece", 123, "stub/1.wav"),
+                new SongStub("Yuri", "FMA", "FMA", 456, "stub/2.wav"),
+                new SongStub("DeathNote", "DeathNote", "Deathnote", 789, "stub/3.wav"));
 
         //Bind properties of song to column
         titleCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
@@ -83,7 +86,7 @@ public class QueueViewController implements Initializable {
      * @param song song that was clicked on.
      */
     public void mouseClicked(Song song) {
-        indexOfCurrentSong=songObservableList.indexOf(song);
+        indexOfCurrentSong = songObservableList.indexOf(song);
         parentViewController.playASong(song);
     }
 
@@ -107,14 +110,18 @@ public class QueueViewController implements Initializable {
     }
 
     /**
-     * The index of song currently playing inside this list.
+     * Access the index of song currently playing inside the list.
      *
-     * @return
+     * @return index of currently playing song.
      */
     public int getIndexOfCurrentSong() {
         return indexOfCurrentSong;
     }
 
+    /**
+     * Mutate the index of song currently playing inside the list. It also highlight the new song that should be playing.
+     * @param indexOfCurrentSong a new index of song.
+     */
     public void setIndexOfCurrentSong(int indexOfCurrentSong) {
         if (indexOfCurrentSong < 0) {
             this.indexOfCurrentSong = songObservableList.size() - 1;
@@ -123,6 +130,7 @@ public class QueueViewController implements Initializable {
         } else {
             this.indexOfCurrentSong = indexOfCurrentSong;
         }
+        tableView.getSelectionModel().select(this.indexOfCurrentSong);
     }
 
 }

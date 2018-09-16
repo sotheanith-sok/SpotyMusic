@@ -1,6 +1,5 @@
 package ui.controller;
 
-import connect.Library;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -55,6 +54,7 @@ public class MainViewController implements Initializable {
 
     /**
      * This function is used to access the next song that should be play. It should be called from the BottomViewController.
+     *
      * @return the next song.
      */
     public Song getNextSong() {
@@ -64,6 +64,7 @@ public class MainViewController implements Initializable {
 
     /**
      * This function is used to access the previous song that should be play. It should be called from the BottomViewController.
+     *
      * @return the previous song.
      */
     public Song getPreviousSong() {
@@ -72,18 +73,20 @@ public class MainViewController implements Initializable {
 
     /**
      * This function is used to access the current song that's being play. It should be called from the BottomViewControler.
+     *
      * @return
      */
-    public Song getCurrentSong(){
+    public Song getCurrentSong() {
         return rightViewController.getCurrentSong();
     }
 
     /**
      * The request to play a specific song has been requested from RightViewController. It should pass that song to BottomViewController to be play.
+     *
      * @param song that need to be play
      */
-    public void playASong(Song song){
-        System.out.println(song.getTitle());
+    public void playASong(Song song) {
+        bottomViewController.playASong(song);
     }
 
 
