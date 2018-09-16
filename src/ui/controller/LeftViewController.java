@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.text.Text;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -22,6 +23,8 @@ public class LeftViewController implements Initializable {
     private ListView<Library> listView;
 
     private ObservableList<Library> libraryObservableList;
+    @FXML
+    Text user;
 
     /**
      * Called to initialize a controller after its root element has been
@@ -87,4 +90,7 @@ public class LeftViewController implements Initializable {
         listView.setItems(libraryObservableList);
     }
 
+    public void setUserName(String tester1) {
+        user.setText("Welcome "+tester1);
+    }
 }

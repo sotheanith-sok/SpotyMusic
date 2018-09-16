@@ -31,15 +31,13 @@ public class MediaLoader implements Runnable {
     public void run() {
         try {
             if (!this.index.exists()) return;
-
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser parser = jsonFactory.createParser(this.index);
-
             JsonToken token = parser.currentToken();
             while (token != JsonToken.END_ARRAY) {
+                token=parser.nextToken();
                 if (token == JsonToken.START_OBJECT) {
                     LocalSong song = LocalSong.loadSong(parser);
-
                     if (song == null) {
                         token = parser.nextToken();
                         continue;
