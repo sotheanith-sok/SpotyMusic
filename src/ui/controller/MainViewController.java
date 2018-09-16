@@ -3,6 +3,8 @@ package ui.controller;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import ui.component.ControlledView;
+import ui.component.Router;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -11,13 +13,19 @@ import java.util.ResourceBundle;
  *
  */
 
-public class MainViewController implements Initializable {
+public class MainViewController implements Initializable, ControlledView {
     @FXML
     private LeftViewController leftViewController;
     @FXML
     private RightViewController rightViewController;
     @FXML
     private BottomViewController bottomViewController;
+
+    Router router;
+
+    public void setViewParent(Router viewParent) {
+        router = viewParent;
+    }
 
     /**
      * Called to initialize a controller after its root element has been
