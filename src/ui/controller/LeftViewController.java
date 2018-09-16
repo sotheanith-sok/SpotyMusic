@@ -7,7 +7,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import stub.LibraryStub;
 
 import java.net.URL;
 import java.util.ResourceBundle;

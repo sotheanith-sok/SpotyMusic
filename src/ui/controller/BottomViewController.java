@@ -10,7 +10,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
-import stub.SongStub;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -103,7 +102,7 @@ public class BottomViewController implements Initializable {
      * @param song that need to be play
      */
     public void playASong(Song song) {
-        if(song!=null){
+        if (song != null) {
             this.song = song;
             try {
                 if (clip.isOpen()) {
@@ -124,7 +123,7 @@ public class BottomViewController implements Initializable {
     }
 
     /**
-     *This function is being call when the play or pause bottom is pressed. It pauses or plays the current song.
+     * This function is being call when the play or pause bottom is pressed. It pauses or plays the current song.
      */
     public void playOrPauseSong() {
         if (song == null) {
@@ -140,7 +139,7 @@ public class BottomViewController implements Initializable {
     }
 
     /**
-     *This function is called in fix interval to update UI elements.
+     * This function is called in fix interval to update UI elements.
      */
     private void updateUIElements() {
         if (song != null) {
@@ -172,14 +171,14 @@ public class BottomViewController implements Initializable {
     }
 
     /**
-     *Play the next song.
+     * Play the next song.
      */
     public void playNextSong() {
         playASong(parentViewController.getNextSong());
     }
 
     /**
-     *Play the previous song
+     * Play the previous song
      */
     public void playPreviousSong() {
         playASong(parentViewController.getPreviousSong());
@@ -187,6 +186,7 @@ public class BottomViewController implements Initializable {
 
     /**
      * Skip a song to a specific place
+     *
      * @param value microseconds position that should be skip to.
      */
     public void scrubbingSong(double value) {
@@ -195,6 +195,7 @@ public class BottomViewController implements Initializable {
 
     /**
      * Adjust the volume
+     *
      * @param value new volume
      */
     public void adjustVolume(double value) {

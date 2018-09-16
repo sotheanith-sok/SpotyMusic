@@ -11,7 +11,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.input.MouseButton;
-import stub.SongStub;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -118,6 +117,7 @@ public class QueueViewController implements Initializable {
 
     /**
      * Mutate the index of song currently playing inside the list. It also highlight the new song that should be playing.
+     *
      * @param indexOfCurrentSong a new index of song.
      */
     public void setIndexOfCurrentSong(int indexOfCurrentSong) {
