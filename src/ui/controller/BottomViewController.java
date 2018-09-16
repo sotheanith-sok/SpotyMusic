@@ -19,8 +19,12 @@ import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Represent media play back and its controls.
+ */
 public class BottomViewController implements Initializable {
     // song progress
     @FXML
@@ -99,22 +103,28 @@ public class BottomViewController implements Initializable {
      * @param song that need to be play
      */
     public void playASong(Song song) {
-        this.song = song;
-        try {
-            if (clip.isOpen()) {
-                clip.close();
+        if(song!=null){
+            this.song = song;
+            try {
+                if (clip.isOpen()) {
+                    clip.close();
+                }
+                clip.open(song.getStream().get());
+                clip.start();
+            } catch (LineUnavailableException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
-            clip.open(((SongStub) song).getAudioInputStream());
-            clip.start();
-        } catch (LineUnavailableException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     /**
-     *
+     *This function is being call when the play or pause bottom is pressed. It pauses or plays the current song.
      */
     public void playOrPauseSong() {
         if (song == null) {
@@ -130,7 +140,7 @@ public class BottomViewController implements Initializable {
     }
 
     /**
-     *
+     *This function is called in fix interval to update UI elements.
      */
     private void updateUIElements() {
         if (song != null) {
@@ -162,28 +172,30 @@ public class BottomViewController implements Initializable {
     }
 
     /**
-     *
+     *Play the next song.
      */
     public void playNextSong() {
         playASong(parentViewController.getNextSong());
     }
 
     /**
-     *
+     *Play the previous song
      */
     public void playPreviousSong() {
         playASong(parentViewController.getPreviousSong());
     }
 
     /**
-     * @param value
+     * Skip a song to a specific place
+     * @param value microseconds position that should be skip to.
      */
     public void scrubbingSong(double value) {
         clip.setMicrosecondPosition((long) value);
     }
 
     /**
-     * @param value
+     * Adjust the volume
+     * @param value new volume
      */
     public void adjustVolume(double value) {
         if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {

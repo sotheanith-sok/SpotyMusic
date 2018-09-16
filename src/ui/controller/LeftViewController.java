@@ -34,7 +34,7 @@ public class LeftViewController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        libraryObservableList = FXCollections.observableArrayList(new LibraryStub(), new LibraryStub(), new LibraryStub());
+        libraryObservableList = FXCollections.observableArrayList();
         listView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 mouseClicked(listView.getSelectionModel().getSelectedItem());
@@ -47,7 +47,7 @@ public class LeftViewController implements Initializable {
                 super.updateItem(item, empty);
                 if (empty) {
                     //sets text to null if there is no information
-                    setText(null);
+                    setText("LibraryNewGoHere");
                 } else {
                     //gets Playlist name string and sets the text to it
                     setText(item.toString());

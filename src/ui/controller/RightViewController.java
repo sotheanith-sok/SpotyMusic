@@ -174,7 +174,10 @@ public class RightViewController implements Initializable {
      */
     public Song getCurrentSong() {
         queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong());
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        if(queueViewController.getSongObservableList().size()!=0){
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**
@@ -184,7 +187,10 @@ public class RightViewController implements Initializable {
      */
     public Song getPreviousSong() {
         queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() - 1);
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        if(queueViewController.getSongObservableList().size()!=0){
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**
@@ -194,7 +200,10 @@ public class RightViewController implements Initializable {
      */
     public Song getNextSong() {
         queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() + 1);
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        if(queueViewController.getSongObservableList().size()!=0){
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**

@@ -3,7 +3,9 @@ package ui.controller;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import persistence.DataManager;
 
+import javax.xml.crypto.Data;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -49,6 +51,7 @@ public class MainViewController implements Initializable {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }*/
+       // System.out.println(DataManager.getDataManager().getCurrentUser().getUsername());
 
     }
 

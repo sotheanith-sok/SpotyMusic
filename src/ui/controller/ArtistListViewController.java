@@ -33,7 +33,7 @@ public class ArtistListViewController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        artistObservableList = FXCollections.observableArrayList("1", "2", "3");
+        artistObservableList = FXCollections.observableArrayList();
 
         //on mouse click, calls method selectArtist
         listView.setOnMouseClicked(event -> {

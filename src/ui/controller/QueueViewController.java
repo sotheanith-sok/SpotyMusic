@@ -42,9 +42,7 @@ public class QueueViewController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         //Create list
-        songObservableList = FXCollections.observableArrayList(new SongStub("Overtaken", "One Piece", "One Piece", 123, "stub/1.wav"),
-                new SongStub("Yuri", "FMA", "FMA", 456, "stub/2.wav"),
-                new SongStub("DeathNote", "DeathNote", "Deathnote", 789, "stub/3.wav"));
+        songObservableList = FXCollections.observableArrayList();
 
         //Bind properties of song to column
         titleCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
