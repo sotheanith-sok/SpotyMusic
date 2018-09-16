@@ -26,7 +26,7 @@
                      <children>
                         <ImageView fitHeight="75.0" fitWidth="75.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                            <image>
-                              <Image url="@../../../resources/Placeholder.png" />
+                              <Image url="@../../resources/Placeholder.png" />
                            </image>
                            <viewport>
                               <Rectangle2D />

@@ -32,7 +32,7 @@
                      <graphic>
                         <ImageView>
                            <image>
-                              <Image url="@../../../resources/previous_song.png" />
+                              <Image url="@../../resources/previous_song.png" />
                            </image>
                         </ImageView>
                      </graphic>
@@ -41,7 +41,7 @@
                      <graphic>
                         <ImageView>
                            <image>
-                              <Image url="@../../../resources/play_song.png" />
+                              <Image url="@../../resources/play_song.png" />
                            </image>
                         </ImageView>
                      </graphic></Button>
@@ -52,7 +52,7 @@
                      <graphic>
                         <ImageView>
                            <image>
-                              <Image url="@../../../resources/next_song.png" />
+                              <Image url="@../../resources/next_song.png" />
                            </image>
                         </ImageView>
                      </graphic>

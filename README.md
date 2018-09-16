@@ -48,14 +48,14 @@ git status
 ```
 git diff                   // overview of things changed
 git diff {filename}        // see specific changes in file 
-git diff {branchname}      // view differences in different branches
+git diff {branchname}      // ui.view differences in different branches
 :wq                        // exits vim mode
 
 ```
 
 ### see list of commits
 ```
-git log      // view commit log
+git log      // ui.view commit log
 git checkout {first 6 characters of chosen checkpoint hash} -b {new branch name}  // checkout log to new branch
 ```
 ----

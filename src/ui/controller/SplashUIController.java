@@ -8,22 +8,23 @@ package ui.controller;
  */
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-
 import persistence.DataManager;
-<<<<<<< HEAD
+import ui.component.ControlledView;
+import ui.component.Router;
 
-import java.io.IOException;
-=======
->>>>>>> d645fa4fa7458cd53fc8e76aa2bbbd606cf3191f
 
-public class SplashUIController {
+public class SplashUIController implements ControlledView {
 
     DataManager DM = DataManager.getDataManager();
+    Router router;
+
+    public void setScreenParent(Router viewParent) {
+        router = viewParent;
+    }
 
     @FXML
     private PasswordField txtPass;
@@ -41,17 +42,11 @@ public class SplashUIController {
     void clickedSignOn() {
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
         {
-            DM.tryAuth(txtUser.getText(), txtPass.getText());
-            //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
-            /*
-            try
-            {
-                DM.tryAuth(txtUser.getText(), txtPass.getText());
-                //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
-            }
-            catch (NoSuchUserException ex)
-            {
-                Alert noSuchUserAlert =  new Alert(Alert.AlertType.INFORMATION);
+            if(DM.tryAuth(txtUser.getText(), txtPass.getText())){
+                router.setView("mainview");
+
+            } else {
+                Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
                 noSuchUserAlert.setTitle("User Not Found");
                 noSuchUserAlert.setHeaderText("Login Error");
                 String message = "Please enter a valid Username and Password.";
@@ -62,7 +57,6 @@ public class SplashUIController {
                 txtPass.setText("");
                 txtUser.requestFocus();
             }
-            */
         }
         else
         {
@@ -83,5 +77,4 @@ public class SplashUIController {
     void tryRegister() {
 
     }
-
 }
