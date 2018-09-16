@@ -83,7 +83,7 @@ public class QueueViewController implements Initializable {
      * @param song song that was clicked on.
      */
     public void mouseClicked(Song song) {
-        indexOfCurrentSong=songObservableList.indexOf(song);
+        indexOfCurrentSong = songObservableList.indexOf(song);
         parentViewController.playASong(song);
     }
 
@@ -107,14 +107,19 @@ public class QueueViewController implements Initializable {
     }
 
     /**
-     * The index of song currently playing inside this list.
+     * Access the index of song currently playing inside the list.
      *
-     * @return
+     * @return index of currently playing song.
      */
     public int getIndexOfCurrentSong() {
         return indexOfCurrentSong;
     }
 
+    /**
+     * Mutate the index of song currently playing inside the list. It also highlight the new song that should be playing.
+     *
+     * @param indexOfCurrentSong a new index of song.
+     */
     public void setIndexOfCurrentSong(int indexOfCurrentSong) {
         if (indexOfCurrentSong < 0) {
             this.indexOfCurrentSong = songObservableList.size() - 1;
@@ -123,6 +128,7 @@ public class QueueViewController implements Initializable {
         } else {
             this.indexOfCurrentSong = indexOfCurrentSong;
         }
+        tableView.getSelectionModel().select(this.indexOfCurrentSong);
     }
 
 }

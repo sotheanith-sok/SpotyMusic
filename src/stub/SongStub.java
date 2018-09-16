@@ -5,6 +5,11 @@ import connect.Song;
 import javafx.beans.property.SimpleStringProperty;
 
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.IOException;
+import java.net.URL;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 public class SongStub implements Song{
@@ -13,12 +18,21 @@ public class SongStub implements Song{
     private final String artist;
     private final String albumTitle ;
     private final long duration;
+    private AudioInputStream audioInputStream;
 
-    public SongStub(String title, String artist, String albumTitle, long duration) {
+    public SongStub(String title, String artist, String albumTitle, long duration, String path) {
         this.title = title;
         this.artist = artist;
         this.albumTitle = albumTitle;
         this.duration = duration;
+        URL url=this.getClass().getClassLoader().getResource(path);
+        try {
+            audioInputStream=AudioSystem.getAudioInputStream(url);
+        } catch (UnsupportedAudioFileException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -48,6 +62,10 @@ public class SongStub implements Song{
 
     @Override
     public Future<AudioInputStream> getStream() {
-        return null;
+        return  null;
+    }
+
+    public AudioInputStream getAudioInputStream() {
+        return audioInputStream;
     }
 }

@@ -173,7 +173,11 @@ public class RightViewController implements Initializable {
      * @return current song.
      */
     public Song getCurrentSong() {
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong());
+        if (queueViewController.getSongObservableList().size() != 0) {
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**
@@ -182,8 +186,11 @@ public class RightViewController implements Initializable {
      * @return the next song.
      */
     public Song getPreviousSong() {
-        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()+1);
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() - 1);
+        if (queueViewController.getSongObservableList().size() != 0) {
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**
@@ -192,15 +199,19 @@ public class RightViewController implements Initializable {
      * @return the previous song.
      */
     public Song getNextSong() {
-        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong()-1);
-        return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        queueViewController.setIndexOfCurrentSong(queueViewController.getIndexOfCurrentSong() + 1);
+        if (queueViewController.getSongObservableList().size() != 0) {
+            return queueViewController.getSongObservableList().get(queueViewController.getIndexOfCurrentSong());
+        }
+        return null;
     }
 
     /**
      * Play a specific song has been requested from the queueView.
+     *
      * @param song that need to be play.
      */
-    public void playASong(Song song){
+    public void playASong(Song song) {
         parentViewController.playASong(song);
     }
 
