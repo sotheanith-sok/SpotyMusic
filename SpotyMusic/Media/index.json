@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "title": "Silent Night",
+    "artist": "Taylor Davis",
+    "album": "Enchanted Christmas",
+    "duration": 132000000,
+    "path": "SpotyMusic/Media/Artists/Taylor Davis/Enchanted Christmas/3. Silent Night_Taylor Davis.wav",
+    "id": 1
+  }, {
+    "title": "Greensleeves",
+    "artist": "Taylor Davis",
+    "album": "Enchanted Christmas",
+    "duration": 144000000,
+    "path": "SpotyMusic/Media/Artists/Taylor Davis/Enchanted Christmas/4. Greensleeves_Taylor Davis.wav",
+    "id": 2
+  }
+]
