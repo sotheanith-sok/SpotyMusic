@@ -18,7 +18,6 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception{
 
         DataManager.getDataManager().init();
-
         //Router mainRouter = new Router();
         //mainRouter.loadView(mainID, mainFile);
         //mainRouter.loadView(splashID, splashFile);

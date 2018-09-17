@@ -116,7 +116,6 @@ public class LocalSong implements Song {
             if (token == JsonToken.FIELD_NAME) {
                 String fieldName;
                 fieldName = parser.getText();
-
                 if (fieldName == "title") title = parser.nextTextValue();
                 else if (fieldName == "artist") artist = parser.nextTextValue();
                 else if (fieldName == "album") album = parser.nextTextValue();

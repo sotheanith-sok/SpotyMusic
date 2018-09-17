@@ -3,11 +3,19 @@ package ui.controller;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
+import javax.xml.crypto.Data;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
+import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -49,6 +57,24 @@ public class MainViewController implements Initializable, ControlledView {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
+        DataManager.getDataManager().tryAuth("Tester1","password");
+        leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+        try {
+            File file=new File("SpotyMusic/TestSongs/1.wav");
+
+    /*        Properties configProperty = new Properties();
+            configProperty.setProperty("title","Overtaken");
+            FileOutputStream fileOut=new FileOutputStream(file);
+            configProperty.store(fileOut,"--No Comment--");
+            fileOut.close();*/
+            DataManager.getDataManager().getCurrentLibrary().get().importSong(file);
+            DataManager.getDataManager().getCurrentLibrary().get().getSongs();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         /*try {
             rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
 
