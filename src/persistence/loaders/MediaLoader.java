@@ -35,7 +35,6 @@ public class MediaLoader implements Runnable {
             JsonParser parser = jsonFactory.createParser(this.index);
             JsonToken token = parser.currentToken();
             while (token != JsonToken.END_ARRAY) {
-                token=parser.nextToken();
                 if (token == JsonToken.START_OBJECT) {
                     LocalSong song = LocalSong.loadSong(parser);
                     if (song == null) {
