@@ -35,7 +35,12 @@ public class LibraryLoader implements Callable<Library> {
 
     @Override
     public Library call() throws IOException {
-        if (!this.descriptor.exists()) return new LocalLibrary(new LinkedList<>(), new HashMap<>());
+        System.out.print("[LibraryLoader] Loading library from ");
+        System.out.println(this.descriptor.getName());
+        if (!this.descriptor.exists()) {
+            System.out.println("[LibraryLoader] Library file does not exist");
+            return new LocalLibrary(new LinkedList<>(), new HashMap<>());
+        }
 
         LinkedList<LocalSong> songs = new LinkedList<>();
 
@@ -44,16 +49,27 @@ public class LibraryLoader implements Callable<Library> {
         JsonFactory factory = new JsonFactory();
         JsonParser parser = factory.createParser(this.descriptor);
 
-        JsonToken token = parser.currentToken();
+        JsonToken token = parser.nextToken();
         while (token != null) {
+            //System.out.print("[LibraryLoader] Token: ");
+            //System.out.println(token);
             if (token == JsonToken.FIELD_NAME) {
                 String name = parser.getText();
+                //System.out.print("[LibraryLoader] Json field name: ");
+                //System.out.println(name);
                 if (name == "songs") {
                     while ((token = parser.nextToken()) != JsonToken.START_ARRAY);
                     while (token != JsonToken.END_ARRAY) {
-                        if (token == JsonToken.VALUE_NUMBER_INT) songs.add(this.songs.get(parser.getIntValue()));
+                        if (token == JsonToken.VALUE_NUMBER_INT) {
+                            int val = parser.getIntValue();
+                            System.out.print("[LibraryLoader] Song ");
+                            System.out.print(val);
+                            System.out.println(" added to library");
+                            songs.add(this.songs.get(val));
+                        }
                         token = parser.nextToken();
                     }
+                    System.out.println("[LibraryLoader] End of songs list");
 
                 } else if (name == "playlists") {
                     String listName = null;
@@ -75,6 +91,7 @@ public class LibraryLoader implements Callable<Library> {
                     }
                 }
             }
+            token = parser.nextToken();
         }
         parser.close();
         System.out.println("[LibraryLoader] Read library contents from file");
