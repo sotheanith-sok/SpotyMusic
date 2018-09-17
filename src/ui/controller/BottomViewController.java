@@ -169,14 +169,6 @@ public class BottomViewController implements Initializable {
             }
 
         }
-       try {
-          System.out.println(DataManager.getDataManager().getCurrentLibrary().get().getSongs().size());
-       } catch (InterruptedException e) {
-          e.printStackTrace();
-       } catch (ExecutionException e) {
-          e.printStackTrace();
-       }
-
     }
 
     /**

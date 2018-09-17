@@ -58,20 +58,13 @@ public class MainViewController implements Initializable, ControlledView {
      */
     public void loadCurrentLibrary() {
          boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
-         DataManager.getDataManager().importFile(new File("SpotyMusic/Media/Artists/Taylor Davis/Enchanted Christmas/3. Silent Night_Taylor Davis.wav"));
-
-         if(result){
-            leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
-            try {
-
-               rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
-
-            } catch (InterruptedException e) {
-               e.printStackTrace();
-            } catch (ExecutionException e) {
-               e.printStackTrace();
-            }
-         }
+       try {
+          rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
+       } catch (InterruptedException e) {
+          e.printStackTrace();
+       } catch (ExecutionException e) {
+          e.printStackTrace();
+       }
     }
 
     /**
