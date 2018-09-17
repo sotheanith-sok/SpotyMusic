@@ -1,0 +1,9 @@
+{
+  "songs": [1, 2],
+  "playlists": [
+    {
+      "name": "Christmas Tunes",
+      "songs": [1, 2]
+    }
+  ]
+}
