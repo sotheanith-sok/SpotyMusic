@@ -24,7 +24,7 @@
                <children>
                   <StackPane layoutX="173.0" prefHeight="150.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome [Name Here]" />
+                        <Text fx:id="user" strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome [Name Here]" />
                      </children>
                   </StackPane>
                </children>
@@ -45,7 +45,7 @@
                <children>
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <children>
-                        <Button fx:id="button" contentDisplay="RIGHT" mnemonicParsing="false" text="Refreash">
+                        <Button fx:id="button" contentDisplay="RIGHT" mnemonicParsing="false" text="Refresh">
                            <HBox.margin>
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </HBox.margin>

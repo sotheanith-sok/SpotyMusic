@@ -13,7 +13,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.text.Text;
-import stub.SongStub;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -48,7 +47,7 @@ public class DetailViewController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        songObservableList = FXCollections.observableArrayList(new SongStub("1","2","3",4),new SongStub("5","6","7",8));
+        songObservableList = FXCollections.observableArrayList();
         title.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
         artist.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
         album.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));

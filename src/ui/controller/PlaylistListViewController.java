@@ -8,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import stub.PlaylistStub;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -36,7 +35,7 @@ public class PlaylistListViewController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        playlistObservableList = FXCollections.observableArrayList(new PlaylistStub("1"), new PlaylistStub("2"), new PlaylistStub("3"));
+        playlistObservableList = FXCollections.observableArrayList();
 
         /**
          * on mouse click, calls method selectPlaylist

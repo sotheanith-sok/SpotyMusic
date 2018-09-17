@@ -7,7 +7,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import stub.LibraryStub;
+import javafx.scene.text.Text;
+
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -23,6 +24,8 @@ public class LeftViewController implements Initializable {
     private ListView<Library> listView;
 
     private ObservableList<Library> libraryObservableList;
+    @FXML
+    Text user;
 
     /**
      * Called to initialize a controller after its root element has been
@@ -34,7 +37,7 @@ public class LeftViewController implements Initializable {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        libraryObservableList = FXCollections.observableArrayList(new LibraryStub(), new LibraryStub(), new LibraryStub());
+        libraryObservableList = FXCollections.observableArrayList();
         listView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 mouseClicked(listView.getSelectionModel().getSelectedItem());
@@ -47,7 +50,7 @@ public class LeftViewController implements Initializable {
                 super.updateItem(item, empty);
                 if (empty) {
                     //sets text to null if there is no information
-                    setText(null);
+                    setText("LibraryNewGoHere");
                 } else {
                     //gets Playlist name string and sets the text to it
                     setText(item.toString());
@@ -88,4 +91,7 @@ public class LeftViewController implements Initializable {
         listView.setItems(libraryObservableList);
     }
 
+    public void setUserName(String tester1) {
+        user.setText("Welcome "+tester1);
+    }
 }

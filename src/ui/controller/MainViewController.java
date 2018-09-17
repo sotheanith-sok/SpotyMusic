@@ -1,24 +1,39 @@
 package ui.controller;
 
-import connect.Library;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import persistence.DataManager;
+import ui.component.ControlledView;
+import ui.component.Router;
 
+import javax.xml.crypto.Data;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
+import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
  */
 
-public class MainViewController implements Initializable {
+public class MainViewController implements Initializable, ControlledView {
     @FXML
     private LeftViewController leftViewController;
     @FXML
     private RightViewController rightViewController;
     @FXML
     private BottomViewController bottomViewController;
+
+    Router router;
+
+    public void setViewParent(Router viewParent) {
+        router = viewParent;
+    }
 
     /**
      * Called to initialize a controller after its root element has been
@@ -42,6 +57,24 @@ public class MainViewController implements Initializable {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
+        DataManager.getDataManager().tryAuth("Tester1","password");
+        leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+        try {
+            File file=new File("SpotyMusic/TestSongs/1.wav");
+
+    /*        Properties configProperty = new Properties();
+            configProperty.setProperty("title","Overtaken");
+            FileOutputStream fileOut=new FileOutputStream(file);
+            configProperty.store(fileOut,"--No Comment--");
+            fileOut.close();*/
+            DataManager.getDataManager().getCurrentLibrary().get().importSong(file);
+            DataManager.getDataManager().getCurrentLibrary().get().getSongs();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         /*try {
             rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
 
@@ -50,11 +83,13 @@ public class MainViewController implements Initializable {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }*/
+        // System.out.println(DataManager.getDataManager().getCurrentUser().getUsername());
 
     }
 
     /**
      * This function is used to access the next song that should be play. It should be called from the BottomViewController.
+     *
      * @return the next song.
      */
     public Song getNextSong() {
@@ -64,6 +99,7 @@ public class MainViewController implements Initializable {
 
     /**
      * This function is used to access the previous song that should be play. It should be called from the BottomViewController.
+     *
      * @return the previous song.
      */
     public Song getPreviousSong() {
@@ -72,18 +108,20 @@ public class MainViewController implements Initializable {
 
     /**
      * This function is used to access the current song that's being play. It should be called from the BottomViewControler.
+     *
      * @return
      */
-    public Song getCurrentSong(){
+    public Song getCurrentSong() {
         return rightViewController.getCurrentSong();
     }
 
     /**
      * The request to play a specific song has been requested from RightViewController. It should pass that song to BottomViewController to be play.
+     *
      * @param song that need to be play
      */
-    public void playASong(Song song){
-        System.out.println(song.getTitle());
+    public void playASong(Song song) {
+        bottomViewController.playASong(song);
     }
 
 
