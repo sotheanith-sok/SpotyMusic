@@ -129,9 +129,12 @@ public class LocalSong implements Song {
 
         if (title == null || album == null || artist == null || path == null) {
             // not enough info to make LocalSong
+            System.out.println("[LocalSong][loadSong] Not enough data to load song");
             return null;
         }
 
+        System.out.print("[LocalSong][LoadSong] Loaded Song ");
+        System.out.println(title);
         return new LocalSong(title, album, artist, duration, new File(path), id);
     }
 

@@ -145,7 +145,7 @@ public class DataManager {
             if (u.testPassword(password)) {
                 this.currentUser = u;
                 // start loading the user's library
-                this.currentLib = this.executor.submit(new LibraryLoader(new File("/SpotyMusic/Libraries/" + username + ".json"), this.songs));
+                this.currentLib = this.executor.submit(new LibraryLoader(new File("SpotyMusic/Libraries/" + username + ".json"), this.songs));
                 return true;
             }
         }
@@ -238,6 +238,8 @@ public class DataManager {
             int id = song.getId();
             songs.put(id, song);
             if (id > largestId) largestId = id;
+            System.out.print("[DataManager][OnSongLoaded] Song loaded: ");
+            System.out.println(song.getTitle());
         }
     }
 
