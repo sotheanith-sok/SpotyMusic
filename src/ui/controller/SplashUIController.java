@@ -7,16 +7,21 @@ package ui.controller;
  * @since 0.0.1
  */
 
+import com.sun.xml.internal.bind.annotation.OverrideAnnotationOf;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import persistence.DataManager;
+import ui.component.ControlledView;
+import ui.component.Router;
 
-public class SplashUIController {
+import java.net.URL;
+import java.util.ResourceBundle;
 
-    DataManager DM = DataManager.getDataManager();
+public class SplashUIController implements Initializable, ControlledView {
 
     @FXML
     private PasswordField txtPass;
@@ -30,21 +35,27 @@ public class SplashUIController {
     @FXML
     private Button btnRegister;
 
+    DataManager DM = DataManager.getDataManager();
+    Router router;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources){
+        // TODO
+    }
+
+    public void setViewParent(Router viewParent) {
+        router = viewParent;
+    }
+
     @FXML
     void clickedSignOn() {
+        if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
+        {
+            if(DM.tryAuth(txtUser.getText(), txtPass.getText())){
+                router.setView("mainview");
 
-        if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty()) {
-            DM.tryAuth(txtUser.getText(), txtPass.getText());
-            //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
-            /*
-            try
-            {
-                DM.tryAuth(txtUser.getText(), txtPass.getText());
-                //Parent root = FXMLLoader.load(getClass().getResource("ui/view/Mainview.fxml"));
-            }
-            catch (NoSuchUserException ex)
-            {
-                Alert noSuchUserAlert =  new Alert(Alert.AlertType.INFORMATION);
+            } else {
+                Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
                 noSuchUserAlert.setTitle("User Not Found");
                 noSuchUserAlert.setHeaderText("Login Error");
                 String message = "Please enter a valid Username and Password.";
@@ -55,7 +66,6 @@ public class SplashUIController {
                 txtPass.setText("");
                 txtUser.requestFocus();
             }
-            */
         } else {
             Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
             loginFailAlert.setTitle("Login Failed");
