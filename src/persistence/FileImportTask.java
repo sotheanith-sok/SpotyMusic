@@ -44,7 +44,7 @@ public class FileImportTask implements Runnable {
             String artist = (String) properties.getOrDefault("author", "Unknown");
             String album = (String) properties.getOrDefault("album", "Unknown");
             long duration = (Long) properties.getOrDefault("duration", 0);
-            this.dest = new File("SpotyMusic/Media/" + artist + "/" + album + "/" + this.src.getName());
+            this.dest = new File("SpotyMusic/Media/Artists/" + artist + "/" + album + "/" + this.src.getName());
 
             this.dest.createNewFile();
 
