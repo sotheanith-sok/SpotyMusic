@@ -61,6 +61,20 @@ public class LocalLibrary implements Library {
         // these are used to cache the FilteredLists that back *byArtist retrieval
         this.artistSongs = new HashMap<>();
         this.artistAlbums = new HashMap<>();
+
+        System.out.println("[LocalLibrary] LocalLibrary created");
+        System.out.print('\t');
+        System.out.print(this.songs.size());
+        System.out.println(" songs");
+        System.out.print('\t');
+        System.out.print(this.albums.size());
+        System.out.println(" albums");
+        System.out.print('\t');
+        System.out.print(this.artists.size());
+        System.out.println(" artists");
+        System.out.print('\t');
+        System.out.print(this.playlists.size());
+        System.out.println(" playlists");
     }
 
     protected void addSong(LocalSong song) {

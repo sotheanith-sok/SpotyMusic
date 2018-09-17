@@ -81,4 +81,15 @@ public interface Library {
      * @throws SecurityException if the current user is not authorized to modify the library
      */
     Future<Boolean> createPlaylist(String name) throws SecurityException;
+
+    /**
+     * Returns an {@link ObservableList} of {@link Song}s in this Library that meet the given search
+     * parameter. Sorting of search results is not required.
+     *
+     * @param searchParam a string to search by
+     * @return the results of the search
+     */
+    default ObservableList<? extends Song> search(String searchParam) {
+        return ((ObservableList<Song>) this.getSongs()).filtered((Song s) -> (s.getTitle().contains(searchParam) | s.getAlbumTitle().contains(searchParam) | s.getArtist().contains(searchParam)));
+    }
 }

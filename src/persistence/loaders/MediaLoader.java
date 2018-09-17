@@ -30,6 +30,8 @@ public class MediaLoader implements Runnable {
     @Override
     public void run() {
         try {
+            System.out.println("[MediaLoader] Loading media library");
+
             if (!this.index.exists()) return;
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser parser = jsonFactory.createParser(this.index);
