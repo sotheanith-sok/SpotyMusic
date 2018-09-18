@@ -47,6 +47,7 @@ public class MediaLoader implements Runnable {
                         this.handler.onSongLoaded(song);
                     }
                 }
+                token=parser.nextToken();
             }
 
             parser.close();

@@ -58,6 +58,7 @@ public class MainViewController implements Initializable, ControlledView {
      */
     public void loadCurrentLibrary() {
          boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
+         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
        try {
           rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
        } catch (InterruptedException e) {

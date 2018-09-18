@@ -47,7 +47,7 @@ public class ArtistListViewController implements Initializable {
      * when mouse is clicked, highlighted artist is selected
      */
     public void mouseClicked(String artist) {
-        parentViewController.showDetailView(PanelType.ARTIST, artist);
+        parentViewController.showDetailView(PanelType.ARTIST, artist,null,artist);
     }
 
 

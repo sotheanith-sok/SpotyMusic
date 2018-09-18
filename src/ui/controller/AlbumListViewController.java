@@ -78,7 +78,7 @@ public class AlbumListViewController implements Initializable {
      */
     public void mouseClicked(Album album) {
 
-        parentViewController.showDetailView(PanelType.ALBUM, (ObservableList<Song>) album.getSongs());
+        parentViewController.showDetailView(PanelType.ALBUM, (ObservableList<Song>) album.getSongs(),null,album.getTitle());
     }
 
     /**
