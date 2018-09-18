@@ -109,7 +109,7 @@ public class PlaylistListViewController implements Initializable {
     public void createPlaylist(){
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Create playlist");
-        dialog.setHeaderText("Play enter a new playlist name");
+        dialog.setHeaderText("Please enter a new playlist name");
         dialog.setContentText("Name:");
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {
