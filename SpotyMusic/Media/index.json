@@ -13,5 +13,57 @@
     "duration": 144000000,
     "path": "SpotyMusic/Media/Artists/Taylor Davis/Enchanted Christmas/4. Greensleeves_Taylor Davis.wav",
     "id": 2
-  }
+  }, {
+  "title": "Autumn",
+  "artist": "Antonio Vivaldi",
+  "album": "Classic",
+  "duration": 643000000,
+  "path": "SpotyMusic/Media/Artists/Antonio Vivaldi/Classic/Autumn.wav",
+  "id": 3
+}, {
+  "title": "Spring",
+  "artist": "Antonio Vivaldi",
+  "album": "Classic",
+  "duration": 627000000,
+  "path": "SpotyMusic/Media/Artists/Antonio Vivaldi/Classic/Spring.wav",
+  "id": 4
+}, {
+  "title": "Summer",
+  "artist": "Antonio Vivaldi",
+  "album": "Classic",
+  "duration": 699000000,
+  "path": "SpotyMusic/Media/Artists/Antonio Vivaldi/Classic/Summer.wav",
+  "id": 5
+}, {
+  "title": "Winter",
+  "artist": "Antonio Vivaldi",
+  "album": "Classic",
+  "duration": 563000000,
+  "path": "SpotyMusic/Media/Artists/Antonio Vivaldi/Classic/Winter.wav",
+  "id": 6
+}
+, {
+  "title": "Moonlight Sonata",
+  "artist": "Beethoven",
+  "album": "Classic",
+  "duration": 899000000,
+  "path": "SpotyMusic/Media/Artists/Beethoven/Classic/Moonlight_Sonata.wav",
+  "id": 7
+}
+, {
+  "title": "No. 5 - I. Allegro con brio",
+  "artist": "Beethoven",
+  "album": "Classic",
+  "duration": 445000000,
+  "path": "SpotyMusic/Media/Artists/Beethoven/Classic/No. 5 - I. Allegro con brio.wav",
+  "id": 8
+},
+  {
+  "title": "Requiem",
+  "artist": "Mozart",
+  "album": "Classic",
+  "duration": 553000000,
+  "path": "SpotyMusic/Media/Artists/Beethoven/Classic/No. 5 - I. Allegro con brio.wav",
+  "id": 9
+}
 ]
