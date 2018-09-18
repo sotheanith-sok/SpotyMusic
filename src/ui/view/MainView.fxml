@@ -6,30 +6,31 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="600.0" prefWidth="800.0" stylesheets="@styleSheets/MainView.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.MainViewController">
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" stylesheets="@styleSheets/MainView.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.MainViewController">
    <children>
       <GridPane alignment="CENTER" hgap="10.0" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
-          <ColumnConstraints hgrow="ALWAYS" minWidth="1.0" percentWidth="20" prefWidth="100.0" />
+          <ColumnConstraints hgrow="ALWAYS" minWidth="1.0" percentWidth="20.0" prefWidth="100.0" />
           <ColumnConstraints hgrow="ALWAYS" minWidth="1.0" prefWidth="100.0" />
+            <ColumnConstraints />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="1.0" percentHeight="85.0" prefHeight="30.0" vgrow="ALWAYS" />
+          <RowConstraints minHeight="1.0" percentHeight="80.0" prefHeight="30.0" vgrow="ALWAYS" />
           <RowConstraints minHeight="1.0" prefHeight="30.0" vgrow="ALWAYS" />
         </rowConstraints>
          <children>
-            <AnchorPane prefHeight="200.0" prefWidth="200.0" >
+            <AnchorPane prefHeight="200.0" prefWidth="200.0">
                <children>
-                  <fx:include source="LeftView.fxml" fx:id="leftView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                  <fx:include fx:id="leftView" source="LeftView.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                </children></AnchorPane>
 
-            <AnchorPane prefHeight="200.0" prefWidth="200.0"  GridPane.columnIndex="1" GridPane.columnSpan="2">
+            <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.columnSpan="2">
                <children>
-                  <fx:include source="RightView.fxml" fx:id="rightView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                  <fx:include fx:id="rightView" source="RightView.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                </children></AnchorPane>
             <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnSpan="3" GridPane.rowIndex="1">
                <children>
-                  <fx:include source="BottomView.fxml" fx:id="bottomView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                  <fx:include fx:id="bottomView" source="BottomView.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                </children></AnchorPane>
          </children>
       </GridPane>
