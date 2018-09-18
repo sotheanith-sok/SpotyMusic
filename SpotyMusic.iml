@@ -7,6 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="com.fasterxml.jackson.core:jackson-core:2.9.6" level="project" />
+    <orderEntry type="library" name="MusicPlayer" level="project" />
+    <orderEntry type="library" name="jackson-core-2.9.6" level="project" />
   </component>
 </module>

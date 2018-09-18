@@ -54,7 +54,7 @@
                         </Text>
                         <HBox alignment="CENTER_LEFT">
                            <children>
-                              <Button fx:id="playAll" mnemonicParsing="false" onMouseClicked="#playAll" prefHeight="50.0" prefWidth="100.0" text="Play All">
+                              <Button fx:id="addAllToQueue" mnemonicParsing="false" onMouseClicked="#addAllToQueue" prefHeight="25.0" prefWidth="160.0" text="Add all songs to queue">
                                  <HBox.margin>
                                     <Insets bottom="10.0" left="10.0" />
                                  </HBox.margin>

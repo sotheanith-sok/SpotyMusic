@@ -10,10 +10,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import persistence.DataManager;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -67,10 +69,18 @@ public class RightViewController implements Initializable {
      * @param string    name of the artist
      */
 
-    public void showDetailView(PanelType panelType, String string) {
+    public void showDetailView(PanelType panelType, String string, String imagePath, String name) {
         switch (panelType) {
             case ARTIST:
-                createDetailView(artistsView, panelType);
+                DetailViewController detailViewController=createDetailView(artistsView, panelType);
+                try {
+                    detailViewController.updateDetailView(imagePath,name,"Artist",(ObservableList<Song>) DataManager.getDataManager().getCurrentLibrary().get().getSongsByArtist(string));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+
                 break;
         }
     }
@@ -82,13 +92,17 @@ public class RightViewController implements Initializable {
      * @param songObservableList collection of songs.
      */
 
-    public void showDetailView(PanelType panelType, ObservableList<Song> songObservableList) {
+    public void showDetailView(PanelType panelType, ObservableList<Song> songObservableList, String imagePath, String name) {
+        DetailViewController detailViewController;
         switch (panelType) {
             case PLAYLIST:
-                createDetailView(playlistsView, panelType);
+                detailViewController=createDetailView(playlistsView, panelType);
+                detailViewController.setSongObservableList(songObservableList);
+                detailViewController.updateDetailView(imagePath,name,"Playlist",songObservableList);
                 break;
             case ALBUM:
-                createDetailView(albumsView, panelType);
+                detailViewController=createDetailView(albumsView, panelType);
+                detailViewController.updateDetailView(imagePath,name,"Album",songObservableList);
                 break;
         }
     }
@@ -164,6 +178,9 @@ public class RightViewController implements Initializable {
      * @param song cliked on song.
      */
     public void addSongToQueue(Song song) {
+        if(queueViewController.getSongObservableList().contains(song)){
+            queueViewController.getSongObservableList().remove(song);
+        }
         queueViewController.getSongObservableList().add(song);
     }
 

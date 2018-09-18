@@ -57,34 +57,15 @@ public class MainViewController implements Initializable, ControlledView {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
-        DataManager.getDataManager().tryAuth("Tester1","password");
-        leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
-        try {
-            File file=new File("SpotyMusic/TestSongs/1.wav");
-
-    /*        Properties configProperty = new Properties();
-            configProperty.setProperty("title","Overtaken");
-            FileOutputStream fileOut=new FileOutputStream(file);
-            configProperty.store(fileOut,"--No Comment--");
-            fileOut.close();*/
-            DataManager.getDataManager().getCurrentLibrary().get().importSong(file);
-            DataManager.getDataManager().getCurrentLibrary().get().getSongs();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        /*try {
-            rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }*/
-        // System.out.println(DataManager.getDataManager().getCurrentUser().getUsername());
-
+         boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
+         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+       try {
+          rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
+       } catch (InterruptedException e) {
+          e.printStackTrace();
+       } catch (ExecutionException e) {
+          e.printStackTrace();
+       }
     }
 
     /**

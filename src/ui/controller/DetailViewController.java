@@ -51,7 +51,7 @@ public class DetailViewController implements Initializable {
         title.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
         artist.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
         album.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));
-        length.setCellValueFactory(param -> new SimpleStringProperty(Long.toString(param.getValue().getDuration())));
+        length.setCellValueFactory(param -> new SimpleStringProperty(Long.toString(param.getValue().getDuration()/1000000)));
         tableView.setRowFactory(tv -> {
             TableRow<Song> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -88,11 +88,12 @@ public class DetailViewController implements Initializable {
     }
 
     /**
-     * This function will be called when "Play All" button is clicked. It will play all songs in this list.
-     * TODO: Need to implement
+     * This function will be called when "addAllToQueue" button is clicked. It will add all songs to queue.
      */
-    public void playAll() {
-
+    public void addAllToQueue() {
+        for(Song song:songObservableList){
+            parentViewController.addSongToQueue(song);
+        }
     }
 
     /**
@@ -127,6 +128,7 @@ public class DetailViewController implements Initializable {
         this.name.setText(name);
         this.type.setText(type);
         this.songObservableList = songObservableList;
+        tableView.setItems(songObservableList);
     }
 
     /**
@@ -145,5 +147,7 @@ public class DetailViewController implements Initializable {
      */
     public void setSongObservableList(ObservableList<Song> songObservableList) {
         this.songObservableList = songObservableList;
+        tableView.setItems(songObservableList);
     }
+
 }

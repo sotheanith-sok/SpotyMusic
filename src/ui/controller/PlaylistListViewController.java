@@ -72,7 +72,7 @@ public class PlaylistListViewController implements Initializable {
      */
     public void mouseClicked(Playlist playlist) {
 
-        parentViewController.showDetailView(PanelType.PLAYLIST, (ObservableList<Song>) playlist.getSongs());
+        parentViewController.showDetailView(PanelType.PLAYLIST, (ObservableList<Song>) playlist.getSongs(),null,playlist.getName());
     }
 
     /**
