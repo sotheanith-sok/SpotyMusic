@@ -38,7 +38,7 @@ public class Main extends Application {
         primaryStage.setTitle("Spusic");
           primaryStage.setOnCloseRequest(t -> {
           Platform.exit();
-        //  System.exit(0);
+            System.exit(0);
        });
         primaryStage.setScene(scene);
         primaryStage.show();
