@@ -135,7 +135,7 @@ public class LocalSong implements Song {
 
         System.out.print("[LocalSong][LoadSong] Loaded Song ");
         System.out.println(title);
-        return new LocalSong(title, album, artist, duration, new File(path), id);
+        return new LocalSong(title, artist, album, duration, new File(path), id);
     }
 
     /**
