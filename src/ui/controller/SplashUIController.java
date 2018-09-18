@@ -52,7 +52,7 @@ public class SplashUIController implements Initializable, ControlledView {
         if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
         {
             if(DM.tryAuth(txtUser.getText(), txtPass.getText())){
-                router.setView("main");
+                router.setView("mainview");
 
             } else {
                 Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
