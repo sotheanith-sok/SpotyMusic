@@ -8,6 +8,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import persistence.DataManager;
@@ -33,7 +37,19 @@ public class RightViewController implements Initializable {
     private ArtistListViewController artistListViewController;
 
     @FXML
+    private TextField searchText;
+    @FXML
+    private Button startSearch;
+
+    @FXML
     private AnchorPane playlistsView, artistsView, albumsView;
+
+    //Variables needed for search functionality
+    @FXML
+    private TabPane tabPane;
+    private Tab searchTab;
+    private DetailViewController searchController;
+    //
 
     private Library currentLibrary;
 
@@ -51,6 +67,17 @@ public class RightViewController implements Initializable {
         playlistListViewController.setParentViewController(this);
         albumListViewController.setParentViewController(this);
         artistListViewController.setParentViewController(this);
+
+        //Quick Implementation of Search
+        startSearch.setOnMouseClicked(event -> {
+            showSearchResult();
+        });
+        searchTab=new Tab();
+        searchTab.setClosable(false);
+        searchTab.setText("Search Results");
+        AnchorPane anchorPane=new AnchorPane();
+        searchTab.setContent(anchorPane);
+        searchController=createDetailView(anchorPane,PanelType.SEARCH);
     }
 
     /**
@@ -123,6 +150,9 @@ public class RightViewController implements Initializable {
             case ARTIST:
                 artistsView.getChildren().remove(artistsView.getChildren().size() - 1);
                 break;
+            case SEARCH:
+                tabPane.getTabs().remove(searchTab);
+                tabPane.getSelectionModel().select(0);
         }
     }
 
@@ -133,7 +163,7 @@ public class RightViewController implements Initializable {
      * @param panelType panel type
      * @return detailViewController for the newly created detailView.
      */
-    private DetailViewController createDetailView(AnchorPane pane, PanelType panelType) {
+    private DetailViewController createDetailView(Pane pane, PanelType panelType) {
         DetailViewController detailViewController = null;
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/view/DetailView.fxml"));
@@ -231,5 +261,21 @@ public class RightViewController implements Initializable {
     public void playASong(Song song) {
         parentViewController.playASong(song);
     }
+
+    /**
+     * Ask library for result.
+     */
+    public void showSearchResult(){
+        ObservableList<Song> searchResult;
+        if(searchText.getText()!=null&&searchText.getText().length()!=0){
+            searchResult= (ObservableList<Song>) currentLibrary.search(searchText.getText());
+            if(searchResult.size()>0){
+                tabPane.getTabs().add(searchTab);
+                tabPane.getSelectionModel().select(searchTab);
+                searchController.updateDetailView(null,searchText.getText(),"Seach result for",searchResult);
+            }
+        }
+    }
+
 
 }

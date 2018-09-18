@@ -88,7 +88,7 @@ public class DataManager {
             try {
                 if (this.currentUser == null) return;
                 LocalLibrary lib = (LocalLibrary) this.getCurrentLibrary().get();
-                LibraryWriter writer = new LibraryWriter(new File("/SpotyMusic/Libraries/" + this.currentUser.getUsername() + ".json"), lib);
+                LibraryWriter writer = new LibraryWriter(new File("SpotyMusic/Libraries/" + this.currentUser.getUsername() + ".json"), lib);
                 writer.run();
 
             } catch (InterruptedException | ExecutionException e) {
