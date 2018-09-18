@@ -24,7 +24,7 @@
                <children>
                   <StackPane layoutX="173.0" prefHeight="150.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome [Name Here]" />
+                        <Text fx:id="user" strokeType="OUTSIDE" strokeWidth="0.0" text="Welcome [Name Here]" />
                      </children>
                   </StackPane>
                </children>

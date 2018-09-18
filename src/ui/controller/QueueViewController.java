@@ -47,7 +47,7 @@ public class QueueViewController implements Initializable {
         titleCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
         artistCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
         albumCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));
-        lengthCol.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getDuration()));
+        lengthCol.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getDuration()/1000000));
         tableView.setItems(songObservableList);
 
         //Add mouse click listener

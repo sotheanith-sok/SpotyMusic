@@ -23,7 +23,7 @@
                   <fx:include source="LeftView.fxml" fx:id="leftView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
                </children></AnchorPane>
 
-            <AnchorPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: blue;" GridPane.columnIndex="1" GridPane.columnSpan="2">
+            <AnchorPane prefHeight="200.0" prefWidth="200.0"  GridPane.columnIndex="1" GridPane.columnSpan="2">
                <children>
                   <fx:include source="RightView.fxml" fx:id="rightView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
                </children></AnchorPane>

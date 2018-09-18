@@ -3,11 +3,19 @@ package ui.controller;
 import connect.Song;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
+import javax.xml.crypto.Data;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
+import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -49,16 +57,15 @@ public class MainViewController implements Initializable, ControlledView {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
-        /*try {
-            rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }*/
-        // System.out.println(DataManager.getDataManager().getCurrentUser().getUsername());
-
+         boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
+         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+       try {
+          rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
+       } catch (InterruptedException e) {
+          e.printStackTrace();
+       } catch (ExecutionException e) {
+          e.printStackTrace();
+       }
     }
 
     /**

@@ -30,16 +30,15 @@ public class MediaLoader implements Runnable {
     @Override
     public void run() {
         try {
-            if (!this.index.exists()) return;
+            System.out.println("[MediaLoader] Loading media library");
 
+            if (!this.index.exists()) return;
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser parser = jsonFactory.createParser(this.index);
-
             JsonToken token = parser.currentToken();
             while (token != JsonToken.END_ARRAY) {
                 if (token == JsonToken.START_OBJECT) {
                     LocalSong song = LocalSong.loadSong(parser);
-
                     if (song == null) {
                         token = parser.nextToken();
                         continue;
@@ -48,6 +47,7 @@ public class MediaLoader implements Runnable {
                         this.handler.onSongLoaded(song);
                     }
                 }
+                token=parser.nextToken();
             }
 
             parser.close();

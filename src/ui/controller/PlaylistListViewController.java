@@ -6,11 +6,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
+import persistence.DataManager;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 
 /**
  * shows the Playlist View, which displays all playlists
@@ -72,7 +74,7 @@ public class PlaylistListViewController implements Initializable {
      */
     public void mouseClicked(Playlist playlist) {
 
-        parentViewController.showDetailView(PanelType.PLAYLIST, (ObservableList<Song>) playlist.getSongs());
+        parentViewController.showDetailView(PanelType.PLAYLIST, (ObservableList<Song>) playlist.getSongs(),null,playlist.getName());
     }
 
     /**
@@ -102,5 +104,25 @@ public class PlaylistListViewController implements Initializable {
     public void setPlaylistObservableList(ObservableList<Playlist> playlistObservableList) {
         this.playlistObservableList = playlistObservableList;
         listView.setItems(playlistObservableList);
+    }
+
+    public void createPlaylist(){
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Create playlist");
+        dialog.setHeaderText("Please enter a new playlist name");
+        dialog.setContentText("Name:");
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(name -> {
+            try {
+                DataManager.getDataManager().getCurrentLibrary().get().createPlaylist(name);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+    public void deletePlaylist(){
+        playlistObservableList.remove(listView.getSelectionModel().getSelectedItem());
     }
 }

@@ -116,7 +116,6 @@ public class LocalSong implements Song {
             if (token == JsonToken.FIELD_NAME) {
                 String fieldName;
                 fieldName = parser.getText();
-
                 if (fieldName == "title") title = parser.nextTextValue();
                 else if (fieldName == "artist") artist = parser.nextTextValue();
                 else if (fieldName == "album") album = parser.nextTextValue();
@@ -130,10 +129,13 @@ public class LocalSong implements Song {
 
         if (title == null || album == null || artist == null || path == null) {
             // not enough info to make LocalSong
+            System.out.println("[LocalSong][loadSong] Not enough data to load song");
             return null;
         }
 
-        return new LocalSong(title, album, artist, duration, new File(path), id);
+        System.out.print("[LocalSong][LoadSong] Loaded Song ");
+        System.out.println(title);
+        return new LocalSong(title, artist, album, duration, new File(path), id);
     }
 
     /**

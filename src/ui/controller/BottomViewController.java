@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import persistence.DataManager;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -166,8 +167,8 @@ public class BottomViewController implements Initializable {
                 songScrubbingSilder.setMax(clip.getMicrosecondLength());
                 songScrubbingSilder.setValue(clip.getMicrosecondPosition());
             }
-        }
 
+        }
     }
 
     /**
