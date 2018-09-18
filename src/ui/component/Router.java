@@ -63,6 +63,7 @@ public class Router extends StackPane {
     //If more than one screen is being added, second screen is added, the current screen removed
     //If there isn't screen being displayed, new screen is added to root
     public boolean setView(final String name){
+        //System.out.println(ViewMap.get(name));
         if(ViewMap.get(name) != null) { //ui.view load check
             final DoubleProperty opacity = opacityProperty();
 
