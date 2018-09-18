@@ -32,7 +32,7 @@ public class Main extends Application {
 
         //Group root = new Group();
         //root.getChildren().addAll(mainRouter);
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, 1280, 720);
 
 
         primaryStage.setTitle("Spusic");
