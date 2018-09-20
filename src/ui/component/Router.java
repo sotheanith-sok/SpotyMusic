@@ -21,6 +21,7 @@ import java.util.HashMap;
 public class Router extends StackPane {
 
     private HashMap<String, Node> ViewMap = new HashMap<>();
+    private HashMap<String, ControlledView> controllerMap = new HashMap<>();
 
     public Router()
     {
@@ -40,6 +41,7 @@ public class Router extends StackPane {
     //Loads FXML file and adds it to ui.view collection
     //injects controller to the interface
     public boolean loadView(String name, String rsrc){
+       System.out.println("[Router] Loading view: " + name);
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(rsrc));
             //load FXML file into the parent
@@ -47,13 +49,15 @@ public class Router extends StackPane {
 
             //load FXML Controller
             ControlledView controller = loader.getController();
+            controllerMap.put(name, controller);
 
             controller.setViewParent(this);
             addView(name, loadView);
+            System.out.println("[Router] Loaded view \"" + name + "\"");
 
             return true;
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            ex.printStackTrace();
             return false;
         }
     }
@@ -63,7 +67,7 @@ public class Router extends StackPane {
     //If more than one screen is being added, second screen is added, the current screen removed
     //If there isn't screen being displayed, new screen is added to root
     public boolean setView(final String name){
-        //System.out.println(ViewMap.get(name));
+        System.out.println("[Router] Switching to view \"" + name + "\"");
         if(ViewMap.get(name) != null) { //ui.view load check
             final DoubleProperty opacity = opacityProperty();
 
@@ -75,6 +79,7 @@ public class Router extends StackPane {
                             @Override
                             public void handle(ActionEvent event) {
                                 getChildren().remove(0);                    //remove the displayed screen
+                                controllerMap.get(name).beforeShow();
                                 getChildren().add(0, ViewMap.get(name));    //add the screen
                                 Timeline fadeIn = new Timeline(
                                         new KeyFrame(Duration.ZERO, new KeyValue(opacity, 0.0)),
@@ -93,7 +98,7 @@ public class Router extends StackPane {
             }
             return true;
         } else {
-            System.out.println("No ui.view loaded\n");
+            System.out.println("[Router] No ui.view loaded");
             return false;
         }
     }

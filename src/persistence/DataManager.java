@@ -181,7 +181,7 @@ public class DataManager {
      * @return future of user's library
      */
     public Future<Library> getCurrentLibrary() {
-        return this.currentLib;
+       return this.currentLib;
     }
 
     /**

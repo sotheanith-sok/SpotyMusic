@@ -100,7 +100,9 @@ public class RightViewController implements Initializable {
         switch (panelType) {
             case ARTIST:
                 DetailViewController detailViewController=createDetailView(artistsView, panelType);
+
                 try {
+                   System.out.println(DataManager.getDataManager().getCurrentLibrary().isDone());
                     detailViewController.updateDetailView(imagePath,name,"Artist",(ObservableList<Song>) DataManager.getDataManager().getCurrentLibrary().get().getSongsByArtist(string));
                 } catch (InterruptedException e) {
                     e.printStackTrace();

@@ -74,19 +74,21 @@ public class LibraryLoader implements Callable<Library> {
                 } else if (name == "playlists") {
                     String listName = null;
                     LinkedList<LocalSong> listSongs = new LinkedList<>();
-                    while (token != JsonToken.END_ARRAY) {
-                        while (token != JsonToken.END_OBJECT) {
-                            if (token == JsonToken.FIELD_NAME) {
+                     System.out.println("[LibraryLoader] Start playlists list");
+                    while ((token = parser.nextToken()) != JsonToken.END_ARRAY) {
+                       if (token == JsonToken.START_OBJECT) {
+                          while ((token = parser.nextToken()) != JsonToken.END_OBJECT) {
+                             if (token == JsonToken.FIELD_NAME) {
                                 if (parser.getText().equals("name")) listName = parser.nextTextValue();
 
-                            } else if (token == JsonToken.VALUE_NUMBER_INT) {
+                             } else if (token == JsonToken.VALUE_NUMBER_INT) {
                                 listSongs.add(this.songs.get(parser.getIntValue()));
-                            }
-                            token = parser.nextToken();
-                        }
-                        playlists.put(listName, listSongs);
-                        listSongs = new LinkedList<>();
-                        token = parser.nextToken();
+                             }
+                             token = parser.nextToken();
+                          }
+                          playlists.put(listName, listSongs);
+                          listSongs = new LinkedList<>();
+                       }
                     }
                 }
             }
