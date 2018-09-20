@@ -35,7 +35,12 @@ public class MainViewController implements Initializable, ControlledView {
         router = viewParent;
     }
 
-    /**
+   @Override
+   public void beforeShow() {
+      loadCurrentLibrary();
+   }
+
+   /**
      * Called to initialize a controller after its root element has been
      * completely processed.
      *
@@ -45,11 +50,11 @@ public class MainViewController implements Initializable, ControlledView {
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        //Give MainViewController reference to sub controllers.
+        //Give MainViewController reference to sub controllers
+        System.out.println("[MainViewController] initializing MainViewController");
         leftViewController.setParentViewController(this);
         rightViewController.setParentViewController(this);
         bottomViewController.setParentViewController(this);
-        loadCurrentLibrary();
     }
 
 
@@ -57,10 +62,15 @@ public class MainViewController implements Initializable, ControlledView {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
-         boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
-         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+       //boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
+       System.out.println("[MainViewController] Getting username");
+       leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+
        try {
+          System.out.println("[MainViewController] Applying library to right view");
           rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
+          System.out.println("[MainViewController] Done");
+
        } catch (InterruptedException e) {
           e.printStackTrace();
        } catch (ExecutionException e) {

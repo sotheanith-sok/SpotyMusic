@@ -5,6 +5,8 @@ public interface ControlledView {
     //inject Parent ViewPane
     void setViewParent(Router viewPage);
 
+    default void beforeShow() {}
+
     //lifecycle functions
     //oncreate
     //onready
