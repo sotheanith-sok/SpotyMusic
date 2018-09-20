@@ -90,6 +90,8 @@ public interface Library {
      * @return the results of the search
      */
     default ObservableList<? extends Song> search(String searchParam) {
-        return ((ObservableList<Song>) this.getSongs()).filtered((Song s) -> (s.getTitle().contains(searchParam) | s.getAlbumTitle().contains(searchParam) | s.getArtist().contains(searchParam)));
+        final String lowerSearchParam = searchParam.toLowerCase();
+        return ((ObservableList<Song>) this.getSongs()).filtered((Song s) -> (s.getTitle().toLowerCase().contains(lowerSearchParam)
+                | s.getAlbumTitle().toLowerCase().contains(lowerSearchParam) | s.getArtist().toLowerCase().contains(lowerSearchParam)));
     }
 }
