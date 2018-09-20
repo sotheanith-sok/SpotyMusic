@@ -2,14 +2,15 @@ package ui.component;
 
 public interface ControlledView {
 
-    //inject Parent ViewPane
-    void setViewParent(Router viewPage);
+   //inject Parent ViewPane
+   void setViewParent(Router viewPage);
 
-    default void beforeShow() {}
+   default void beforeShow() {
+   }
 
-    //lifecycle functions
-    //oncreate
-    //onready
-    //onshow
-    //pass information for new screens to load if they need more resources
+   //lifecycle functions
+   //oncreate
+   //onready
+   //onshow
+   //pass information for new screens to load if they need more resources
 }

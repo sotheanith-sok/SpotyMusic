@@ -7,7 +7,6 @@ package ui.controller;
  * @since 0.0.1
  */
 
-import com.sun.xml.internal.bind.annotation.OverrideAnnotationOf;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -23,66 +22,61 @@ import java.util.ResourceBundle;
 
 public class SplashUIController implements Initializable, ControlledView {
 
-    @FXML
-    private PasswordField txtPass;
+   DataManager DM = DataManager.getDataManager();
+   Router router;
+   @FXML
+   private PasswordField txtPass;
+   @FXML
+   private TextField txtUser;
+   @FXML
+   private Button btnSignIn;
+   @FXML
+   private Button btnRegister;
 
-    @FXML
-    private TextField txtUser;
+   @Override
+   public void initialize(URL location, ResourceBundle resources) {
+      // TODO
+   }
 
-    @FXML
-    private Button btnSignIn;
+   public void setViewParent(Router viewParent) {
+      router = viewParent;
+   }
 
-    @FXML
-    private Button btnRegister;
+   @FXML
+   void clickedSignOn() {
+      if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty()) {
+         if (DM.tryAuth(txtUser.getText(), txtPass.getText())) {
+            router.setView("main");
 
-    DataManager DM = DataManager.getDataManager();
-    Router router;
+         } else {
+            Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
+            noSuchUserAlert.setTitle("User Not Found");
+            noSuchUserAlert.setHeaderText("Login Error");
+            String message = "Please enter a valid Username and Password.";
+            noSuchUserAlert.setContentText(message);
+            noSuchUserAlert.show();
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources){
-        // TODO
-    }
-
-    public void setViewParent(Router viewParent) {
-        router = viewParent;
-    }
-
-    @FXML
-    void clickedSignOn() {
-        if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty())
-        {
-            if(DM.tryAuth(txtUser.getText(), txtPass.getText())){
-               router.setView("main");
-
-            } else {
-                Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
-                noSuchUserAlert.setTitle("User Not Found");
-                noSuchUserAlert.setHeaderText("Login Error");
-                String message = "Please enter a valid Username and Password.";
-                noSuchUserAlert.setContentText(message);
-                noSuchUserAlert.show();
-
-                txtUser.setText("");
-                txtPass.setText("");
-                txtUser.requestFocus();
-            }
-        } else {
-            Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
-            loginFailAlert.setTitle("Login Failed");
-            loginFailAlert.setHeaderText("Information Error");
-            String message = "Please Enter a Valid Username and Password.";
-            loginFailAlert.setContentText(message);
-            loginFailAlert.show();
-
-            txtPass.setText("");
             txtUser.setText("");
+            txtPass.setText("");
             txtUser.requestFocus();
-        }
-    }
+         }
+      } else {
+         Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
+         loginFailAlert.setTitle("Login Failed");
+         loginFailAlert.setHeaderText("Information Error");
+         String message = "Please Enter a Valid Username and Password.";
+         loginFailAlert.setContentText(message);
+         loginFailAlert.show();
 
-    @FXML
-    void tryRegister() {
+         txtPass.setText("");
+         txtUser.setText("");
+         txtUser.requestFocus();
+      }
+   }
 
-    }
+   @FXML
+   void tryRegister() {
+
+   }
 
 }
