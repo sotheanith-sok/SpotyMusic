@@ -1,6 +1,7 @@
 package connect;
 
 import javafx.collections.ObservableList;
+import persistence.FileImportTask;
 
 import java.io.File;
 import java.util.concurrent.Future;
@@ -59,10 +60,25 @@ public interface Library {
      * Adds a song to the library.
      *
      * @param song a File representing the song to add
+     * @param title the title of the song being imported
+     * @param artist the artist wto wrote the song
+     * @param album the album in which the song was released
      * @throws SecurityException if the current user is not authorized to modify the library
      * @return Future that resolves to success
      */
-    Future<Boolean> importSong(File song) throws SecurityException;
+    Future<Boolean> importSong(File song, String title, String artist, String album) throws SecurityException;
+
+    /**
+     * Adds a song to the library.
+     *
+     * @param song a File that stores the song
+     * @param title the title of the song to import
+     * @param artist the artist who wrote the song
+     * @param album the album in which the song was released
+     * @param listener a progress listener
+     * @return Future that resolves to success
+     */
+    Future<Boolean> importSong(File song, String title, String artist, String album, FileImportTask.FileImportProgressListener listener);
 
     /**
      * Removes a song from the library.
