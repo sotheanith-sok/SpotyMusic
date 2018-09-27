@@ -51,7 +51,7 @@ public class DetailViewController implements Initializable {
       title.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
       artist.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
       album.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));
-      length.setCellValueFactory(param -> new SimpleStringProperty(Long.toString(param.getValue().getDuration() / 1000000)));
+      length.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getReadableDuration()));
       tableView.setRowFactory(tv -> {
          TableRow<Song> row = new TableRow<>();
          row.setOnMouseClicked(event -> {
