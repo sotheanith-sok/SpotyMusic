@@ -14,64 +14,64 @@ import java.util.ResourceBundle;
  */
 public class ArtistListViewController implements Initializable {
 
-    /**
-     * a listview
-     */
-    @FXML
-    private ListView<String> listView;
+   /**
+    * a listview
+    */
+   @FXML
+   private ListView<String> listView;
 
-    private RightViewController parentViewController;
+   private RightViewController parentViewController;
 
-    private ObservableList<String> artistObservableList;
-
-
-    /**
-     * override the initialize, so listview of artists can be generated
-     *
-     * @param location  location to resolve relative path
-     * @param resources resources used for root object
-     */
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        artistObservableList = FXCollections.observableArrayList();
-
-        //on mouse click, calls method selectArtist
-        listView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2)
-                mouseClicked(listView.getSelectionModel().getSelectedItem());
-        });
-        listView.setItems(artistObservableList);
-    }
-
-    /**
-     * when mouse is clicked, highlighted artist is selected
-     */
-    public void mouseClicked(String artist) {
-        parentViewController.showDetailView(PanelType.ARTIST, artist,null,artist);
-    }
+   private ObservableList<String> artistObservableList;
 
 
-    public void setParentViewController(RightViewController rightViewController) {
-        parentViewController = rightViewController;
-    }
+   /**
+    * override the initialize, so listview of artists can be generated
+    *
+    * @param location  location to resolve relative path
+    * @param resources resources used for root object
+    */
+   @Override
+   public void initialize(URL location, ResourceBundle resources) {
+      artistObservableList = FXCollections.observableArrayList();
 
-    /**
-     * Get list of artists.
-     *
-     * @return list of artists
-     */
-    public ObservableList<String> getArtistObservableList() {
-        return artistObservableList;
-    }
+      //on mouse click, calls method selectArtist
+      listView.setOnMouseClicked(event -> {
+         if (event.getClickCount() == 2)
+            mouseClicked(listView.getSelectionModel().getSelectedItem());
+      });
+      listView.setItems(artistObservableList);
+   }
 
-    /**
-     * Set list of artists
-     *
-     * @param artistObservableList a new artist list
-     */
-    public void setArtistObservableList(ObservableList<String> artistObservableList) {
-        this.artistObservableList = artistObservableList;
-        listView.setItems(artistObservableList);
-    }
+   /**
+    * when mouse is clicked, highlighted artist is selected
+    */
+   public void mouseClicked(String artist) {
+      parentViewController.showDetailView(PanelType.ARTIST, artist, null, artist);
+   }
+
+
+   public void setParentViewController(RightViewController rightViewController) {
+      parentViewController = rightViewController;
+   }
+
+   /**
+    * Get list of artists.
+    *
+    * @return list of artists
+    */
+   public ObservableList<String> getArtistObservableList() {
+      return artistObservableList;
+   }
+
+   /**
+    * Set list of artists
+    *
+    * @param artistObservableList a new artist list
+    */
+   public void setArtistObservableList(ObservableList<String> artistObservableList) {
+      this.artistObservableList = artistObservableList;
+      listView.setItems(artistObservableList);
+   }
 }
 

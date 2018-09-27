@@ -1,5 +1,5 @@
 package ui.controller;
 
 public enum PanelType {
-    PLAYLIST, ALBUM, ARTIST, SEARCH;
+   PLAYLIST, ALBUM, ARTIST, SEARCH;
 }

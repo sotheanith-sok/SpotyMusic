@@ -16,86 +16,86 @@ import java.io.IOException;
  */
 public class User {
 
-    private final String username;
-    private final String password;
+   private final String username;
+   private final String password;
 
-    /**
-     * Creates a new instance of User, with the given username and password.
-     *
-     * @param username the name of the user
-     * @param password the user's password
-     */
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
+   /**
+    * Creates a new instance of User, with the given username and password.
+    *
+    * @param username the name of the user
+    * @param password the user's password
+    */
+   public User(String username, String password) {
+      this.username = username;
+      this.password = password;
+   }
 
-    /**
-     * Returns the username of the user represented by this User instance.
-     *
-     * @return user's username
-     */
-    public String getUsername() {
-        return this.username;
-    }
+   /**
+    * Reads data from the given {@link JsonParser} and returns a User based on the read data.
+    *
+    * @param in a source of JSON data
+    * @return a User or null if insufficient data is found
+    * @throws IOException if there is an exception while reading data
+    */
+   public static User load(JsonParser in) throws IOException {
+      String username = null;
+      String password = null;
 
-    /**
-     * Checks the given password against the password of this User.
-     *
-     * @param password the password to test
-     * @return whether the given password matches that of this User
-     */
-    public boolean testPassword(String password) {
-        return this.password.equals(password);
-    }
+      JsonToken token = in.currentToken();
+      for (; ; ) {
+         if (token == JsonToken.FIELD_NAME) {
+            // check name of field
+            String field = in.getText();
 
-    /**
-     * Writes this User to the given {@link JsonGenerator}.
-     *
-     * @param out a destination for this User's data
-     * @throws IOException if an exception is thrown when writing data
-     */
-    public void write(JsonGenerator out) throws IOException {
-        out.writeStartObject();
-        out.writeStringField("username", this.username);
-        out.writeStringField("password", this.password);
-        out.writeEndObject();
-    }
+            if (field == "username") {
+               username = in.nextTextValue();
 
-    /**
-     * Reads data from the given {@link JsonParser} and returns a User based on the read data.
-     *
-     * @param in a source of JSON data
-     * @return a User or null if insufficient data is found
-     * @throws IOException if there is an exception while reading data
-     */
-    public static User load(JsonParser in) throws IOException {
-        String username = null;
-        String password = null;
+            } else if (field == "password") {
+               password = in.nextTextValue();
 
-        JsonToken token = in.currentToken();
-        for (;;) {
-            if (token == JsonToken.FIELD_NAME) {
-                // check name of field
-                String field = in.getText();
+            } // else... um... that shouldn't be here
 
-                if (field == "username") {
-                    username = in.nextTextValue();
+         } else if (token == JsonToken.END_OBJECT) {
+            break;
+         }
 
-                } else if (field == "password") {
-                    password = in.nextTextValue();
+         token = in.nextToken();
+      }
 
-                } // else... um... that shouldn't be here
+      // verify that we have all the data we need
+      if (username == null || password == null) return null;
+      return new User(username, password);
+   }
 
-            } else if (token == JsonToken.END_OBJECT) {
-                break;
-            }
+   /**
+    * Returns the username of the user represented by this User instance.
+    *
+    * @return user's username
+    */
+   public String getUsername() {
+      return this.username;
+   }
 
-            token = in.nextToken();
-        }
+   /**
+    * Checks the given password against the password of this User.
+    *
+    * @param password the password to test
+    * @return whether the given password matches that of this User
+    */
+   public boolean testPassword(String password) {
+      return this.password.equals(password);
+   }
 
-        // verify that we have all the data we need
-        if (username == null || password == null) return null;
-        return new User(username, password);
-    }
+   /**
+    * Writes this User to the given {@link JsonGenerator}.
+    *
+    * @param out a destination for this User's data
+    * @throws IOException if an exception is thrown when writing data
+    */
+   public void write(JsonGenerator out) throws IOException {
+      out.writeStartObject();
+      out.writeStringField("username", this.username);
+      out.writeStringField("password", this.password);
+      out.writeEndObject();
+   }
 }
