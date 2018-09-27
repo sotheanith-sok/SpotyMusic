@@ -1,0 +1,10 @@
+.button{
+    -fx-text-fill: white;
+    -fx-background-color: #1e646e;
+}
+.panel{
+    -fx-background-color: #5a5a5a;
+}
+.panel{
+    -fx-background-color: green;
+}

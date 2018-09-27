@@ -25,8 +25,7 @@
                <tabs>
                   <Tab closable="false" text="Queue">
                      <content>
-                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0"
-                                    style="-fx-background-color: red;">
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
                               <fx:include source="QueueView.fxml" fx:id="queueView" AnchorPane.bottomAnchor="0.0"
                                           AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
@@ -50,7 +49,7 @@
                   <Tab closable="false" text="Album">
                      <content>
                         <AnchorPane fx:id="albumsView" minHeight="0.0" minWidth="0.0" prefHeight="180.0"
-                                    prefWidth="200.0" style="-fx-background-color: green;">
+                                    prefWidth="200.0">
                            <children>
                               <fx:include source="AlbumListView.fxml" fx:id="albumListView"
                                           AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
