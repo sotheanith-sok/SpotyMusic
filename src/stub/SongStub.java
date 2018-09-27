@@ -61,8 +61,8 @@ public class SongStub implements Song {
 
     @Override
     public Library getLibrary() {
-        return null;
- 
+       return null;
+    }
 
    @Override
    public Future<AudioInputStream> getStream() {
