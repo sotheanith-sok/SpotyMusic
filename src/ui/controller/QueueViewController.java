@@ -33,7 +33,7 @@ public class QueueViewController implements Initializable {
     @FXML
     private TableColumn<Song, String> albumCol;
     @FXML
-    private TableColumn<Song, Long> lengthCol;
+    private TableColumn<Song, String> lengthCol;
     private RightViewController parentViewController;
     private ObservableList<Song> songObservableList;
 
@@ -47,7 +47,7 @@ public class QueueViewController implements Initializable {
         titleCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getTitle()));
         artistCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getArtist()));
         albumCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getAlbumTitle()));
-        lengthCol.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getDuration()/1000000));
+        lengthCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getReadableDuration()));
         tableView.setItems(songObservableList);
 
         //Add mouse click listener

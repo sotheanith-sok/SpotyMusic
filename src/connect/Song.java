@@ -42,6 +42,14 @@ public interface Song {
     long getDuration();
 
     /**
+     * default implementation
+     * */
+    default String getReadableDuration() {
+        int seconds = (int)(this.getDuration()/1000000);
+        return Integer.toString(seconds/60) + ":" + Integer.toString(seconds % 60);
+    }
+
+    /**
      * Returns a reference to the {@link Library} that this Song belongs to.
      *
      * @return reference to library containing song

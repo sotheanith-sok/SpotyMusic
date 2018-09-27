@@ -56,6 +56,12 @@ public class SongStub implements Song{
     }
 
     @Override
+    public String getReadableDuration() {
+        int seconds = (int)(this.duration/1000000);
+        return Integer.toString(seconds/60) + ":" + Integer.toString(seconds % 60);
+    }
+
+    @Override
     public Library getLibrary() {
         return null;
     }
