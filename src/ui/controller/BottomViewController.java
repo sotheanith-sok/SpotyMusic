@@ -7,8 +7,8 @@ import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 import javax.sound.sampled.AudioSystem;
@@ -27,10 +27,10 @@ import java.util.concurrent.TimeUnit;
 public class BottomViewController implements Initializable {
    // song progress
    @FXML
-   Slider songScrubbingSilder;
+   Slider songScrubbingSlider;
    // song title
    @FXML
-   Text songTitle, timestamp;
+   Label songTitle, timestamp;
    // playback control buttons
    @FXML
    Button previousSongBtn;
@@ -66,11 +66,11 @@ public class BottomViewController implements Initializable {
       }
 
       // song scrubbing
-      songScrubbingSilder.setOnMouseReleased(e -> {
-         scrubbingSong(songScrubbingSilder.getValue());
+      songScrubbingSlider.setOnMouseReleased(e -> {
+         scrubbingSong(songScrubbingSlider.getValue());
          scrubbingSliderControl = false;
       });
-      songScrubbingSilder.setOnMousePressed(e -> {
+      songScrubbingSlider.setOnMousePressed(e -> {
          scrubbingSliderControl = true;
       });
 
@@ -162,9 +162,9 @@ public class BottomViewController implements Initializable {
 
          //Update slider
          if (!scrubbingSliderControl) {
-            songScrubbingSilder.setMin(0);
-            songScrubbingSilder.setMax(clip.getMicrosecondLength());
-            songScrubbingSilder.setValue(clip.getMicrosecondPosition());
+            songScrubbingSlider.setMin(0);
+            songScrubbingSlider.setMax(clip.getMicrosecondLength());
+            songScrubbingSlider.setValue(clip.getMicrosecondPosition());
          }
 
       }
