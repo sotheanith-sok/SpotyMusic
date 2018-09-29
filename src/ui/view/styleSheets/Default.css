@@ -1,0 +1,458 @@
+/**
+This the base configuration of the css. Please make a copy before editing. Change the styleSheet in MainView.fxml to load in another style sheet.
+@author: Sotheanith Sok
+ */
+
+/**
+Everything
+ */
+
+.MainView *{
+
+}
+
+/**
+LeftView and its children
+ */
+.LeftView *{
+
+}
+
+/**
+RightView and its children.
+ */
+.RightView *{
+
+}
+
+/**
+BottomView and its children
+ */
+.BottomView *{
+
+}
+
+/**
+Leftview only
+ */
+.LeftView{
+
+}
+
+/**
+All buttons in left view.
+ */
+.LeftView .button{
+
+}
+
+/**
+Library selection list-view of the left view.
+ */
+.LeftView .list-view{
+
+}
+
+/**
+Cell of the library selection list-view of the left view.
+ */
+.LeftView .list-cell{
+
+}
+
+/**
+Welcoming text of the left view.
+ */
+.LeftView #welcomeLabel{
+
+}
+
+/**
+Refresh button of the left view.
+ */
+.LeftView #refreshButton{
+
+}
+
+/**
+Signout button of the left view
+ */
+.LeftView #signOutButton{
+
+}
+
+/**
+Right view only
+ */
+.RightView{
+
+}
+
+/**
+TabPane  of right view
+ */
+.RightView .tab-pane {
+
+}
+/**
+Tabs of Tab-pane of right view
+ */
+.RightView .tab{
+
+}
+
+/**
+Labels insde tab-pane of right view
+ */
+.RightView .tab-label{
+
+}
+
+/**
+Search bar of the right view
+ */
+.RightView .text-field{
+
+}
+
+/**
+Search button of the right view
+ */
+.RightView #searchButton{
+
+}
+
+/**
+Bottom view only
+ */
+.BottomView {
+
+}
+
+/**
+All texts in Bottom view
+ */
+.BottomView .label{
+
+}
+
+/**
+All buttons in Bottom View
+ */
+.BottomView .button{
+
+}
+
+/**
+All sliders in Bottom View
+ */
+.BottomView .slider{
+
+}
+
+/**
+Song scrubbing slider in Bottom View
+ */
+.BottomView #songScrubbingSlider{
+
+}
+
+/**
+Volume slider in Bottom View
+ */
+.BottomView #volumeSlider{
+
+}
+
+/**
+Song title label in Bottom View
+ */
+.BottomView #titleLabel{
+
+}
+
+/**
+Timestamp label in Bottom View
+ */
+.BottomView #timestampLabel{
+
+}
+
+/**
+Previous button in Bottom View
+ */
+.BottomView #previousButton{
+
+}
+
+/**
+Play button in Bottom View
+ */
+.BottomView #playButton{
+
+}
+/**
+Next button in Bottom View
+ */
+.BottomView #nextButton{
+
+}
+
+/**
+PlaylistListView and its children
+ */
+.PlaylistListView *{
+
+}
+/**
+PlaylistListView only
+ */
+.PlaylistListView{
+
+}
+/**
+List-view of PlaylistListView
+ */
+.PlaylistListView .list-view{
+
+}
+/**
+Cell of list-view of PlaylistListView
+ */
+.PlaylistListView .list-cell{
+
+}
+
+/**
+All buttons of PlaylistListView
+ */
+.PlaylistListView .button{
+
+}
+
+/**
+Create button of PlaylistListView
+ */
+.PlaylistListView #createButton{
+
+}
+/**
+Delete button of PlaylistListView
+ */
+.PlaylistListView #deleteButton{
+
+}
+
+/**
+QueueView and its children
+ */
+.QueueView *{
+
+}
+/**
+QueueView only
+ */
+.QueueView{
+
+}
+/**
+Table view of QueueView
+ */
+.QueueView .table-view{
+
+}
+/**
+Column headers of table-view of QueueView
+ */
+.QueueView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of QueueView
+ */
+.QueueView .table-view .filler{
+
+}
+/**
+Text of the column headers QueueView
+ */
+.QueueView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of QueueView
+ */
+.QueueView .table-view .table-row-cell{
+
+}
+
+/**
+ArtistListView and its children
+ */
+.ArtistListView *{
+
+}
+/**
+ArtistListView only
+ */
+.ArtistListView{
+
+}
+/**
+List-view of ArtistListView
+ */
+.PlaylistListView .list-view{
+
+}
+/**
+Cell of list-view of ArtistListView
+ */
+.PlaylistListView .list-cell{
+
+}
+
+
+/**
+AlbumListView and its children
+ */
+.AlbumListView *{
+
+}
+/**
+AlbumListView only
+ */
+.AlbumListView{
+
+}
+/**
+Table view of AlbumListView
+ */
+.AlbumListView .table-view{
+
+}
+/**
+Column headers of table-view of AlbumListView
+ */
+.AlbumListView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of AlbumListView
+ */
+.AlbumListView .table-view .filler{
+
+}
+/**
+Text of the column headers AlbumListView
+ */
+.AlbumListView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of AlbumListView
+ */
+.AlbumListView .table-view .table-row-cell{
+
+}
+
+
+/**
+DetailView and its children
+ */
+.DetailView *{
+
+}
+/**
+DetailView only
+ */
+.DetailView{
+
+}
+/**
+Table view of DetailView
+ */
+.DetailView .table-view{
+
+}
+/**
+Column headers of table-view of DetailView
+ */
+.DetailView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of DetailView
+ */
+.DetailView .table-view .filler{
+
+}
+/**
+Text of the column headers DetailView
+ */
+.DetailView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of DetailView
+ */
+.DetailView .table-view .table-row-cell{
+
+}
+
+/**
+All buttons in DetailView
+ */
+.DetailView .button{
+
+}
+/**
+All label in DetailView
+ */
+.DetailView .label{
+
+}
+
+/**
+The image view of DetailView
+ */
+.DetailView #image{
+
+}
+
+/**
+Type of the information of DetailView
+ */
+.DetailView #typeLabel{
+
+}
+
+/**
+Name of the subject displayed in DetailView
+ */
+.DetailView #nameLabel{
+
+}
+
+/**
+Add all to queue button in DetailView
+ */
+.DetailView #addAllButton{
+
+}
+
+/**
+Close button in DetailView
+ */
+.DetailView #closeButton{
+
+}
+
+
+
+
