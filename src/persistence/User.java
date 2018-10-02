@@ -18,16 +18,19 @@ public class User {
 
    private final String username;
    private final String password;
+   private String theme = "Default";
 
    /**
     * Creates a new instance of User, with the given username and password.
     *
     * @param username the name of the user
     * @param password the user's password
+    * @param theme the name of the user's prefered theme
     */
-   public User(String username, String password) {
+   public User(String username, String password, String theme) {
       this.username = username;
       this.password = password;
+      this.theme = theme;
    }
 
    /**
@@ -40,6 +43,7 @@ public class User {
    public static User load(JsonParser in) throws IOException {
       String username = null;
       String password = null;
+      String theme = "Default";
 
       JsonToken token = in.currentToken();
       for (; ; ) {
@@ -53,7 +57,10 @@ public class User {
             } else if (field == "password") {
                password = in.nextTextValue();
 
-            } // else... um... that shouldn't be here
+            } else if (field == "theme") {
+               theme = in.nextTextValue();
+               
+            }// else... um... that shouldn't be here
 
          } else if (token == JsonToken.END_OBJECT) {
             break;
@@ -74,6 +81,15 @@ public class User {
     */
    public String getUsername() {
       return this.username;
+   }
+   
+   /**
+    * Returns the name of the user's preferred theme.
+    * 
+    * @return user's theme preference
+    */
+   public String getTheme() {
+      return this.theme;
    }
 
    /**
@@ -96,6 +112,7 @@ public class User {
       out.writeStartObject();
       out.writeStringField("username", this.username);
       out.writeStringField("password", this.password);
+      out.writeStringField("theme", this.theme);
       out.writeEndObject();
    }
 }
