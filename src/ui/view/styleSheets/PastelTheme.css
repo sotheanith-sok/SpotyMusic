@@ -1,0 +1,527 @@
+/**
+This the base configuration of the css. Please make a copy before editing. Change the styleSheet in MainView.fxml to load in another style sheet.
+@author: Sotheanith Sok
+ */
+
+/**
+Everything
+ */
+
+.MainView *{
+    -fx-text-fill: #533852;
+}
+
+/**
+MainView only
+ */
+.MainView {
+    -fx-background-color: #ff79bc;
+}
+
+/**
+All buttons
+ */
+.MainView .button{
+    -fx-background-color: #98edb7;
+}
+
+
+/**
+LeftView and its children
+ */
+.LeftView *{
+
+}
+
+/**
+RightView and its children.
+ */
+.RightView *{
+
+}
+
+/**
+BottomView and its children
+ */
+.BottomView *{
+
+}
+
+/**
+Leftview only
+ */
+.LeftView{
+
+}
+
+/**
+All buttons in left view.
+ */
+.LeftView .button{
+    -fx-background-color: #ea9ced;
+}
+
+/**
+Library selection list-view of the left view.
+ */
+.LeftView .list-view{
+    -fx-background-color: #ff79bc
+}
+
+/**
+Cell of the library selection list-view of the left view.
+ */
+.LeftView .list-cell{
+
+}
+
+/**
+Welcoming text of the left view.
+ */
+.LeftView #welcomeLabel{
+}
+
+/**
+Refresh button of the left view.
+ */
+.LeftView #refreshButton{
+
+}
+
+/**
+Signout button of the left view
+ */
+.LeftView #signOutButton{
+
+}
+
+/**
+Right view only
+ */
+.RightView{
+
+}
+
+/**
+TabPane  of right view
+ */
+.RightView .tab-pane .tab-header-background {
+    -fx-background-color: #ff79bc;
+}
+/**
+Tabs of Tab-pane of right view
+ */
+.RightView .tab{
+    -fx-background-color: #ff79bc;
+}
+
+/**
+Labels insde tab-pane of right view
+ */
+.RightView .tab-label{
+
+}
+
+/**
+Search bar of the right view
+ */
+.RightView .text-field *{
+    -fx-background-color: #ea9ced;
+}
+
+.RightView .text-field{
+    -fx-background-color: #373737;
+    -fx-min-height: 30;
+    -fx-prompt-text-fill: #533852;
+}
+
+/**
+Search button of the right view
+ */
+.RightView #searchButton{
+    -fx-text-fill: #533852;
+
+}
+
+/**
+Bottom view only
+ */
+.BottomView {
+
+}
+
+/**
+All texts in Bottom view
+ */
+.BottomView .label{
+
+}
+
+/**
+All buttons in Bottom View
+ */
+.BottomView .button{
+
+}
+
+/**
+All sliders in Bottom View
+ */
+.BottomView .slider{
+
+}
+
+/**
+Song scrubbing slider in Bottom View
+ */
+.BottomView #songScrubbingSlider{
+
+}
+/**
+Slider bar color
+ */
+.BottomView #songScrubbingSlider .track{
+    -fx-background-color: #e3c3ed;
+}
+
+/*
+Slider thumb color
+ */
+.BottomView #songScrubbingSlider .thumb{
+    -fx-background-color: #07d1e0;
+}
+
+
+/**
+Volume slider in Bottom View
+ */
+.BottomView #volumeSlider {
+
+}
+
+/**
+Slider bar color
+ */
+.BottomView #volumeSlider .track{
+    -fx-background-color: #e3c3ed;
+}
+
+/*
+Slider thumb color
+ */
+.BottomView #volumeSlider .thumb{
+    -fx-background-color: #07d1e0;
+}
+
+/***
+slider label color
+ */
+.BottomView #volumeSlider .axis{
+    -fx-tick-label-fill: #533852;
+}
+
+/**
+    Slider ticks color both major and minor
+ */
+.BottomView #volumeSlider .axis .axis-tick-mark, .BottomView #volumeSlider .axis .axis-minor-tick-mark{
+    -fx-fill: null;
+    -fx-stroke: #07d1e0
+}
+
+
+
+/**
+Song title label in Bottom View
+ */
+.BottomView #titleLabel{
+    -fx-text-fill: #533852;
+
+}
+
+/**
+Timestamp label in Bottom View
+ */
+.BottomView #timestampLabel{
+    -fx-text-fill: #533852;
+
+}
+
+/**
+Previous button in Bottom View
+ */
+.BottomView #previousButton{
+
+}
+
+/**
+Play button in Bottom View
+ */
+.BottomView #playButton{
+
+}
+/**
+Next button in Bottom View
+ */
+.BottomView #nextButton{
+
+}
+
+/**
+PlaylistListView and its children
+ */
+.PlaylistListView *{
+    -fx-background-color: #ff79bc;
+}
+/**
+PlaylistListView only
+ */
+.PlaylistListView{
+
+}
+/**
+List-view of PlaylistListView
+ */
+.PlaylistListView .list-view{
+
+}
+/**
+Cell of list-view of PlaylistListView
+ */
+.PlaylistListView .list-cell{
+
+}
+
+/**
+All buttons of PlaylistListView
+ */
+.PlaylistListView .button{
+
+}
+
+/**
+Create button of PlaylistListView
+ */
+.PlaylistListView #createButton{
+    -fx-background-color: #ea9ced;
+}
+/**
+Delete button of PlaylistListView
+ */
+.PlaylistListView #deleteButton{
+    -fx-background-color: #98edb7;
+
+}
+
+/**
+QueueView and its children
+ */
+.QueueView *{
+    -fx-background-color: #ff79bc;
+}
+/**
+QueueView only
+ */
+.QueueView{
+
+}
+/**
+Table view of QueueView
+ */
+.QueueView .table-view{
+
+}
+/**
+Column headers of table-view of QueueView
+ */
+.QueueView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of QueueView
+ */
+.QueueView .table-view .filler{
+
+}
+/**
+Text of the column headers QueueView
+ */
+.QueueView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of QueueView
+ */
+.QueueView .table-view .table-row-cell{
+
+}
+
+/**
+ArtistListView and its children
+ */
+.ArtistListView *{
+    -fx-background-color: #ff79bc;
+}
+/**
+ArtistListView only
+ */
+.ArtistListView{
+
+}
+/**
+List-view of ArtistListView
+ */
+.PlaylistListView .list-view{
+
+}
+/**
+Cell of list-view of ArtistListView
+ */
+.PlaylistListView .list-cell{
+
+}
+
+
+/**
+AlbumListView and its children
+ */
+.AlbumListView *{
+    -fx-background-color: #ff79bc;
+}
+/**
+AlbumListView only
+ */
+.AlbumListView{
+
+}
+/**
+Table view of AlbumListView
+ */
+.AlbumListView .table-view{
+
+}
+/**
+Column headers of table-view of AlbumListView
+ */
+.AlbumListView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of AlbumListView
+ */
+.AlbumListView .table-view .filler{
+
+}
+/**
+Text of the column headers AlbumListView
+ */
+.AlbumListView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of AlbumListView
+ */
+.AlbumListView .table-view .table-row-cell{
+
+}
+
+
+/**
+DetailView and its children
+ */
+.DetailView *{
+
+}
+/**
+DetailView only
+ */
+.DetailView{
+
+}
+/**
+Table view of DetailView
+ */
+.DetailView .table-view{
+
+}
+/**
+Column headers of table-view of DetailView
+ */
+.DetailView .table-view .column-header{
+
+}
+
+/**
+The rest of column headers of DetailView
+ */
+.DetailView .table-view .filler{
+
+}
+/**
+Text of the column headers DetailView
+ */
+.DetailView .table-view .column-header-background .label{
+
+}
+
+/**
+table-row-cell of the table-view of DetailView
+ */
+.DetailView .table-view .table-row-cell{
+
+}
+
+/**
+All buttons in DetailView
+ */
+.DetailView .button{
+
+}
+/**
+All label in DetailView
+ */
+.DetailView .label{
+
+}
+
+/**
+The image view of DetailView
+ */
+.DetailView #image{
+
+}
+
+/**
+Type of the information of DetailView
+ */
+.DetailView #typeLabel{
+
+}
+
+/**
+Name of the subject displayed in DetailView
+ */
+.DetailView #nameLabel{
+
+}
+
+/**
+Add all to queue button in DetailView
+ */
+.DetailView #addAllButton{
+
+}
+
+/**
+Close button in DetailView
+ */
+.DetailView #closeButton{
+
+}
+
+
+
+
