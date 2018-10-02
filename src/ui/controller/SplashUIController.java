@@ -55,7 +55,7 @@ public class SplashUIController implements Initializable, ControlledView {
             txtUser.setText("");
             txtPass.setText("");
             txtUser.requestFocus();
-         }
+            }
       } else {
          Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
          loginFailAlert.setTitle("Login Failed");
@@ -85,6 +85,17 @@ public class SplashUIController implements Initializable, ControlledView {
                UserExistsAlert.setContentText(message);
                UserExistsAlert.show();
            }
+       } else {
+           Alert registerFailAlert = new Alert(Alert.AlertType.INFORMATION);
+           registerFailAlert.setTitle("Register Failed");
+           registerFailAlert.setHeaderText("Register Error");
+           String message = "Please Enter a Valid Username and Password.";
+           registerFailAlert.setContentText(message);
+           registerFailAlert.show();
+
+           txtPass.setText("");
+           txtUser.setText("");
+           txtUser.requestFocus();
        }
    }
 }
