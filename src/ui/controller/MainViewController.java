@@ -109,4 +109,10 @@ public class MainViewController implements Initializable, ControlledView {
    }
 
 
-}
+   @FXML
+   public void trySignOut() {
+       router.setView("splash");
+   }
+
+
+   }

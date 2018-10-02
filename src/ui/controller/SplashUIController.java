@@ -28,10 +28,6 @@ public class SplashUIController implements Initializable, ControlledView {
    private PasswordField txtPass;
    @FXML
    private TextField txtUser;
-   @FXML
-   private Button btnSignIn;
-   @FXML
-   private Button btnRegister;
 
    @Override
    public void initialize(URL location, ResourceBundle resources) {
@@ -59,7 +55,7 @@ public class SplashUIController implements Initializable, ControlledView {
             txtUser.setText("");
             txtPass.setText("");
             txtUser.requestFocus();
-         }
+            }
       } else {
          Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
          loginFailAlert.setTitle("Login Failed");
@@ -76,7 +72,30 @@ public class SplashUIController implements Initializable, ControlledView {
 
    @FXML
    void tryRegister() {
+       if (!txtUser.getText().isEmpty() && !txtPass.getText().isEmpty()) {
+           try {
+               DM.registerUser(txtUser.getText(), txtPass.getText());
+               System.out.println("User successfully registered.");
+               clickedSignOn();
+           } catch (IllegalArgumentException ex) {
+               Alert UserExistsAlert = new Alert(Alert.AlertType.INFORMATION);
+               UserExistsAlert.setTitle("User Exists");
+               UserExistsAlert.setHeaderText("Register Error");
+               String message = "This user already exists, please log in.";
+               UserExistsAlert.setContentText(message);
+               UserExistsAlert.show();
+           }
+       } else {
+           Alert registerFailAlert = new Alert(Alert.AlertType.INFORMATION);
+           registerFailAlert.setTitle("Register Failed");
+           registerFailAlert.setHeaderText("Register Error");
+           String message = "Please Enter a Valid Username and Password.";
+           registerFailAlert.setContentText(message);
+           registerFailAlert.show();
 
+           txtPass.setText("");
+           txtUser.setText("");
+           txtUser.requestFocus();
+       }
    }
-
 }

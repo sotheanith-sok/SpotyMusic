@@ -26,7 +26,8 @@ public class Main extends Application {
         mainRouter.loadView(mainID, mainFile);
         mainRouter.loadView(splashID, splashFile);
 
-/*        Parent root = null;
+
+/*      Parent root = null;
         try {
             root = FXMLLoader.load(getClass().getResource("ui/view/MainView.fxml"));
         } catch (IOException e) {
@@ -44,6 +45,7 @@ public class Main extends Application {
           Platform.exit();
             System.exit(0);
        });
+        primaryStage.setScene(scene);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
