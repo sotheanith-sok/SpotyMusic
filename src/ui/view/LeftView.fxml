@@ -52,7 +52,7 @@
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </HBox.margin>
                         </Button>
-                        <Button id="signOutButton" mnemonicParsing="false" text="Sign Out">
+                        <Button id="signOutButton" fx:id="btnSignOut" mnemonicParsing="false" onAction="#trySignOut" text="Sign Out">
                            <HBox.margin>
                               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                            </HBox.margin>

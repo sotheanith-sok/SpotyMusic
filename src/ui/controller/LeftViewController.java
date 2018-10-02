@@ -74,6 +74,12 @@ public class LeftViewController implements Initializable {
 
    }
 
+   @FXML //switches view to splash
+   public void trySignOut() {
+      System.out.println("Sign Out Successful");
+      parentViewController.trySignOut();
+   }
+
    public ObservableList<Library> getPlaylistObservableList() {
       return libraryObservableList;
    }
