@@ -8,21 +8,21 @@ Everything
  */
 
 .MainView *{
-    -fx-text-fill: #533852;
+    -fx-text-fill: #000000;
 }
 
 /**
 MainView only
  */
 .MainView {
-    -fx-background-color: #ff79bc;
+    -fx-background-color: #BFD8D2;
 }
 
 /**
 All buttons
  */
 .MainView .button{
-    -fx-background-color: #98edb7;
+    -fx-background-color: #DF744A;
 }
 
 
@@ -58,14 +58,14 @@ Leftview only
 All buttons in left view.
  */
 .LeftView .button{
-    -fx-background-color: #ea9ced;
+    -fx-background-color: #DF744A;
 }
 
 /**
 Library selection list-view of the left view.
  */
 .LeftView .list-view{
-    -fx-background-color: #ff79bc
+    -fx-background-color: #BFD8D2
 }
 
 /**
@@ -106,13 +106,13 @@ Right view only
 TabPane  of right view
  */
 .RightView .tab-pane .tab-header-background {
-    -fx-background-color: #ff79bc;
+    -fx-background-color: #BFD8D2;
 }
 /**
 Tabs of Tab-pane of right view
  */
 .RightView .tab{
-    -fx-background-color: #ff79bc;
+    -fx-background-color: #BFD8D2;
 }
 
 /**
@@ -126,20 +126,20 @@ Labels insde tab-pane of right view
 Search bar of the right view
  */
 .RightView .text-field *{
-    -fx-background-color: #ea9ced;
+    -fx-background-color: #c8a69d;
 }
 
 .RightView .text-field{
-    -fx-background-color: #373737;
+    -fx-background-color: #DF744A;
     -fx-min-height: 30;
-    -fx-prompt-text-fill: #533852;
+    -fx-prompt-text-fill: #a17f77;
 }
 
 /**
 Search button of the right view
  */
 .RightView #searchButton{
-    -fx-text-fill: #533852;
+    -fx-text-fill: #000000;
 
 }
 
@@ -181,14 +181,14 @@ Song scrubbing slider in Bottom View
 Slider bar color
  */
 .BottomView #songScrubbingSlider .track{
-    -fx-background-color: #e3c3ed;
+    -fx-background-color: #c4a39b;
 }
 
 /*
 Slider thumb color
  */
 .BottomView #songScrubbingSlider .thumb{
-    -fx-background-color: #07d1e0;
+    -fx-background-color: #DCB239;
 }
 
 
@@ -203,21 +203,21 @@ Volume slider in Bottom View
 Slider bar color
  */
 .BottomView #volumeSlider .track{
-    -fx-background-color: #e3c3ed;
+    -fx-background-color: #FEDCD2;
 }
 
 /*
 Slider thumb color
  */
 .BottomView #volumeSlider .thumb{
-    -fx-background-color: #07d1e0;
+    -fx-background-color: #DCB239;
 }
 
 /***
 slider label color
  */
 .BottomView #volumeSlider .axis{
-    -fx-tick-label-fill: #533852;
+    -fx-tick-label-fill: #a17f77;
 }
 
 /**
@@ -234,7 +234,7 @@ slider label color
 Song title label in Bottom View
  */
 .BottomView #titleLabel{
-    -fx-text-fill: #533852;
+    -fx-text-fill: #a17f77;
 
 }
 
@@ -242,7 +242,7 @@ Song title label in Bottom View
 Timestamp label in Bottom View
  */
 .BottomView #timestampLabel{
-    -fx-text-fill: #533852;
+    -fx-text-fill: #a17f77;
 
 }
 
@@ -270,7 +270,7 @@ Next button in Bottom View
 PlaylistListView and its children
  */
 .PlaylistListView *{
-    -fx-background-color: #ff79bc;
+    -fx-background-color: #DF744A;
 }
 /**
 PlaylistListView only
@@ -302,13 +302,13 @@ All buttons of PlaylistListView
 Create button of PlaylistListView
  */
 .PlaylistListView #createButton{
-    -fx-background-color: #ea9ced;
+    -fx-background-color: #DF744A;
 }
 /**
 Delete button of PlaylistListView
  */
 .PlaylistListView #deleteButton{
-    -fx-background-color: #98edb7;
+    -fx-background-color: #DF744A;
 
 }
 
@@ -316,7 +316,7 @@ Delete button of PlaylistListView
 QueueView and its children
  */
 .QueueView *{
-    -fx-background-color: #ff79bc;
+    -fx-background-color: #BFD8D2;
 }
 /**
 QueueView only
