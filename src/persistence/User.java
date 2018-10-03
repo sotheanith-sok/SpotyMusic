@@ -95,6 +95,16 @@ public class User {
     }
 
     /**
+     * Sets the name of the user's preferred theme.
+     *
+     * @param name the name of the user's preferred theme
+     */
+    public void setTheme(String name) {
+        this.theme = name;
+        DataManager.getDataManager().saveUsers();
+    }
+
+    /**
      * Returns the name of the user's preferred theme.
      *
      * @return user's theme preference
