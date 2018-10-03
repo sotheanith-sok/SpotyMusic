@@ -5,6 +5,8 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
 import java.util.Map;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 /**
  * The FileImportTask handles importing an audio file from the file system into SpotyMusic's file structure.
@@ -75,7 +77,8 @@ public class FileImportTask implements Runnable {
 
             this.dest.createNewFile();
 
-            BufferedInputStream in = new BufferedInputStream(new FileInputStream(this.src));
+            CheckedInputStream check = new CheckedInputStream(new FileInputStream(this.src), new CRC32());
+            BufferedInputStream in = new BufferedInputStream(check);
             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(this.dest));
             byte[] buffer = new byte[4000];
 
@@ -93,7 +96,7 @@ public class FileImportTask implements Runnable {
             in.close();
             out.close();
 
-            this.handler.onFileImported(title, artist, album, duration, this.dest);
+            this.handler.onFileImported(title, artist, album, duration, this.dest, check.getChecksum().getValue());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -109,7 +112,7 @@ public class FileImportTask implements Runnable {
      */
     @FunctionalInterface
     public interface FileImportedHandler {
-        void onFileImported(String title, String artist, String album, long duration, File path);
+        void onFileImported(String title, String artist, String album, long duration, File path, long checksum);
     }
 
     /**

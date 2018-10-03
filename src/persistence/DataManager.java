@@ -61,7 +61,7 @@ public class DataManager {
     /**
      * A {@link Map} containing all of ths songs in the local library, irrespective of users.
      */
-    private Map<Integer, LocalSong> songs;
+    private Map<Long, LocalSong> songs;
     private int largestId = 0;
 
     /**
@@ -270,9 +270,8 @@ public class DataManager {
     private class OnSongLoaded implements MediaLoader.SongLoadedHandler {
         @Override
         public void onSongLoaded(LocalSong song) {
-            int id = song.getId();
+            long id = song.getId();
             songs.put(id, song);
-            if (id > largestId) largestId = id;
             System.out.print("[DataManager][OnSongLoaded] Song loaded: ");
             System.out.println(song.getTitle());
         }
@@ -295,8 +294,7 @@ public class DataManager {
      */
     private class OnFileImported implements FileImportTask.FileImportedHandler {
         @Override
-        public void onFileImported(String title, String artist, String album, long duration, File path) {
-            int id = ++largestId;
+        public void onFileImported(String title, String artist, String album, long duration, File path, long id) {
             LocalSong newSong = new LocalSong(title, artist, album, duration, path, id);
             songs.put(id, newSong);
             try {

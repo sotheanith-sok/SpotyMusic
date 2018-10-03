@@ -21,14 +21,14 @@ import java.util.concurrent.*;
 public class LibraryLoader implements Callable<Library> {
 
     private final File descriptor;
-    private final Map<Integer, LocalSong> songs;
+    private final Map<Long, LocalSong> songs;
 
     /**
      * Creates a new LibraryLoader that will load library data from the given {@link File}.
      *
      * @param desc the file describing the library to load
      */
-    public LibraryLoader(File desc, Map<Integer, LocalSong> songs) {
+    public LibraryLoader(File desc, Map<Long, LocalSong> songs) {
         this.descriptor = desc;
         this.songs = songs;
     }
@@ -82,7 +82,7 @@ public class LibraryLoader implements Callable<Library> {
                                 if (parser.getText().equals("name")) listName = parser.nextTextValue();
 
                              } else if (token == JsonToken.VALUE_NUMBER_INT) {
-                                listSongs.add(this.songs.get(parser.getIntValue()));
+                                listSongs.add(this.songs.get(parser.nextLongValue(-1)));
                              }
                           }
                           playlists.put(listName, listSongs);
