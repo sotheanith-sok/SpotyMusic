@@ -84,7 +84,6 @@ public class LibraryLoader implements Callable<Library> {
                              } else if (token == JsonToken.VALUE_NUMBER_INT) {
                                 listSongs.add(this.songs.get(parser.getIntValue()));
                              }
-                             token = parser.nextToken();
                           }
                           playlists.put(listName, listSongs);
                           listSongs = new LinkedList<>();
