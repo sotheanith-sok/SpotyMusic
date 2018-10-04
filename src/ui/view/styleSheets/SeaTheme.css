@@ -6,6 +6,48 @@ This the base configuration of the css. Please make a copy before editing. Chang
 /**
 Everything
  */
+.SplashView {
+    -fx-background-color: #333333;
+}
+
+.SplashView Label, .SplashView Text{
+    -fx-fill: #cbf3ff;
+    -fx-text-fill: #cbf3ff;
+}
+
+.SplashView TextField, .SplashView PasswordField{
+    -fx-background-color: #ffffff;
+    -fx-prompt-text-fill: #000000;
+    -fx-text-fill: #000000;
+}
+
+.SplashView Button{
+    -fx-text-fill: #cbf3ff;
+    -fx-background-color: #077381;
+}
+
+.SplashView FontAwesomeIconView {
+    -fx-fill: #cbf3ff;
+}
+
+.myDialog{
+    -fx-background-color: #f9d900;
+}
+.myDialog > *.button-bar > *.container{
+    -fx-background-color: #a9e200;
+}
+.myDialog > *.label.content{
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+.myDialog:header *.header-panel{
+    -fx-background-color: #a59c31;
+}
+.myDialog:header *.header-panel *.label{
+    -fx-font-size: 18px;
+    -fx-font-style: italic;
+    -fx-fill: #292929;
+}
 
 .MainView *{
     -fx-text-fill: #cbf3ff;
@@ -65,7 +107,7 @@ All buttons in left view.
 Library selection list-view of the left view.
  */
 .LeftView .list-view{
-    -fx-background-color: #373737
+    -fx-background-color: #373737;
 }
 
 /**
