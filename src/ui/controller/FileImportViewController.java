@@ -42,7 +42,7 @@ public class FileImportViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-
+        songObservableList=FXCollections.observableArrayList();
        recentlyImportedSongListView.setCellFactory(lv -> new ListCell<String>() {
            @Override
            public void updateItem(String item, boolean empty) {

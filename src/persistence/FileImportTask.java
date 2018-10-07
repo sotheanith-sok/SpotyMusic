@@ -75,7 +75,7 @@ public class FileImportTask implements Runnable {
 
             this.dest = new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album + "/" + this.title);
 
-            this.dest.createNewFile();
+           this.dest.createNewFile();
 
             CheckedInputStream check = new CheckedInputStream(new FileInputStream(this.src), new CRC32());
             BufferedInputStream in = new BufferedInputStream(check);
