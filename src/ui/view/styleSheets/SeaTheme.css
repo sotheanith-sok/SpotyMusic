@@ -86,7 +86,7 @@ RightView and its children.
 BottomView and its children
  */
 .BottomView *{
-
+    -fx-background-color: #333333;
 }
 
 /**
@@ -471,7 +471,7 @@ table-row-cell of the table-view of AlbumListView
 DetailView and its children
  */
 .DetailView *{
-
+    -fx-background-color: #333333;
 }
 /**
 DetailView only
@@ -558,6 +558,9 @@ Close button in DetailView
  */
 .DetailView #closeButton{
 
+}
+.BottomView .menu-button *{
+    -fx-background-color: #077381 ;
 }
 
 
