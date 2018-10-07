@@ -1,13 +1,18 @@
 package ui.controller;
 
+import connect.Song;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import persistence.DataManager;
 
 import java.io.File;
 import java.net.URL;
@@ -23,6 +28,9 @@ public class FileImportViewController implements Initializable {
    private TextField filePath,title,album,artist;
    private Stage stage;
    private File file;
+   private MainViewController mainViewController;
+
+   private ObservableList<String > songObservableList;
 
    /**
     * Called to initialize a controller after its root element has been
@@ -34,7 +42,24 @@ public class FileImportViewController implements Initializable {
     */
    @Override
    public void initialize(URL location, ResourceBundle resources) {
-      stage=new Stage();
+
+       recentlyImportedSongListView.setCellFactory(lv -> new ListCell<String>() {
+           @Override
+           public void updateItem(String item, boolean empty) {
+               super.updateItem(item, empty);
+               if (empty) {
+                   //sets text to null if there is no information
+                   setText(null);
+               } else {
+                   //gets Playlist name string and sets the text to it
+                   setText(item);
+               }
+           }
+       });
+
+
+
+       filePath.setEditable(false);
       browseButton.setOnMouseClicked(event -> {
          openFileChooser();
       });
@@ -46,6 +71,12 @@ public class FileImportViewController implements Initializable {
       });
    }
 
+   public void setStage(Stage stage){
+       this.stage=stage;
+   }
+   public void setParentController(MainViewController controller){
+    this.mainViewController=controller;
+   }
    private void openFileChooser(){
       FileChooser fileChooser =new FileChooser();
       fileChooser.setTitle("Choose song");
@@ -71,6 +102,11 @@ public class FileImportViewController implements Initializable {
       }
       if(artist.getText().isEmpty()){
          artist.setPromptText("[Information Needed]");
+      }
+      if(!filePath.getText().isEmpty() && !title.getText().isEmpty() &&!album.getText().isEmpty()&&!artist.getText().isEmpty()){
+          DataManager.getDataManager().importFile(file,title.getText(),artist.getText(),album.getText());
+          songObservableList.add(title.getText());
+          stage.close();
       }
    }
 

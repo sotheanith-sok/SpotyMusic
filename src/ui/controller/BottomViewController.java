@@ -228,6 +228,8 @@ public class BottomViewController implements Initializable {
          fxmlLoader.setLocation(getClass().getResource("/ui/view/FileImportView.fxml"));
          Scene scene = new Scene(fxmlLoader.load(), 600, 400);
          Stage stage = new Stage();
+          ((FileImportViewController)fxmlLoader.getController()).setStage(stage);
+          ((FileImportViewController)fxmlLoader.getController()).setParentController(parentViewController);
          stage.setTitle("Import song");
          stage.setScene(scene);
          stage.show();
