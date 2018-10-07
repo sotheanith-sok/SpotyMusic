@@ -1,0 +1,72 @@
+.MainView{
+    -fx-background-color: #4f4f4f;
+}
+
+.LeftView #welcomeLabel{
+    -fx-text-fill: #00fffe;
+}
+
+.LeftView .button{
+    -fx-text-fill: #000000;
+    -fx-background-color: #00fffe;
+}
+.LeftView .list-view{
+    -fx-background-color: #555555;
+}
+.BottomView .label{
+    -fx-text-fill: #00fffe;
+}
+
+.BottomView .slider .track{
+    -fx-background-color: #00fffe;
+}
+.BottomView .slider .thumb{
+    -fx-background-color: #00c9c8;
+}
+
+.BottomView .slider .axis {
+    -fx-tick-label-fill: #00fffe;
+}
+.BottomView .slider .axis .axis-tick-mark, .BottomView .slider .axis .axis-minor-tick-mark{
+    -fx-fill: transparent;
+    -fx-stroke: #00fffe;
+}
+.BottomView .button{
+    -fx-text-fill: #000000;
+    -fx-background-color: #00fffe;
+}
+.RightView {
+      -fx-background-color: #4f4f4f;
+  }
+
+.RightView .tab-header-background{
+    -fx-background-color: #4f4f4f;
+}
+.RightView .tab-label, .RightView .tab{
+    -fx-background-color: #00fffe;
+}
+.RightView .text-field{
+    -fx-background-color: #555555;
+    -fx-text-fill: #00fffe;
+    -fx-prompt-text-fill: #00fffe;
+}
+.RightView #searchButton{
+    -fx-text-fill: #000000;
+    -fx-background-color: #00fffe;
+}
+
+.QueueView .table-view .placeholder, .QueueView .table-view{
+    -fx-background-color: #4f4f4f;
+}
+
+.QueueView .table-view .filler{
+    -fx-background-color: #4f4f4f;
+
+}
+
+.QueueView .table-view .column-header{
+    -fx-background-color: #555555;
+}
+.QueueView .table-view .label{
+    -fx-text-fill: #00fffe;
+}
