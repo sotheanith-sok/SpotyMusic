@@ -82,6 +82,7 @@ public class BottomViewController implements Initializable {
          scrubbingSliderControl = true;
       });
 
+
       // previous song button
       previousSongBtn.setOnMouseClicked(e -> playPreviousSong());
       playPauseSongBtn.setOnMouseClicked(e -> playOrPauseSong());
@@ -89,6 +90,7 @@ public class BottomViewController implements Initializable {
 
       // volume slider
       volumeSlider.setOnMouseDragged(e -> adjustVolume(volumeSlider.getValue()));
+      volumeSlider.setOnMouseClicked(event -> adjustVolume(volumeSlider.getValue()));
 
       Timeline timeline = new Timeline(new KeyFrame(Duration.millis(250), ae -> updateUIElements()));
       timeline.setCycleCount(Animation.INDEFINITE);

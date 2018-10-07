@@ -82,6 +82,7 @@ public class FileImportViewController implements Initializable {
       fileChooser.setTitle("Choose song");
       fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("WAV","*.wav"));
       file =fileChooser.showOpenDialog(stage);
+      System.out.println(file.getPath());
 
       if(file!=null){
          filePath.setText(file.getPath());

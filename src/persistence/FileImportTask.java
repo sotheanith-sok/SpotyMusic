@@ -72,7 +72,7 @@ public class FileImportTask implements Runnable {
             }
 
             long duration = Math.round(format.getFrameLength() / format.getFormat().getFrameRate());
-
+            (new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album)).mkdirs();
             this.dest = new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album + "/" + this.title);
 
            this.dest.createNewFile();
