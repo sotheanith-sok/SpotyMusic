@@ -42,6 +42,8 @@ public class LibraryLoader implements Callable<Library> {
             return new LocalLibrary(new LinkedList<>(), new HashMap<>());
         }
 
+        System.out.println("[LibraryLoader] There are " + this.songs.size() + " songs loaded");
+
         LinkedList<LocalSong> songs = new LinkedList<>();
 
         HashMap<String, List<LocalSong>> playlists = new HashMap<>();
@@ -61,11 +63,17 @@ public class LibraryLoader implements Callable<Library> {
                     while ((token = parser.nextToken()) != JsonToken.START_ARRAY);
                     while (token != JsonToken.END_ARRAY) {
                         if (token == JsonToken.VALUE_NUMBER_INT) {
-                            int val = parser.getIntValue();
-                            System.out.print("[LibraryLoader] Song ");
-                            System.out.print(val);
-                            System.out.println(" added to library");
-                            songs.add(this.songs.get(val));
+                            long val = parser.getLongValue();
+                            if (this.songs.containsKey(val)) {
+                                System.out.print("[LibraryLoader] Song ");
+                                System.out.print(val);
+                                System.out.println(" added to library");
+                                songs.add(this.songs.get(val));
+
+                            } else {
+                                System.err.print("[LibraryLoader] Library references nonexistent song ID: ");
+                                System.err.println(val);
+                            }
                         }
                         token = parser.nextToken();
                     }
@@ -82,7 +90,13 @@ public class LibraryLoader implements Callable<Library> {
                                 if (parser.getText().equals("name")) listName = parser.nextTextValue();
 
                              } else if (token == JsonToken.VALUE_NUMBER_INT) {
-                                listSongs.add(this.songs.get(parser.nextLongValue(-1)));
+                                 long id = parser.nextLongValue(-1);
+                                 if (id!= -1 && this.songs.containsKey(id)) {
+                                     listSongs.add(this.songs.get(id));
+
+                                 } else {
+                                     System.err.println("[LibraryLoader] Playlist contains nonexistent song");
+                                 }
                              }
                           }
                           playlists.put(listName, listSongs);
