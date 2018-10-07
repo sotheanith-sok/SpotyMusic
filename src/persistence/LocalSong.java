@@ -71,7 +71,7 @@ public class LocalSong implements Song {
             else if (fieldName == "album") album = parser.nextTextValue();
             else if (fieldName == "path") path = parser.nextTextValue();
             else if (fieldName == "duration") duration = parser.nextLongValue(0);
-            else if (fieldName == "id") id = parser.nextIntValue(0);
+            else if (fieldName == "id") id = parser.nextLongValue(0);
          }
 
          token = parser.nextToken();
