@@ -273,7 +273,10 @@ public class DataManager {
             long id = song.getId();
             songs.put(id, song);
             System.out.print("[DataManager][OnSongLoaded] Song loaded: ");
-            System.out.println(song.getTitle());
+            System.out.print(song.getTitle());
+            System.out.print(" (");
+            System.out.print(song.getId());
+            System.out.println(")");
         }
     }
 
