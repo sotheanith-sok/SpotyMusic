@@ -75,6 +75,16 @@
                   </Slider>
                </children>
             </AnchorPane>
+            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" GridPane.rowIndex="2">
+               <children>
+                  <MenuButton mnemonicParsing="false" popupSide="TOP" text="Menu">
+                    <items>
+                      <MenuItem fx:id="importSong" mnemonicParsing="false" text="Import Song" />
+                      <MenuItem fx:id="theme" mnemonicParsing="false" text="Theme" />
+                    </items>
+                  </MenuButton>
+               </children>
+            </VBox>
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
