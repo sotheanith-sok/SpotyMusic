@@ -23,7 +23,7 @@ public class LocalSong implements Song {
    private String album;
    private long duration;
    private Library lib;
-   private int id;
+   private long id;
    private File path;
 
    /**
@@ -36,7 +36,7 @@ public class LocalSong implements Song {
     * @param path     the path to the file containing the song
     * @param id       the ID number of the song
     */
-   protected LocalSong(String title, String artist, String album, long duration, File path, int id) {
+   protected LocalSong(String title, String artist, String album, long duration, File path, long id) {
       this.title = title;
       this.artist = artist;
       this.album = album;
@@ -59,7 +59,7 @@ public class LocalSong implements Song {
       String artist = null;
       long duration = 0;
       String path = null;
-      int id = 0;
+      long id = 0;
 
       JsonToken token = parser.currentToken();
       while (token != JsonToken.END_OBJECT) {
@@ -77,14 +77,14 @@ public class LocalSong implements Song {
          token = parser.nextToken();
       }
 
-      if (title == null || album == null || artist == null || path == null) {
+      if (title == null || album == null || artist == null || path == null || id == 0) {
          // not enough info to make LocalSong
          System.out.println("[LocalSong][loadSong] Not enough data to load song");
          return null;
       }
 
-      System.out.print("[LocalSong][LoadSong] Loaded Song ");
-      System.out.println(title);
+      //System.out.print("[LocalSong][LoadSong] Loaded Song ");
+      //System.out.println(title);
       return new LocalSong(title, artist, album, duration, new File(path), id);
    }
 
@@ -94,7 +94,7 @@ public class LocalSong implements Song {
     *
     * @return song ID number
     */
-   public int getId() {
+   public long getId() {
       return this.id;
    }
 

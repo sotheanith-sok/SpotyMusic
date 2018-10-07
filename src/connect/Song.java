@@ -35,9 +35,9 @@ public interface Song {
     String getAlbumTitle();
 
     /**
-     * Returns the duration of the Song in <em>microseconds</em>.
+     * Returns the duration of the Song in seconds.
      *
-     * @return duration in micros
+     * @return duration in seconds
      */
     long getDuration();
 
