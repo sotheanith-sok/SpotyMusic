@@ -77,14 +77,14 @@ public class LocalSong implements Song {
          token = parser.nextToken();
       }
 
-      if (title == null || album == null || artist == null || path == null) {
+      if (title == null || album == null || artist == null || path == null || id == 0) {
          // not enough info to make LocalSong
          System.out.println("[LocalSong][loadSong] Not enough data to load song");
          return null;
       }
 
-      System.out.print("[LocalSong][LoadSong] Loaded Song ");
-      System.out.println(title);
+      //System.out.print("[LocalSong][LoadSong] Loaded Song ");
+      //System.out.println(title);
       return new LocalSong(title, artist, album, duration, new File(path), id);
    }
 
