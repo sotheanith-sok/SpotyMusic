@@ -49,7 +49,7 @@ public class SplashUIController implements Initializable, ControlledView {
             noSuchUserAlert.setContentText(message);
 
             DialogPane dPane = noSuchUserAlert.getDialogPane();
-            dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+            dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
             dPane.getStyleClass().add("myDialog");
 
             noSuchUserAlert.show();
@@ -66,7 +66,7 @@ public class SplashUIController implements Initializable, ControlledView {
          loginFailAlert.setContentText(message);
 
          DialogPane dPane = loginFailAlert.getDialogPane();
-         dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+         dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
          dPane.getStyleClass().add("myDialog");
 
          loginFailAlert.show();
@@ -92,7 +92,7 @@ public class SplashUIController implements Initializable, ControlledView {
                UserExistsAlert.setContentText(message);
 
                DialogPane dPane = UserExistsAlert.getDialogPane();
-               dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+               dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
                dPane.getStyleClass().add("myDialog");
 
                UserExistsAlert.show();
@@ -105,7 +105,7 @@ public class SplashUIController implements Initializable, ControlledView {
            registerFailAlert.setContentText(message);
 
            DialogPane dPane = registerFailAlert.getDialogPane();
-           dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+           dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
            dPane.getStyleClass().add("myDialog");
 
 
