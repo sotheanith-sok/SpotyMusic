@@ -55,16 +55,16 @@ public class PlaylistListViewController implements Initializable {
        */
       listView.setCellFactory(lv -> new ListCell<Playlist>() {
          @Override
-         public void updateItem(Playlist item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty) {
-               //sets text to null if there is no information
-               setText(null);
-            } else {
-               //gets Playlist name string and sets the text to it
-               setText(item.getName());
-            }
-         }
+          public void updateItem(Playlist item, boolean empty) {
+              super.updateItem(item, empty);
+              if (empty) {
+                  //sets text to null if there is no information
+                  setText(null);
+              } else {
+                  //gets Playlist name string and sets the text to it
+                  setText(item.getName());
+              }
+          }
       });
 
       listView.setItems(playlistObservableList);

@@ -83,6 +83,7 @@ public class LocalPlaylist implements Playlist, ListChangeListener<LocalSong> {
 
    @Override
    public void onChanged(Change<? extends LocalSong> c) {
+      c.next();
       if (c.wasRemoved()) {
          this.songs.removeAll(c.getRemoved());
          // we can call saveLibrary even if whatever removed a song already did, because saveLibrary is debounced
