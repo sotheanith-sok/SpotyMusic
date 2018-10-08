@@ -1,0 +1,199 @@
+/**
+Awesome neon theme by Sotheanith Sok
+ */
+
+.SplashView {
+    -fx-background-color: #333333;
+}
+
+.SplashView Label, .SplashView Text{
+    -fx-fill: #cbf3ff;
+    -fx-text-fill: #cbf3ff;
+}
+
+.SplashView TextField, .SplashView PasswordField{
+    -fx-background-color: #ffffff;
+    -fx-prompt-text-fill: #000000;
+    -fx-text-fill: #000000;
+}
+
+.SplashView Button{
+    -fx-text-fill: #cbf3ff;
+    -fx-background-color: #077381;
+}
+
+.SplashView FontAwesomeIconView {
+    -fx-fill: #cbf3ff;
+}
+
+.myDialog{
+    -fx-background-color: #f9d900;
+}
+.myDialog > *.button-bar > *.container{
+    -fx-background-color: #a9e200;
+}
+.myDialog > *.label.content{
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+.myDialog:header *.header-panel{
+    -fx-background-color: #a59c31;
+}
+.myDialog:header *.header-panel *.label{
+    -fx-font-size: 18px;
+    -fx-font-style: italic;
+    -fx-fill: #292929;
+}
+
+
+/**
+Change background color from the top
+ */
+.MainView *{
+    -fx-text-fill: #08eaff;
+
+}
+.MainView{
+    -fx-background-color: #333333;
+}
+.MainView .button{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+}
+
+/**
+Style bottomview by itself
+ */
+.BottomView .slider .track{
+    -fx-background-color: #077381;
+}
+.BottomView .slider .thumb{
+    -fx-background-color: #07b2c1;
+}
+
+.BottomView .slider .axis {
+    -fx-tick-label-fill: #08eaff;
+}
+.BottomView .slider .axis .axis-tick-mark, .BottomView .slider .axis .axis-minor-tick-mark{
+    -fx-fill: null;
+    -fx-stroke: #07b2c1
+}
+.BottomView .menu-button *{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+
+}
+.BottomView .menu-button:selected{
+    -fx-background-color: transparent;
+}
+
+.RightView .tab-pane .tab .tab-label , .RightView .tab-pane .tab-header-area .tab{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+}
+
+/**
+Style the tab-pane header
+ */
+.RightView .tab-pane .tab-header-background{
+    -fx-background-color: #333333;
+}
+
+.RightView #searchText{
+    -fx-background-color:#373737;
+    -fx-text-fill: #08eaff;
+    -fx-prompt-text-fill: #08eaff;
+}
+
+/**
+Style all table-view
+ */
+.table-view{
+    -fx-background-color: #333333;
+}
+.table-view .arrow{
+    -fx-background-color:#08eaff ;
+}
+
+.table-view .column-header-background .filler {
+    -fx-background-color: #333333;
+}
+.table-view .placeholder{
+    -fx-background-color: #333333;
+}
+.table-view .column-header{
+    -fx-background-color: #333333;
+}
+
+.table-view .table-row-cell{
+    -fx-background-color:  #373737;
+    -fx-table-cell-border-color: #00fffe;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #4f4f4f;
+}
+
+/**
+Style all list-view
+ */
+.list-view{
+    -fx-background-color: #333333;
+}
+.list-view .list-cell{
+    -fx-background-color:  #373737;
+}
+.list-view .list-cell:selected{
+    -fx-background-color:  #4f4f4f;
+}
+.LeftView .list-view{
+    -fx-background-color: #373737;
+}
+
+/**
+Style detailview
+ */
+.DetailView{
+    -fx-background-color: #333333;
+}
+
+.FileImportView *{
+    -fx-text-fill: #08eaff;
+
+}
+.FileImportView{
+    -fx-background-color: #333333;
+}
+.FileImportView .button{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+}
+.FileImportView .text-field{
+    -fx-background-color:#4f4f4f;
+    -fx-text-fill: #08eaff;
+    -fx-prompt-text-fill: #08eaff;
+}
+.FileImportView .list-view{
+    -fx-background-color: #373737;
+}
+.ThemeSelectorView .label{
+    -fx-text-fill:  #08eaff;
+}
+.ThemeSelectorView {
+    -fx-background-color: #333333;
+}
+
+.ThemeSelectorView .list-view{
+    -fx-background-color: #333333;
+}
+.ThemeSelectorView .list-view .list-cell{
+    -fx-background-color:  #373737;
+    -fx-text-fill: #08eaff;
+}
+.ThemeSelectorView .list-view .list-cell:selected{
+    -fx-background-color:  #4f4f4f;
+}
+.ThemeSelectorView .button{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+}
