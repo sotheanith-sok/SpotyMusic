@@ -1,72 +1,99 @@
+/**
+Change background color from the top
+ */
+.MainView *{
+    -fx-text-fill: #08eaff;
+
+}
 .MainView{
-    -fx-background-color: #4f4f4f;
+    -fx-background-color: #333333;
+}
+.MainView .button{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
 }
 
-.LeftView #welcomeLabel{
-    -fx-text-fill: #00fffe;
-}
-
-.LeftView .button{
-    -fx-text-fill: #000000;
-    -fx-background-color: #00fffe;
-}
-.LeftView .list-view{
-    -fx-background-color: #555555;
-}
-.BottomView .label{
-    -fx-text-fill: #00fffe;
-}
-
+/**
+Style bottomview by itself
+ */
 .BottomView .slider .track{
-    -fx-background-color: #00fffe;
+    -fx-background-color: #077381;
 }
 .BottomView .slider .thumb{
-    -fx-background-color: #00c9c8;
+    -fx-background-color: #07b2c1;
 }
 
 .BottomView .slider .axis {
-    -fx-tick-label-fill: #00fffe;
+    -fx-tick-label-fill: #08eaff;
 }
 .BottomView .slider .axis .axis-tick-mark, .BottomView .slider .axis .axis-minor-tick-mark{
-    -fx-fill: transparent;
-    -fx-stroke: #00fffe;
+    -fx-fill: null;
+    -fx-stroke: #07b2c1
 }
-.BottomView .button{
-    -fx-text-fill: #000000;
-    -fx-background-color: #00fffe;
-}
-.RightView {
-      -fx-background-color: #4f4f4f;
-  }
 
-.RightView .tab-header-background{
+.RightView .tab-pane .tab .tab-label , .RightView .tab-pane .tab-header-area .tab{
+    -fx-background-color: #077381;
+    -fx-text-fill: #cbf3ff;
+}
+
+/**
+Style the tab-pane header
+ */
+.RightView .tab-pane .tab-header-background{
+    -fx-background-color: #333333;
+}
+
+.RightView #searchText{
+    -fx-background-color:#373737;
+    -fx-text-fill: #08eaff;
+    -fx-prompt-text-fill: #08eaff;
+}
+
+/**
+Style all table-view
+ */
+.table-view{
+    -fx-background-color: #333333;
+}
+.table-view .arrow{
+    -fx-background-color:#08eaff ;
+}
+
+.table-view .column-header-background .filler {
+    -fx-background-color: #333333;
+}
+.table-view .placeholder{
+    -fx-background-color: #333333;
+}
+.table-view .column-header{
+    -fx-background-color: #333333;
+}
+
+.table-view .table-row-cell{
+    -fx-background-color:  #373737;
+    -fx-table-cell-border-color: #00fffe;
+}
+
+.table-view .table-row-cell:selected {
     -fx-background-color: #4f4f4f;
 }
-.RightView .tab-label, .RightView .tab{
-    -fx-background-color: #00fffe;
+
+/**
+Style all list-view
+ */
+.list-view{
+    -fx-background-color: #333333;
 }
-.RightView .text-field{
-    -fx-background-color: #555555;
-    -fx-text-fill: #00fffe;
-    -fx-prompt-text-fill: #00fffe;
+.list-view .list-cell{
+    -fx-background-color:  #373737;
 }
-.RightView #searchButton{
-    -fx-text-fill: #000000;
-    -fx-background-color: #00fffe;
+.list-view .list-cell:selected{
+    -fx-background-color:  #4f4f4f;
+}
+/**
+Style detailview
+ */
+.DetailView{
+    -fx-background-color: #333333;
 }
 
-.QueueView .table-view .placeholder, .QueueView .table-view{
-    -fx-background-color: #4f4f4f;
-}
-
-.QueueView .table-view .filler{
-    -fx-background-color: #4f4f4f;
-
-}
-
-.QueueView .table-view .column-header{
-    -fx-background-color: #555555;
-}
-.QueueView .table-view .label{
-    -fx-text-fill: #00fffe;
-}
