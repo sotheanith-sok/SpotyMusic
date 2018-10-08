@@ -4,6 +4,8 @@ import connect.Song;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
@@ -24,6 +26,9 @@ public class MainViewController implements Initializable, ControlledView {
     private RightViewController rightViewController;
     @FXML
     private BottomViewController bottomViewController;
+
+    @FXML
+    private Pane container;
 
     private String currentTheme = "Default";
 
@@ -51,6 +56,7 @@ public class MainViewController implements Initializable, ControlledView {
         leftViewController.setParentViewController(this);
         rightViewController.setParentViewController(this);
         bottomViewController.setParentViewController(this);
+
     }
 
 
@@ -72,9 +78,9 @@ public class MainViewController implements Initializable, ControlledView {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
-        this.setTheme(DataManager.getDataManager().getCurrentUser().getTheme());
+        this.setTheme("Default");
+
     }
 
     /**
@@ -87,16 +93,26 @@ public class MainViewController implements Initializable, ControlledView {
      */
     public void setTheme(String name) {
         if (THEMES.containsKey(name)) {
-            ObservableList<String> stylesheets = this.router.getScene().getStylesheets();
-            stylesheets.remove(THEMES.get(this.currentTheme));
+            ObservableList<String> stylesheets = container.getStylesheets();
+            stylesheets.clear();
             stylesheets.add(THEMES.get(name));
             this.currentTheme = name;
+            DataManager.getDataManager().getCurrentUser().setTheme(name);
 
         } else {
             System.err.print("[MainViewController][setTheme] Unknown theme: ");
             System.err.println(name);
         }
     }
+
+    public String getCurrentTheme(){
+        if(THEMES.containsKey(currentTheme)){
+            return THEMES.get(currentTheme);
+        }else{
+            return THEMES.get("Default");
+        }
+    }
+
 
     /**
      * This function is used to access the next song that should be play. It should be called from the BottomViewController.
@@ -145,7 +161,6 @@ public class MainViewController implements Initializable, ControlledView {
 
     static {
         THEMES = new HashMap<>();
-
         THEMES.put("Default", MainViewController.class.getResource("/ui/view/styleSheets/Default.css").toExternalForm());
         THEMES.put("Sea", MainViewController.class.getResource("/ui/view/styleSheets/SeaTheme.css").toExternalForm());
         THEMES.put("Pastel", MainViewController.class.getResource("/ui/view/styleSheets/PastelTheme.css").toExternalForm());
