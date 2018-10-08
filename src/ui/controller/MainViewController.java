@@ -165,5 +165,6 @@ public class MainViewController implements Initializable, ControlledView {
         THEMES.put("Default", MainViewController.class.getResource("/ui/view/styleSheets/Default.css").toExternalForm());
         THEMES.put("Neon", MainViewController.class.getResource("/ui/view/styleSheets/NeonTheme.css").toExternalForm());
         THEMES.put("Pastel", MainViewController.class.getResource("/ui/view/styleSheets/PastelTheme.css").toExternalForm());
+       THEMES.put("PurpleFlurp", MainViewController.class.getResource("/ui/view/styleSheets/PurpleFlurp.css").toExternalForm());
     }
 }
