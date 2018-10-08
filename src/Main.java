@@ -41,6 +41,7 @@ public class Main extends Application {
         root.getChildren().addAll(mainRouter);
         Scene scene = new Scene(root, 1280, 720);
 
+
         primaryStage.setTitle("Spusic");
         //primaryStage.getIcons().add(new Image(logoFile));
 

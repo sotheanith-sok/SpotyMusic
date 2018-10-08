@@ -116,13 +116,10 @@ public class LocalLibrary implements Library {
 
     @Override
     public ObservableList<? extends Song> getSongsByArtist(String artist) {
-        System.out.println("KAPPA");
         if (this.artistSongs.containsKey(artist)) {
-            System.out.println("KAPPA1");
             return this.artistSongs.get(artist);
 
         } else {
-            System.out.println("KAPPA2");
             ObservableList<LocalSong> artistSongs = this.songs.filtered(song -> song.getArtist().equals(artist));
             this.artistSongs.put(artist, artistSongs);
             return artistSongs;

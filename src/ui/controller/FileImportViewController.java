@@ -1,15 +1,15 @@
 package ui.controller;
 
-import connect.Song;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import persistence.DataManager;
@@ -28,8 +28,10 @@ public class FileImportViewController implements Initializable {
    private TextField filePath,title,album,artist;
    private Stage stage;
    private File file;
-   private MainViewController mainViewController;
+   private MainViewController parentViewController;
 
+   @FXML
+   private Pane container;
    private ObservableList<String > songObservableList;
 
    /**
@@ -69,21 +71,20 @@ public class FileImportViewController implements Initializable {
       cancelButton.setOnMouseClicked(event -> {
          cancel();
       });
+
    }
 
    public void setStage(Stage stage){
        this.stage=stage;
    }
    public void setParentController(MainViewController controller){
-    this.mainViewController=controller;
+    this.parentViewController =controller;
    }
    private void openFileChooser(){
       FileChooser fileChooser =new FileChooser();
       fileChooser.setTitle("Choose song");
       fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("WAV","*.wav"));
       file =fileChooser.showOpenDialog(stage);
-      System.out.println(file.getPath());
-
       if(file!=null){
          filePath.setText(file.getPath());
          title.setText(file.getName().replaceFirst("[.][^.]+$", ""));
@@ -115,5 +116,9 @@ public class FileImportViewController implements Initializable {
       stage.close();
    }
 
+   public void updateStyleSheet(){
+       container.getStylesheets().clear();
+       container.getStylesheets().add(parentViewController.getCurrentTheme());
+   }
 
 }
