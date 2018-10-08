@@ -453,6 +453,19 @@ Close button in DetailView
 
 }
 
+/**
+Song importer View
+ */
+.FileImportView .button{
+
+}
+
+/**
+Theme selector view.
+ */
+.ThemeSelectorView{
+
+}
 
 
 
