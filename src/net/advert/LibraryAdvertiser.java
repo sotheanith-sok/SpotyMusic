@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * The LibraryAdvertiser manages sending and receiving library advertisements in the local network.
@@ -118,9 +119,17 @@ public class LibraryAdvertiser {
 
         this.jsonFactory = new JsonFactory();
         User user = DataManager.getDataManager().getCurrentUser();
-        Library localLib = (Library) DataManager.getDataManager().getCurrentLibrary();
+       Library localLib = null;
+       try {
+          localLib = DataManager.getDataManager().getCurrentLibrary().get();
 
-        // wrap in try/catch, to comply with throws, but don't handle exception because there won't be an exception.
+       } catch (InterruptedException e) {
+          e.printStackTrace();
+       } catch (ExecutionException e) {
+          e.printStackTrace();
+       }
+
+       // wrap in try/catch, to comply with throws, but don't handle exception because there won't be an exception.
         ByteArrayOutputStream buffer = new ByteArrayOutputStream(MAX_PACKET_SIZE);
         try {
             /*

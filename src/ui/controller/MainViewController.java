@@ -1,11 +1,14 @@
 package ui.controller;
 
 import connect.Song;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import net.advert.LibraryAdvertisement;
+import net.advert.LibraryAdvertiser;
 import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
@@ -32,6 +35,8 @@ public class MainViewController implements Initializable, ControlledView {
     private Pane container;
 
     private String currentTheme = "Default";
+
+    private LibraryAdvertiser advertiser;
 
     public void setViewParent(Router viewParent) {
         router = viewParent;
@@ -82,6 +87,13 @@ public class MainViewController implements Initializable, ControlledView {
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
         this.setTheme(DataManager.getDataManager().getCurrentUser().getTheme());
 
+       this.advertiser = new LibraryAdvertiser(12324);
+       this.advertiser.start();
+       this.advertiser.getLibraryList().addListener((ListChangeListener<? super LibraryAdvertisement>) (change) -> {
+         change.next();
+         System.out.println("[MainViewController][AdvertisementListener] advertisement list changed!");
+         System.out.println(change);
+       });
     }
 
     /**
