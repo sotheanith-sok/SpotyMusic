@@ -45,7 +45,7 @@ public class PlaylistListViewController implements Initializable {
        * on mouse click, calls method selectPlaylist
        */
       listView.setOnMouseClicked(event -> {
-         if (event.getClickCount() == 2) {
+         if (event.getClickCount() == 2 &&listView.getSelectionModel().getSelectedItem()!=null) {
             mouseClicked(listView.getSelectionModel().getSelectedItem());
          }
       });

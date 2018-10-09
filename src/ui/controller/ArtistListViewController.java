@@ -37,7 +37,7 @@ public class ArtistListViewController implements Initializable {
 
       //on mouse click, calls method selectArtist
       listView.setOnMouseClicked(event -> {
-         if (event.getClickCount() == 2)
+         if (event.getClickCount() == 2 && listView.getSelectionModel().getSelectedItem()!=null)
             mouseClicked(listView.getSelectionModel().getSelectedItem());
       });
       listView.setItems(artistObservableList);

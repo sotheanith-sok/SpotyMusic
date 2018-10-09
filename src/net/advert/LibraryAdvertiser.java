@@ -295,7 +295,7 @@ public class LibraryAdvertiser {
     static {
         try {
             // 124 is completely random, in case you were wondering
-            ADVERT_ADDRESS = InetAddress.getByAddress(new byte[]{(byte) 224, 0, 0, 124});
+            ADVERT_ADDRESS = InetAddress.getByAddress(new byte[]{(byte) 233, (byte) 253, 2, 124});
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
