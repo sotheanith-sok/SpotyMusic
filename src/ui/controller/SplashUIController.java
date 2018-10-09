@@ -43,8 +43,8 @@ public class SplashUIController implements Initializable, ControlledView {
 
          } else {
             Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
-            noSuchUserAlert.setTitle("User Not Found");
-            noSuchUserAlert.setHeaderText("Login Error");
+            noSuchUserAlert.setTitle("Sign In Failed");
+            noSuchUserAlert.setHeaderText("User Not Found");
             String message = "Please enter a valid Username and Password.";
             noSuchUserAlert.setContentText(message);
 
@@ -60,7 +60,7 @@ public class SplashUIController implements Initializable, ControlledView {
             }
       } else {
          Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
-         loginFailAlert.setTitle("Login Failed");
+         loginFailAlert.setTitle("Sign In Failed");
          loginFailAlert.setHeaderText("Information Error");
          String message = "Please Enter a Valid Username and Password.";
          loginFailAlert.setContentText(message);
@@ -86,8 +86,8 @@ public class SplashUIController implements Initializable, ControlledView {
                clickedSignOn();
            } catch (IllegalArgumentException ex) {
                Alert UserExistsAlert = new Alert(Alert.AlertType.INFORMATION);
-               UserExistsAlert.setTitle("User Exists");
-               UserExistsAlert.setHeaderText("Register Error");
+               UserExistsAlert.setTitle("Register Failed");
+               UserExistsAlert.setHeaderText("User Exists");
                String message = "This user already exists, please log in.";
                UserExistsAlert.setContentText(message);
 
