@@ -1,7 +1,6 @@
 /**
 Awesome neon theme by Sotheanith Sok
  */
-
 .SplashView {
     -fx-background-color: #333333;
 }
@@ -27,22 +26,22 @@ Awesome neon theme by Sotheanith Sok
 }
 
 .myDialog{
-    -fx-background-color: #f9d900;
+    -fx-background-color: #cbf3ff;
 }
 .myDialog > *.button-bar > *.container{
-    -fx-background-color: #a9e200;
+    -fx-background-color: #cbf3ff;
 }
 .myDialog > *.label.content{
     -fx-font-size: 14px;
     -fx-font-weight: bold;
 }
-.myDialog:header *.header-panel{
-    -fx-background-color: #a59c31;
+.myDialog *.header-panel{
+    -fx-background-color: #08eaff;
 }
-.myDialog:header *.header-panel *.label{
+.myDialog *.header-panel *.label{
     -fx-font-size: 18px;
-    -fx-font-style: italic;
-    -fx-fill: #292929;
+    -fx-font-weight: bold;
+    -fx-fill: #000000;
 }
 
 
