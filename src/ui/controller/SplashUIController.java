@@ -9,10 +9,7 @@ package ui.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
@@ -46,10 +43,15 @@ public class SplashUIController implements Initializable, ControlledView {
 
          } else {
             Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
-            noSuchUserAlert.setTitle("User Not Found");
-            noSuchUserAlert.setHeaderText("Login Error");
+            noSuchUserAlert.setTitle("Sign In Failed");
+            noSuchUserAlert.setHeaderText("User Not Found");
             String message = "Please enter a valid Username and Password.";
             noSuchUserAlert.setContentText(message);
+
+            DialogPane dPane = noSuchUserAlert.getDialogPane();
+            dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
+            dPane.getStyleClass().add("myDialog");
+
             noSuchUserAlert.show();
 
             txtUser.setText("");
@@ -58,10 +60,15 @@ public class SplashUIController implements Initializable, ControlledView {
             }
       } else {
          Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
-         loginFailAlert.setTitle("Login Failed");
+         loginFailAlert.setTitle("Sign In Failed");
          loginFailAlert.setHeaderText("Information Error");
          String message = "Please Enter a Valid Username and Password.";
          loginFailAlert.setContentText(message);
+
+         DialogPane dPane = loginFailAlert.getDialogPane();
+         dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
+         dPane.getStyleClass().add("myDialog");
+
          loginFailAlert.show();
 
          txtPass.setText("");
@@ -79,10 +86,15 @@ public class SplashUIController implements Initializable, ControlledView {
                clickedSignOn();
            } catch (IllegalArgumentException ex) {
                Alert UserExistsAlert = new Alert(Alert.AlertType.INFORMATION);
-               UserExistsAlert.setTitle("User Exists");
-               UserExistsAlert.setHeaderText("Register Error");
+               UserExistsAlert.setTitle("Register Failed");
+               UserExistsAlert.setHeaderText("User Exists");
                String message = "This user already exists, please log in.";
                UserExistsAlert.setContentText(message);
+
+               DialogPane dPane = UserExistsAlert.getDialogPane();
+               dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
+               dPane.getStyleClass().add("myDialog");
+
                UserExistsAlert.show();
            }
        } else {
@@ -91,6 +103,12 @@ public class SplashUIController implements Initializable, ControlledView {
            registerFailAlert.setHeaderText("Register Error");
            String message = "Please Enter a Valid Username and Password.";
            registerFailAlert.setContentText(message);
+
+           DialogPane dPane = registerFailAlert.getDialogPane();
+           dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
+           dPane.getStyleClass().add("myDialog");
+
+
            registerFailAlert.show();
 
            txtPass.setText("");
@@ -98,4 +116,9 @@ public class SplashUIController implements Initializable, ControlledView {
            txtUser.requestFocus();
        }
    }
+
+    @FXML
+    void closeApp() {
+        System.exit(0);
+    }
 }

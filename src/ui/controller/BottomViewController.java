@@ -5,10 +5,15 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import javax.sound.sampled.AudioSystem;
@@ -41,6 +46,8 @@ public class BottomViewController implements Initializable {
    // volume slider
    @FXML
    Slider volumeSlider;
+   @FXML
+   private MenuItem importSong,theme;
 
    private Clip clip;
    private long clipTime = 0;
@@ -74,17 +81,29 @@ public class BottomViewController implements Initializable {
          scrubbingSliderControl = true;
       });
 
+
       // previous song button
       previousSongBtn.setOnMouseClicked(e -> playPreviousSong());
       playPauseSongBtn.setOnMouseClicked(e -> playOrPauseSong());
       nextSongBtn.setOnMouseClicked(e -> playNextSong());
 
       // volume slider
+       volumeSlider.setValue(100);
+       adjustVolume(100);
       volumeSlider.setOnMouseDragged(e -> adjustVolume(volumeSlider.getValue()));
+      volumeSlider.setOnMouseClicked(event -> adjustVolume(volumeSlider.getValue()));
 
       Timeline timeline = new Timeline(new KeyFrame(Duration.millis(250), ae -> updateUIElements()));
       timeline.setCycleCount(Animation.INDEFINITE);
       timeline.play();
+
+      //Menu
+      importSong.setOnAction(event -> {
+         showImportSongSelector();
+      });
+      theme.setOnAction(event -> {
+         showThemeSelector();
+      });
    }
 
    /**
@@ -205,6 +224,43 @@ public class BottomViewController implements Initializable {
          float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
          gainControl.setValue(dB);
       }
+   }
+   private void showImportSongSelector(){
+      try {
+         FXMLLoader fxmlLoader = new FXMLLoader();
+         fxmlLoader.setLocation(getClass().getResource("/ui/view/FileImportView.fxml"));
+         Scene scene = new Scene(fxmlLoader.load(), 600, 400);
+         Stage stage = new Stage();
+          ((FileImportViewController)fxmlLoader.getController()).setStage(stage);
+          ((FileImportViewController)fxmlLoader.getController()).setParentController(parentViewController);
+          ((FileImportViewController)fxmlLoader.getController()).updateStyleSheet();
+         stage.setTitle("Import song");
+         stage.setScene(scene);
+          stage.initModality(Modality.APPLICATION_MODAL);
+         stage.show();
+      }
+      catch (IOException e) {
+         e.printStackTrace();
+      }
+   }
+
+   private void showThemeSelector(){
+       try {
+           FXMLLoader fxmlLoader = new FXMLLoader();
+           fxmlLoader.setLocation(getClass().getResource("/ui/view/ThemeSelectorView.fxml"));
+           Scene scene = new Scene(fxmlLoader.load(), 600, 400);
+           Stage stage = new Stage();
+           ((ThemeSelectorViewController)fxmlLoader.getController()).setStage(stage);
+           ((ThemeSelectorViewController)fxmlLoader.getController()).setParentController(parentViewController);
+           ((ThemeSelectorViewController)fxmlLoader.getController()).updateStyleSheet();
+           stage.setTitle("Import song");
+           stage.setScene(scene);
+           stage.initModality(Modality.APPLICATION_MODAL);
+           stage.show();
+       }
+       catch (IOException e) {
+           e.printStackTrace();
+       }
    }
 
 }
