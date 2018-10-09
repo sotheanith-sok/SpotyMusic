@@ -370,7 +370,7 @@ DetailView and its children
 DetailView only
  */
 .DetailView{
-
+    -fx-background-color: white;
 }
 /**
 Table view of DetailView

@@ -43,13 +43,13 @@ public class SplashUIController implements Initializable, ControlledView {
 
          } else {
             Alert noSuchUserAlert = new Alert(Alert.AlertType.INFORMATION);
-            noSuchUserAlert.setTitle("User Not Found");
-            noSuchUserAlert.setHeaderText("Login Error");
+            noSuchUserAlert.setTitle("Sign In Failed");
+            noSuchUserAlert.setHeaderText("User Not Found");
             String message = "Please enter a valid Username and Password.";
             noSuchUserAlert.setContentText(message);
 
             DialogPane dPane = noSuchUserAlert.getDialogPane();
-            dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+            dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
             dPane.getStyleClass().add("myDialog");
 
             noSuchUserAlert.show();
@@ -60,13 +60,13 @@ public class SplashUIController implements Initializable, ControlledView {
             }
       } else {
          Alert loginFailAlert = new Alert(Alert.AlertType.INFORMATION);
-         loginFailAlert.setTitle("Login Failed");
+         loginFailAlert.setTitle("Sign In Failed");
          loginFailAlert.setHeaderText("Information Error");
          String message = "Please Enter a Valid Username and Password.";
          loginFailAlert.setContentText(message);
 
          DialogPane dPane = loginFailAlert.getDialogPane();
-         dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+         dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
          dPane.getStyleClass().add("myDialog");
 
          loginFailAlert.show();
@@ -86,13 +86,13 @@ public class SplashUIController implements Initializable, ControlledView {
                clickedSignOn();
            } catch (IllegalArgumentException ex) {
                Alert UserExistsAlert = new Alert(Alert.AlertType.INFORMATION);
-               UserExistsAlert.setTitle("User Exists");
-               UserExistsAlert.setHeaderText("Register Error");
+               UserExistsAlert.setTitle("Register Failed");
+               UserExistsAlert.setHeaderText("User Exists");
                String message = "This user already exists, please log in.";
                UserExistsAlert.setContentText(message);
 
                DialogPane dPane = UserExistsAlert.getDialogPane();
-               dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+               dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
                dPane.getStyleClass().add("myDialog");
 
                UserExistsAlert.show();
@@ -105,7 +105,7 @@ public class SplashUIController implements Initializable, ControlledView {
            registerFailAlert.setContentText(message);
 
            DialogPane dPane = registerFailAlert.getDialogPane();
-           dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/SeaTheme.css").toExternalForm());
+           dPane.getStylesheets().add(getClass().getResource("../../ui/view/styleSheets/NeonTheme.css").toExternalForm());
            dPane.getStyleClass().add("myDialog");
 
 

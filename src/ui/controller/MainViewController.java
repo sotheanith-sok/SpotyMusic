@@ -10,6 +10,7 @@ import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
+import javax.xml.crypto.Data;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -79,7 +80,7 @@ public class MainViewController implements Initializable, ControlledView {
             e.printStackTrace();
         }
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
-        this.setTheme("Default");
+        this.setTheme(DataManager.getDataManager().getCurrentUser().getTheme());
 
     }
 
@@ -162,7 +163,8 @@ public class MainViewController implements Initializable, ControlledView {
     static {
         THEMES = new HashMap<>();
         THEMES.put("Default", MainViewController.class.getResource("/ui/view/styleSheets/Default.css").toExternalForm());
-        THEMES.put("Sea", MainViewController.class.getResource("/ui/view/styleSheets/SeaTheme.css").toExternalForm());
+        THEMES.put("Neon", MainViewController.class.getResource("/ui/view/styleSheets/NeonTheme.css").toExternalForm());
         THEMES.put("Pastel", MainViewController.class.getResource("/ui/view/styleSheets/PastelTheme.css").toExternalForm());
+       THEMES.put("PurpleFlurp", MainViewController.class.getResource("/ui/view/styleSheets/PurpleFlurp.css").toExternalForm());
     }
 }
