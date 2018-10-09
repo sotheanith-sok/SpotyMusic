@@ -3,8 +3,10 @@ import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.stage.WindowEvent;
@@ -36,11 +38,7 @@ public class Main extends Application {
         }*/
 
         mainRouter.setView(splashID);
-
-        Group root = new Group();
-        root.getChildren().addAll(mainRouter);
-        Scene scene = new Scene(root, 1280, 720);
-
+        Scene scene = new Scene(mainRouter, 1280, 720);
 
         primaryStage.setTitle("Spusic");
         //primaryStage.getIcons().add(new Image(logoFile));
