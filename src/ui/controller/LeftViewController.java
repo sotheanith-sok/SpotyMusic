@@ -8,6 +8,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import net.advert.LibraryAdvertisement;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -21,8 +22,8 @@ public class LeftViewController implements Initializable {
    Label user;
    private MainViewController parentViewController;
    @FXML
-   private ListView<Library> listView;
-   private ObservableList<Library> libraryObservableList;
+   private ListView<LibraryAdvertisement> listView;
+   private ObservableList<LibraryAdvertisement> libraryObservableList;
 
    /**
     * Called to initialize a controller after its root element has been
@@ -36,21 +37,21 @@ public class LeftViewController implements Initializable {
    public void initialize(URL location, ResourceBundle resources) {
       libraryObservableList = FXCollections.observableArrayList();
       listView.setOnMouseClicked(event -> {
-         if (event.getClickCount() == 2) {
+         if (event.getClickCount() == 2 &&  listView.getSelectionModel().getSelectedItem()!=null) {
             mouseClicked(listView.getSelectionModel().getSelectedItem());
          }
       });
 
-      listView.setCellFactory(lv -> new ListCell<Library>() {
+      listView.setCellFactory(lv -> new ListCell<LibraryAdvertisement>() {
          @Override
-         public void updateItem(Library item, boolean empty) {
+         public void updateItem(LibraryAdvertisement item, boolean empty) {
             super.updateItem(item, empty);
             if (empty) {
                //sets text to null if there is no information
                setText("LibraryNewGoHere");
             } else {
                //gets Playlist name string and sets the text to it
-               setText(item.toString());
+               setText(item.getLibraryName());
             }
          }
       });
@@ -69,7 +70,7 @@ public class LeftViewController implements Initializable {
    /**
     * once mouse is clicked, the highlighted playlist is selected
     */
-   public void mouseClicked(Library library) {
+   public void mouseClicked(LibraryAdvertisement library) {
       System.out.println(library);
 
    }
@@ -80,7 +81,7 @@ public class LeftViewController implements Initializable {
       parentViewController.trySignOut();
    }
 
-   public ObservableList<Library> getPlaylistObservableList() {
+   public ObservableList<LibraryAdvertisement> getLibraryObservableList() {
       return libraryObservableList;
    }
 
@@ -89,7 +90,7 @@ public class LeftViewController implements Initializable {
     *
     * @param libraryObservableList a new list of playlist.
     */
-   public void setPlaylistObservableList(ObservableList<Library> libraryObservableList) {
+   public void setLibraryObservableList(ObservableList<LibraryAdvertisement> libraryObservableList) {
       this.libraryObservableList = libraryObservableList;
       listView.setItems(libraryObservableList);
    }

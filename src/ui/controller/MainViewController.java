@@ -70,7 +70,6 @@ public class MainViewController implements Initializable, ControlledView {
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
-        //boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
         System.out.println("[MainViewController][loadCurrentLibrary] Getting username");
         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
 
@@ -94,6 +93,7 @@ public class MainViewController implements Initializable, ControlledView {
          System.out.println("[MainViewController][AdvertisementListener] advertisement list changed!");
          System.out.println(change);
        });
+       leftViewController.setLibraryObservableList(advertiser.getLibraryList());
     }
 
     /**
@@ -179,4 +179,9 @@ public class MainViewController implements Initializable, ControlledView {
         THEMES.put("Pastel", MainViewController.class.getResource("/ui/view/styleSheets/PastelTheme.css").toExternalForm());
        THEMES.put("PurpleFlurp", MainViewController.class.getResource("/ui/view/styleSheets/PurpleFlurp.css").toExternalForm());
     }
+
+    public ObservableList<LibraryAdvertisement> getAvaiableLibrary (){
+       return this.advertiser.getLibraryList();
+    }
+
 }
