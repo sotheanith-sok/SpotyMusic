@@ -1,5 +1,4 @@
 package ui.controller;
-
 import connect.Song;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -8,10 +7,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -24,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,7 +32,7 @@ public class BottomViewController implements Initializable {
    Slider songScrubbingSlider;
    // song title
    @FXML
-   Label songTitle, timestamp;
+   Label songTitle, timestamp, progressLabel;
    // playback control buttons
    @FXML
    Button previousSongBtn;
@@ -48,6 +45,10 @@ public class BottomViewController implements Initializable {
    Slider volumeSlider;
    @FXML
    private MenuItem importSong,theme;
+
+   @FXML
+   private ProgressBar progressBar;
+
 
    private Clip clip;
    private long clipTime = 0;
@@ -127,7 +128,15 @@ public class BottomViewController implements Initializable {
             if (clip.isOpen()) {
                clip.close();
             }
-            clip.open(song.getStream().get());
+            boolean done = song.getStream().isDone();
+            if(done){
+               clip.open(song.getStream().get());
+            }else{
+               clip.open(song.getStream().get(5,TimeUnit.SECONDS));
+               progressBar.setVisible(true);
+               progressBar.setVisible(true);
+            }
+
             clip.start();
          } catch (LineUnavailableException e) {
             e.printStackTrace();
@@ -136,6 +145,8 @@ public class BottomViewController implements Initializable {
          } catch (InterruptedException e) {
             e.printStackTrace();
          } catch (ExecutionException e) {
+            e.printStackTrace();
+         } catch (java.util.concurrent.TimeoutException e){
             e.printStackTrace();
          }
       }
@@ -178,14 +189,25 @@ public class BottomViewController implements Initializable {
          long length = TimeUnit.MICROSECONDS.toSeconds(clip.getMicrosecondLength());
          timestamp.setText(Long.toString(currentTimestamp) + "/" + Long.toString(length));
 
-
          //Update slider
          if (!scrubbingSliderControl) {
             songScrubbingSlider.setMin(0);
             songScrubbingSlider.setMax(clip.getMicrosecondLength());
             songScrubbingSlider.setValue(clip.getMicrosecondPosition());
          }
+      }
+      if(progressBar.isVisible() && progressLabel.isVisible()){
+         if (progressBar.getProgress() < 1d) {
+            double progress=progressBar.getProgress()+100d/5000d;
+            progressBar.setProgress(progress);
+            progressLabel.setText(String.format("Importing: %.2f%%",progress));
+         }
 
+         if(progressBar.getProgress()>=1){
+            progressBar.setProgress(0);
+            progressBar.setVisible(false);
+            progressLabel.setVisible(false);
+         }
       }
    }
 
