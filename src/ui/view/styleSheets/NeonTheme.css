@@ -196,3 +196,10 @@ Style detailview
     -fx-background-color: #077381;
     -fx-text-fill: #cbf3ff;
 }
+
+.BottomView .progress-bar .bar   {
+    -fx-background-color: #07c1d1;
+}
+.BottomView .progress-bar .track   {
+    -fx-background-color: #4f4f4f;
+}
