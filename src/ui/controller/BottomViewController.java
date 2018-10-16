@@ -3,6 +3,7 @@ import connect.Song;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,10 +13,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -124,32 +122,37 @@ public class BottomViewController implements Initializable {
    public void playASong(Song song) {
       if (song != null) {
          this.song = song;
-         try {
-            if (clip.isOpen()) {
-               clip.close();
+         Runnable runnable= () -> {
+            try {
+               if (clip.isOpen()) {
+                  clip.close();
+               }
+               boolean done = song.getStream().isDone();
+               if(done){
+                  clip.open(song.getStream().get());
+               }else{
+                  progressBar.setVisible(true);
+                  progressBar.setVisible(true);
+                  clip.open(song.getStream().get(5,TimeUnit.SECONDS));
+               }
+               clip.start();
+               progressBar.setVisible(false);
+               progressBar.setVisible(false);
+            } catch (LineUnavailableException e) {
+               e.printStackTrace();
+            } catch (IOException e) {
+               e.printStackTrace();
+            } catch (InterruptedException e) {
+               e.printStackTrace();
+            } catch (ExecutionException e) {
+               e.printStackTrace();
+            } catch (java.util.concurrent.TimeoutException e){
+               e.printStackTrace();
             }
-            boolean done = song.getStream().isDone();
-            if(done){
-               clip.open(song.getStream().get());
-            }else{
-               clip.open(song.getStream().get(5,TimeUnit.SECONDS));
-               progressBar.setVisible(true);
-               progressBar.setVisible(true);
-            }
-
-            clip.start();
-         } catch (LineUnavailableException e) {
-            e.printStackTrace();
-         } catch (IOException e) {
-            e.printStackTrace();
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-         } catch (ExecutionException e) {
-            e.printStackTrace();
-         } catch (java.util.concurrent.TimeoutException e){
-            e.printStackTrace();
-         }
+         };
+         new Thread(runnable).start();
       }
+
    }
 
    /**
