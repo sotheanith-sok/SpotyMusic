@@ -27,6 +27,7 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
                 this.waitingForSource();
 
             } else if (!this.que.isEmpty()) {
+                System.out.println("[SimpleJsonWriter] SimpleJsonWriter writing json");
                 this.counter.reset();
                 JsonField next;
                 while (this.counter.getCount() < maxSize) {
@@ -34,6 +35,7 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
                     next.write(this.gen);
                 }
             } else {
+                System.out.println("[SimpleJsonWriter] SimpleJsonWriter finished");
                 this.finished();
             }
         }
@@ -50,6 +52,7 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
     }
 
     public void complete() {
+        System.out.println("[SimpleJsonWriter] Completed with " + this.que.size() + " items in queue");
         this.running.set(false);
     }
 }

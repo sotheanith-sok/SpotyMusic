@@ -74,6 +74,7 @@ public class RemoteSong implements Song {
             System.out.println("[RemoteSong][getStream] Requesting song stream");
 
             Session session = this.library.getSession();
+            session.debug = true;
             System.out.println("[RemoteSong][getStream] Opened Session");
 
             SimpleJsonWriter request = new SimpleJsonWriter(session);
@@ -82,17 +83,9 @@ public class RemoteSong implements Song {
             packet.setProperty("id", this.getId());
             request.que(packet);
             request.complete();
-            Future reqFuture = library.taskManager.submit(request);
+            library.taskManager.submit(request);
 
-            try {
-                reqFuture.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            System.out.println("[RemoteSong][getStream] Request sent");
+            System.out.println("[RemoteSong][getStream] Request sending");
             System.out.println("[RemoteSong][getStream] Waiting for response data");
 
             InputStream in = session.inputStream();

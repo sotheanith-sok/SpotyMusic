@@ -69,6 +69,8 @@ public class Session {
     private InputStream inputStream;
     private OutputStream inputBufferStream;
 
+    public boolean debug = false;
+
     public Session(SessionedSocket socket, int id, InetAddress remote, int remotePort) {
         this.socket = socket;
         this.sessionID = id;
@@ -126,6 +128,7 @@ public class Session {
     }
 
     public void closeSend() throws IOException {
+        if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] Shutting down sending system");
         this.sendOpened.set(false);
         this.outputStream.close();
     }
@@ -193,6 +196,8 @@ public class Session {
             // if there are unacknowledged packets that were sent, resend them
             // if sent packets were acknowledged, remove them from the queue
             synchronized (this.sendLock) {
+                if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] " + this.sendQueue.size() + " in queue");
+
                 int i = 0; // i is the amount of data sent
                 for (SessionPacket packet : this.sendQueue) {
                     if (packet.getMessageID() <= this.sendAck.get()) {
@@ -201,6 +206,7 @@ public class Session {
                     }
                     if (i + packet.getPayloadSize() >= this.sendWindow.get()) break;
                     // resend packet, without adding it to the queue again
+                    if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] Resending queued packet of type " + packet.getType());
                     this.sendPacket(packet, false);
                     i += packet.getPayloadSize();
                 }
@@ -209,6 +215,7 @@ public class Session {
             // if data available, break it up into packets and send the packets
             // only queue up to 5 packets, to prevent memory leaks
             try {
+                if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] " + this.outputBufferStream.available() + " bytes in output buffer");
                 while (this.outputBufferStream.available() > 0 && sendQueue.size() < 5) {
                     int size = this.outputBufferStream.read(temp, 0, temp.length);
                     this.sendPacket(this.createPacket(SessionPacket.PacketType.MESSAGE, temp, size));
@@ -220,7 +227,7 @@ public class Session {
                     //System.out.println(this.outputBufferStream.available());
                     //System.out.print("\tsendOpened = ");
                     //System.out.println(this.sendOpened.get());
-                    this.sendPacket(this.createPacket(SessionPacket.PacketType.CLOSE, true));
+                    this.sendClose();
                     this.sentClose.set(true);
 
                 } else if (this.outputBufferStream.available() == 0 && !this.sendOpened.get() && !this.sentSendClosed.get()) {
@@ -252,6 +259,8 @@ public class Session {
         if (!this.remoteOpened.get()) {
             this.sendQueue.clear();
         }
+
+        if (!this.receiver.isAlive()) if (!this.sender.isAlive()) this.socket.sessionClosed(this.sessionID);
 
         System.out.println("[Session][Sender][" + this.sessionID + "] Sender Thread terminating");
     }
@@ -376,6 +385,8 @@ public class Session {
             if (!handled) System.err.println("[Session][receiver] Packet not successfully handled");
         }
 
+        if (!this.sender.isAlive()) this.socket.sessionClosed(this.sessionID);
+
         //System.out.println("[Session][Receiver] Receiver Thread terminating");
     }
 
@@ -407,12 +418,12 @@ public class Session {
     protected boolean onClose(SessionPacket packet) {
         //System.out.println("[Session][onClose] Received CLOSE packet");
         // acknowledge close
-        this.sendPacket(this.createPacket(SessionPacket.PacketType.CLOSE_ACK, false));
+        this.sendPacket(this.createPacket(SessionPacket.PacketType.CLOSE_ACK, true), true);
         // take note of remote closing
         this.remoteOpened.set(false);
         this.connected.set(false);
         this.sentClose.set(true);
-        this.socket.sessionClosed(this.sessionID);/*
+        /*
         try {
             this.inputBufferStream.close();
         } catch (IOException e) {
@@ -468,6 +479,12 @@ public class Session {
         }
     }
 
+    private void sendClose() {
+        if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] Sending CLOSE packet");
+        this.sendPacket(this.createPacket(SessionPacket.PacketType.CLOSE, true), true);
+        this.sentClose.set(true);
+    }
+
     private void sendKeepAlive() {
         if (System.currentTimeMillis() - lastKeepAlive > Constants.RESEND_DELAY) {
             this.sendPacket(this.createPacket(SessionPacket.PacketType.KEEP_ALIVE, new byte[]{}, 0), false);
@@ -496,8 +513,11 @@ public class Session {
         if (packet.getType() == SessionPacket.PacketType.MESSAGE && !this.receiveOpened.get()) {
             System.err.println("[Session][onPacket] Received packet on closed session");
 
-        } else {
+        } else if (this.receiver.isAlive()){
             this.receiveQueue.put(packet);
+
+        } else {
+            System.err.println("[Session][onPacket] Received " + packet.getType() + " packet on session with dead receiver thread");
         }
     }
 

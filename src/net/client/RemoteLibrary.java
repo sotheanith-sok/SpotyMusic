@@ -116,6 +116,7 @@ public class RemoteLibrary implements Library {
         }, true));
 
         session = this.getSession();
+        //session.debug = true;
         request = new SimpleJsonWriter(session);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_SUBSCRIBE);

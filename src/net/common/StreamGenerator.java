@@ -34,12 +34,11 @@ public abstract class StreamGenerator implements CompletableRunnable {
             }
             this.state = GeneratorState.READY;
         }
-
+/*
         if (!this.session.isConnected() || !this.session.isOutputOpened()) {
             this.state = GeneratorState.CLOSED;
-            return true;
         }
-
+*/
         if (this.state == GeneratorState.READY) {
             // transfer data if there is space
             if (this.session.outputBufferSpace() > 0) {

@@ -139,19 +139,21 @@ public class SessionedSocket {
 
                 // uncomment for debug
                 //printPacketDetails(sessPack, true);
-                System.out.println("[SessionedSocket][listen][" + sessPack.getSessionID() + "] Received " + sessPack.getType() + " packet");
+                System.out.println("[SessionedSocket][listen][" + this.port + "][" + sessPack.getSessionID() + "] Received " + sessPack.getType() + " packet");
 
-                if (this.sessions.containsKey(sessPack.getSessionID())) {
-                    try {
-                        this.sessions.get(sessPack.getSessionID()).onPacket(sessPack);
-                    } catch (InterruptedException e) {
-                        System.err.println("[SessionedSocket][listen] Interrupted while passing packet to Session");
-                        e.printStackTrace();
+                synchronized (this.sessionsLock) {
+                    if (this.sessions.containsKey(sessPack.getSessionID())) {
+                        try {
+                            this.sessions.get(sessPack.getSessionID()).onPacket(sessPack);
+                        } catch (InterruptedException e) {
+                            System.err.println("[SessionedSocket][listen] Interrupted while passing packet to Session");
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        System.out.println("[SessionedSocket][listen] Passing packet to default handler");
+                        if (this.defaultHandler != null) this.defaultHandler.handlePacket(sessPack);
                     }
-
-                } else {
-                    System.out.println("[SessionedSocket][listen] Passing packet to default handler");
-                    if (this.defaultHandler != null) this.defaultHandler.handlePacket(sessPack);
                 }
 
             } catch (IOException e) {
