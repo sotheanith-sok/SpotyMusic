@@ -1,5 +1,7 @@
 package net.connect;
 
+import net.common.Constants;
+
 import java.io.*;
 import java.net.InetAddress;
 
@@ -7,8 +9,6 @@ import java.net.InetAddress;
  * Represents a packet of data that is a part of a communication Session.
  */
 public class SessionPacket {
-
-    public static final int HEADER_OVERHEAD = 6 * 4;
 
     private int sessionID;
 
@@ -101,7 +101,7 @@ public class SessionPacket {
     }
 
     public byte[] getPacket() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream(HEADER_OVERHEAD + this.payload.length);
+        ByteArrayOutputStream out = new ByteArrayOutputStream(Constants.HEADER_OVERHEAD + this.payload.length);
         DataOutputStream dout = new DataOutputStream(out);
         try {
             dout.writeInt(sessionID);
@@ -135,7 +135,8 @@ public class SessionPacket {
         MESSAGE         (0x03),
         KEEP_ALIVE      (0x04),
         CLOSE           (0x05),
-        CLOSE_ACK       (0x06)
+        CLOSE_ACK       (0x06),
+        CLOSE_SEND      (0x07)
         ;
 
         private final int value;
@@ -152,6 +153,7 @@ public class SessionPacket {
                 case 0x04 : return KEEP_ALIVE;
                 case 0x05 : return CLOSE;
                 case 0x06 : return CLOSE_ACK;
+                case 0x07 : return CLOSE_SEND;
                 default : return UNRECOGNIZED;
             }
         }

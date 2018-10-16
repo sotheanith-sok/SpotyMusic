@@ -1,24 +1,24 @@
 package net.connect;
 
+import net.common.Constants;
+
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SessionedSocket {
 
-    public static final int PACKET_LENGTH = 1024;
-
+    private final Object socketLock;
     private DatagramSocket sock;
 
+    private final Object sessionsLock;
     private HashMap<Integer, Session> sessions;
 
     private int port;
-    DefaultPacketHandler defaultHandler;
+    private DefaultPacketHandler defaultHandler;
 
-    private boolean running = false;
+    private AtomicBoolean running;
 
     private Thread listener;
 
@@ -26,18 +26,60 @@ public class SessionedSocket {
         this.port = port;
         this.sessions = new HashMap<>();
         this.defaultHandler = defaultHandler;
+        this.socketLock = new Object();
+        this.sessionsLock = new Object();
+        this.running = new AtomicBoolean(false);
         this.listener = new Thread(this::listen);
+        this.listener.setName("[SessionedSocket][Listener]");
     }
 
     public void init() throws SocketException {
-        this.sock = new DatagramSocket(this.port);
-        this.running = true;
+        try {
+            SocketAddress address = Utils.getSocketAddress(this.port);
+            if (address == null) {
+                System.err.println("[SessionedSocket][init] Unable to find address to bind");
+                return;
+            }
+
+            this.sock = new DatagramSocket(address);
+
+        } catch (SocketException e) {
+            System.err.println("[SessionedSocket][init] SocketException while trying to bind socket");
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("[SessionedSocket][init] Socket bound to local address and port: " + this.sock.getLocalAddress() + ":" + this.sock.getLocalPort());
+        this.running.set(true);
         this.listener.start();
     }
 
+    public void shutdown() {
+        this.running.set(false);
+        this.sock.close();
+        synchronized (this.sessionsLock) {
+            for (Session session : this.sessions.values()) {
+                try {
+                    session.close();
+
+                } catch (IOException e) {
+                    System.err.println("[SessionedSocket][shutdown] IOException while closing session");
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public boolean isShutdown() {
+        synchronized (this.sessionsLock) {
+            return !this.running.get() && this.sessions.isEmpty();
+        }
+    }
+
     public Session createSession(InetAddress remote, int port) {
+        if (!this.running.get()) throw new IllegalStateException("SessionedSocket is not opened");
         int id = (this.sock.getLocalAddress().hashCode() ^ remote.hashCode() << 4) +
-                (this.sock.getLocalPort() ^ port << 8) + (int) System.currentTimeMillis();
+                (this.sock.getLocalPort() ^ port << 8) + (int) System.currentTimeMillis() + ((int) System.nanoTime());
         Session session = new Session(this, id, remote, port);
         this.sessions.put(id, session);
         session.open();
@@ -46,6 +88,7 @@ public class SessionedSocket {
     }
 
     public Session createSession(SessionPacket init) {
+        if (!this.running.get()) throw new IllegalStateException("SessionedSocket is not opened");
         Session session = new Session(this, init.getSessionID(), init.getRemote(), init.getPort());
         this.sessions.put(init.getSessionID(), session);
         session.open();
@@ -53,27 +96,50 @@ public class SessionedSocket {
         return session;
     }
 
+    public InetAddress getAddress() {
+        return this.sock.getLocalAddress();
+    }
+
+    public int getPort() {
+        return this.sock.getLocalPort();
+    }
+
     protected synchronized void send(SessionPacket p) throws IOException {
-        if (p.getPayloadSize() > PACKET_LENGTH) {
+        if (p.getPayloadSize() > Constants.PACKET_SIZE) {
             throw new IllegalArgumentException("Packet length too big");
         }
 
-        DatagramPacket packet = new DatagramPacket(p.getPacket(), 0, p.getPayloadSize() + SessionPacket.HEADER_OVERHEAD, p.getRemote(), p.getPort());
-        this.sock.send(packet);
+        DatagramPacket packet = new DatagramPacket(p.getPacket(), 0, p.getPayloadSize() + Constants.HEADER_OVERHEAD, p.getRemote(), p.getPort());
+        try {
+            synchronized (this.socketLock) {
+                this.sock.send(packet);
+            }
+            //System.out.println("[SessionedSocket][send][" + p.getSessionID() + "] Sent " + p.getType() + " packet");
 
-        printPacketDetails(p, false);
+        } catch (BindException e) {
+            System.err.println("[SessionedSocket][send] BindException while trying to send packet");
+            System.err.println("\tLocalAddress: " + this.sock.getLocalAddress());
+            System.err.println("\tLocalPort: " + this.sock.getLocalPort());
+            System.err.println("\tRemoteAddress: " + p.getRemote());
+            System.err.println("\tRemotePort: " + p.getPort());
+        }
+
+        // uncomment for debug
+        //printPacketDetails(p, false);
     }
 
     public void listen() {
-        DatagramPacket packet = new DatagramPacket(new byte[PACKET_LENGTH], PACKET_LENGTH);
+        DatagramPacket packet = new DatagramPacket(new byte[Constants.PACKET_SIZE], Constants.PACKET_SIZE);
 
-        while (this.running) {
+        while (this.running.get()) {
             try {
                 this.sock.receive(packet);
                 byte[] data = packet.getData();
                 SessionPacket sessPack = new SessionPacket(data, packet.getAddress(), packet.getPort());
 
-                printPacketDetails(sessPack, true);
+                // uncomment for debug
+                //printPacketDetails(sessPack, true);
+                System.out.println("[SessionedSocket][listen][" + sessPack.getSessionID() + "] Received " + sessPack.getType() + " packet");
 
                 if (this.sessions.containsKey(sessPack.getSessionID())) {
                     try {
@@ -84,6 +150,7 @@ public class SessionedSocket {
                     }
 
                 } else {
+                    System.out.println("[SessionedSocket][listen] Passing packet to default handler");
                     if (this.defaultHandler != null) this.defaultHandler.handlePacket(sessPack);
                 }
 
@@ -92,24 +159,26 @@ public class SessionedSocket {
                 e.printStackTrace();
             }
         }
+
+        System.out.println("[SessionedSocket][Listener] SessionedSocket Listener thread terminating");
     }
 
     protected void sessionClosed(int id) {
-        synchronized (this) {
-            System.out.print("[SessionedSocket][sessionClosed] Session ");
-            System.out.print(id);
-            System.out.println(" closed");
+        synchronized (this.sessionsLock) {
+            //System.out.print("[SessionedSocket][sessionClosed] Session ");
+            //System.out.print(id);
+            //System.out.println(" closed");
             this.sessions.remove(id);
+
+            if (!this.running.get() && this.sessions.isEmpty()) System.out.println("[SessionedSocket] SessionedSocket shutdown");
         }
     }
 
     public static void printPacketDetails(SessionPacket packet, boolean received) {
-        // uncomment for debugging
-
         System.out.print("[");
         System.out.print(System.currentTimeMillis());
-        if (received) System.out.println("][scratch] Received Packet:");
-        else System.out.println("][scratch] Sending Packet:");
+        if (received) System.out.println("][SessionedSocket] Received Packet:");
+        else System.out.println("][SessionedSocket] Sending Packet:");
         System.out.print("\tRemote: ");
         System.out.println(packet.getRemote());
         System.out.print("\tPort: ");
@@ -126,8 +195,6 @@ public class SessionedSocket {
         System.out.println(packet.getWindow());
         System.out.print("\tPayloadSize: ");
         System.out.println(packet.getPayloadSize());
-
-
     }
 
     public interface DefaultPacketHandler {
