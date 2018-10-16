@@ -158,10 +158,23 @@ class BufferProvider extends OutputStream {
     }
 
     @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+       
+       synchronized (this.buffer.lock) {
+          for (int i = 0; i < len; i++) {
+             write(b[off + i]);
+          }
+       }
+
+       System.out.println("[StreamBuffer][OutputStream][write] " + System.nanoTime());
+    }
+
+    @Override
     public void close() {
         buffer.writeOpened.set(false);
         synchronized (buffer.lock) {
             buffer.lock.notifyAll();
         }
+       System.out.println("[StreamBuffer][OutputStream][close] " + System.nanoTime());
     }
 }
