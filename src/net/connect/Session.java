@@ -108,7 +108,6 @@ public class Session {
         this.receiver.setName("[Session][Receiver]");
         this.receiveAck = new AtomicInteger(0);
         this.receiveOpened = new AtomicBoolean(true);
-        //this.inputStream = new PipedInputStream(Constants.BUFFER_SIZE);
         this.inputBuffer = new StreamBuffer(Constants.BUFFER_SIZE);
         this.inputStream = this.inputBuffer.getInputStream();
         this.inputBufferStream = this.inputBuffer.getOutputStream();
@@ -135,7 +134,7 @@ public class Session {
 
     public void closeReceive() throws IOException {
         this.receiveOpened.set(false);
-        this.inputBufferStream.close();
+        this.inputBuffer.getOutputStream().close();
     }
 
     public boolean isInputOpened() {
@@ -176,6 +175,7 @@ public class Session {
 
     private void sender() {
         // while connected
+        if (this.debug) System.out.println("[Session][sender][" + this.sessionID + "] Sender thread starting");
         byte[] temp = new byte[Constants.PACKET_SIZE - Constants.HEADER_OVERHEAD];
         while (this.remoteOpened.get() || this.sentInit.get()) {
             if (System.currentTimeMillis() - this.receivedKeepAlive.get() > 10 * Constants.RESEND_DELAY) {
@@ -262,7 +262,7 @@ public class Session {
 
         if (!this.receiver.isAlive()) if (!this.sender.isAlive()) this.socket.sessionClosed(this.sessionID);
 
-        System.out.println("[Session][Sender][" + this.sessionID + "] Sender Thread terminating");
+        if (this.debug) System.out.println("[Session][Sender][" + this.sessionID + "] Sender Thread terminating");
     }
 
     protected SessionPacket createPacket(SessionPacket.PacketType type, boolean order) {
@@ -394,13 +394,13 @@ public class Session {
         synchronized (this.receiveLock) {
             try {
                 //System.out.println("[Session][onMessage] Received " + packet.getPayloadSize() + " bytes of message data");
-                /*
+
                 {
                     Reader reader = new InputStreamReader(new ByteArrayInputStream(packet.getPayload()));
                     char[] c = new char[1];
                     while (reader.read(c, 0, 1) != -1) System.out.print(c);
                 }
-                */
+
                 //int avail = this.inputStream.available();
                 this.inputBufferStream.write(packet.getPayload(), 0, packet.getPayloadSize());
                 //System.out.println("[Session][onMessage] Transferred " + (this.inputStream.available() - avail) + " bytes to input buffer");
@@ -517,7 +517,15 @@ public class Session {
             this.receiveQueue.put(packet);
 
         } else {
-            System.err.println("[Session][onPacket] Received " + packet.getType() + " packet on session with dead receiver thread");
+           if (packet.getType() == SessionPacket.PacketType.CLOSE_ACK) {
+              this.remoteOpened.set(false);
+
+           }else if (this.sender.isAlive()) {
+              System.err.println("[Session][onPacket][" + this.sessionID + "] Received " + packet.getType() + " packet on session with dead receiver thread and live sender thread. RemoteOpened = " + this.remoteOpened.get());
+
+           } else {
+              System.err.println("[Session][onPacket][" + this.sessionID + "] Received " + packet.getType() + " packet on session with dead receiver and sender thread");
+           }
         }
     }
 
