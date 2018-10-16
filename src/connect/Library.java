@@ -57,39 +57,6 @@ public interface Library {
     ObservableList<? extends Playlist> getPlaylists();
 
     /**
-     * Adds a song to the library.
-     *
-     * @param song a File representing the song to add
-     * @param title the title of the song being imported
-     * @param artist the artist wto wrote the song
-     * @param album the album in which the song was released
-     * @throws SecurityException if the current user is not authorized to modify the library
-     * @return Future that resolves to success
-     */
-    Future<Boolean> importSong(File song, String title, String artist, String album) throws SecurityException;
-
-    /**
-     * Adds a song to the library.
-     *
-     * @param song a File that stores the song
-     * @param title the title of the song to import
-     * @param artist the artist who wrote the song
-     * @param album the album in which the song was released
-     * @param listener a progress listener
-     * @return Future that resolves to success
-     */
-    Future<Boolean> importSong(File song, String title, String artist, String album, FileImportTask.FileImportProgressListener listener);
-
-    /**
-     * Removes a song from the library.
-     *
-     * @param song the Song to remove from the library
-     * @throws SecurityException if the current uer is not authorized to modify the library
-     * @return Future that resolves to success
-     */
-    Future<Boolean> deleteSong(Song song) throws SecurityException;
-
-    /**
      * Creates a new Playlist with the given name.
      *
      * @param name the name of the playlist to create

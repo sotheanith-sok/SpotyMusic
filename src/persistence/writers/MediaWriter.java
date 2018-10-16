@@ -30,6 +30,8 @@ public class MediaWriter implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("[MediaWriter][run] Saving media index");
+
         try {
             JsonFactory factory = new JsonFactory();
             JsonGenerator gen = factory.createGenerator(this.index, JsonEncoding.UTF8);
@@ -45,5 +47,8 @@ public class MediaWriter implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        System.out.println("[MediaWriter][run] Saved media index");
     }
+
 }

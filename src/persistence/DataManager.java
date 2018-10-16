@@ -1,6 +1,8 @@
 package persistence;
 
 import connect.Library;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import persistence.loaders.LibraryLoader;
 import persistence.loaders.MediaLoader;
 import persistence.loaders.UserLoader;
@@ -8,6 +10,7 @@ import persistence.writers.LibraryWriter;
 import persistence.writers.MediaWriter;
 import persistence.writers.UserWriter;
 import utils.DebouncedRunnable;
+import utils.ObservableListImpl;
 
 import java.io.File;
 import java.util.HashMap;
@@ -59,10 +62,9 @@ public class DataManager {
     protected ScheduledExecutorService executor;
 
     /**
-     * A {@link Map} containing all of ths songs in the local library, irrespective of users.
+     * An {@link ObservableList} containing all of ths songs in the local library, irrespective of users.
      */
-    private Map<Long, LocalSong> songs;
-    private int largestId = 0;
+    private ObservableList<LocalSong> songs;
 
     /**
      * Stores all loaded users.
@@ -86,7 +88,8 @@ public class DataManager {
      * Private constructor.
      */
     private DataManager() {
-        this.users = new HashMap<>();
+        this.users = new ConcurrentHashMap<>();
+        this.songs = FXCollections.observableList(new LinkedList<>());
     }
 
     /**
@@ -108,28 +111,16 @@ public class DataManager {
             List<User> users = new LinkedList<>(this.users.values());
             UserWriter writer = new UserWriter(userFile, users);
             writer.run();
-        }, 10, TimeUnit.SECONDS, this.executor);
+        }, 5, TimeUnit.SECONDS, this.executor);
         this.saveMediaTask = new DebouncedRunnable(() -> {
-            MediaWriter writer = new MediaWriter(mediaIndex, new LinkedList<>(this.songs.values()));
+            MediaWriter writer = new MediaWriter(mediaIndex, this.songs);
             writer.run();
-        }, 30, TimeUnit.SECONDS, this.executor);
-        this.saveLibraryTask = new DebouncedRunnable(() -> {
-            try {
-                if (this.currentUser == null) return;
-                LocalLibrary lib = (LocalLibrary) this.getCurrentLibrary().get();
-                LibraryWriter writer = new LibraryWriter(new File("SpotyMusic/Libraries/" + this.currentUser.getUsername() + ".json"), lib);
-                writer.run();
-
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }, 30, TimeUnit.SECONDS, this.executor);
+        }, 5, TimeUnit.SECONDS, this.executor);
 
         if (!rootDirectory.exists()) rootDirectory.mkdir();
         if (!mediaRoot.exists()) mediaRoot.mkdir();
         if (!libRoot.exists()) libRoot.mkdir();
 
-        this.users = new ConcurrentHashMap<>();
         if (userFile.exists()) {
             this.loadUsers();
 
@@ -137,7 +128,6 @@ public class DataManager {
             this.saveUsers();
         }
 
-        this.songs = new ConcurrentHashMap<>();
         if (mediaIndex.exists()) {
             this.loadMedia();
 
@@ -148,8 +138,7 @@ public class DataManager {
 
     /**
      * Attempts to authenticate a user with the given username and password. Returns a boolean indicating success.
-     * Once a user is authenticated, the {@link #getCurrentUser()} and {@link #getCurrentLibrary()} methods can be
-     * used to retrieve the name of the current user, and that user's library.
+     * Once a user is authenticated, {@link #getCurrentUser()} can be used to retrieve the name of the current user.
      *
      * @param username the username of a user
      * @param password the password of the user with the given username
@@ -161,7 +150,8 @@ public class DataManager {
             if (u.testPassword(password)) {
                 this.currentUser = u;
                 // start loading the user's library
-                this.currentLib = this.executor.submit(new LibraryLoader(new File("SpotyMusic/Libraries/" + username + ".json"), this.songs));
+                // TODO: reimplement this
+                //this.currentLib = this.executor.submit(new LibraryLoader(new File("SpotyMusic/Libraries/" + username + ".json"), this.songs));
                 return true;
             }
         }
@@ -190,14 +180,8 @@ public class DataManager {
         return this.currentUser;
     }
 
-    /**
-     * Returns a {@link Future} which resolves to the {@link Library} of the current user.
-     * Returns null if there is no current user.
-     *
-     * @return future of user's library
-     */
-    public Future<Library> getCurrentLibrary() {
-        return this.currentLib;
+    public ObservableList<LocalSong> getSongs() {
+        return this.songs;
     }
 
     /**
@@ -211,7 +195,7 @@ public class DataManager {
      * @return Future resolving to success
      */
     public Future<Boolean> importFile(File file, String title, String artist, String album) {
-        return this.executor.submit(new FileImportTask(file, this.new OnFileImported(), title, artist, album), true);
+        return this.executor.submit(new FileImportTask(file, this::onFileImported, title, artist, album), true);
     }
 
     /**
@@ -226,7 +210,7 @@ public class DataManager {
      * @return Future resolving to success
      */
     public Future<Boolean> importFile(File file, String title, String artist, String album, FileImportTask.FileImportProgressListener listener) {
-        return this.executor.submit(new FileImportTask(file, this.new OnFileImported(), title, artist, album, listener), true);
+        return this.executor.submit(new FileImportTask(file, this::onFileImported, title, artist, album, listener), true);
     }
 
     /**
@@ -240,14 +224,14 @@ public class DataManager {
      * Loads {@link User}s from the default user file.
      */
     private void loadUsers() {
-        this.executor.submit(new UserLoader(userFile, this.new OnUserLoaded()));
+        this.executor.submit(new UserLoader(userFile, this::onUserLoaded));
     }
 
     /**
      * Loads the {@link #mediaIndex} file.
      */
     private void loadMedia() {
-        this.executor.submit(new MediaLoader(mediaIndex, this.new OnSongLoaded()));
+        this.executor.submit(new MediaLoader(mediaIndex, this::onSongLoaded));
     }
 
     /**
@@ -267,47 +251,38 @@ public class DataManager {
     /**
      * Callback handler for {@link MediaLoader}.
      */
-    private class OnSongLoaded implements MediaLoader.SongLoadedHandler {
-        @Override
-        public void onSongLoaded(LocalSong song) {
-            long id = song.getId();
-            songs.put(id, song);
-            System.out.print("[DataManager][OnSongLoaded] Song loaded: ");
-            System.out.print(song.getTitle());
-            System.out.print(" (");
-            System.out.print(song.getId());
-            System.out.println(")");
-        }
+    private void onSongLoaded(LocalSong song) {
+        this.songs.add(song);
+        System.out.print("[DataManager][OnSongLoaded] Song loaded: ");
+        System.out.print(song.getTitle());
+        System.out.print(" (");
+        System.out.print(song.getId());
+        System.out.println(")");
     }
 
     /**
      * Callback handler for {@link UserLoader}.
      */
-    private class OnUserLoaded implements UserLoader.UserLoadedHandler {
-        @Override
-        public void onUserLoaded(User user) {
-            synchronized (DataManager.this) {
-                users.put(user.getUsername(), user);
-            }
+    private void onUserLoaded(User user) {
+        synchronized (DataManager.this) {
+            users.put(user.getUsername(), user);
         }
     }
 
     /**
-     * An implementation of {@link persistence.FileImportTask.FileImportedHandler}.
+     * A callback used when a {@link FileImportTask} completes.
+     *
+     * @param title the title of the song imported
+     * @param artist the artist who wrote the song
+     * @param album the album in which the song was published
+     * @param duration the length of the song
+     * @param path the path to the song's file
+     * @param id the unique ID number of the song
      */
-    private class OnFileImported implements FileImportTask.FileImportedHandler {
-        @Override
-        public void onFileImported(String title, String artist, String album, long duration, File path, long id) {
-            LocalSong newSong = new LocalSong(title, artist, album, duration, path, id);
-            songs.put(id, newSong);
-            try {
-                ((LocalLibrary) getCurrentLibrary().get(10, TimeUnit.SECONDS)).addSong(newSong);
-
-            } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            DataManager.this.saveMediaTask.run();
-        }
+    private void onFileImported(String title, String artist, String album, long duration, File path, long id) {
+        LocalSong newSong = new LocalSong(title, artist, album, duration, path, id);
+        System.out.format("[DataManager][onFileImported] Song \"%s\" imported\n", title);
+        this.songs.add(newSong);
+        this.saveMedia();
     }
 }

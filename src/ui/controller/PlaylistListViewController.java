@@ -115,13 +115,7 @@ public class PlaylistListViewController implements Initializable {
       dialog.setContentText("Name:");
       Optional<String> result = dialog.showAndWait();
       result.ifPresent(name -> {
-         try {
-            DataManager.getDataManager().getCurrentLibrary().get().createPlaylist(name);
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-         } catch (ExecutionException e) {
-            e.printStackTrace();
-         }
+          parentViewController.getCurrentLibrary().createPlaylist(name);
       });
    }
 

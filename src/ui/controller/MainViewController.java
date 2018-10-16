@@ -1,16 +1,18 @@
 package ui.controller;
 
+import connect.Library;
 import connect.Song;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import net.client.RemoteLibrary;
+import net.server.LibraryServer;
 import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
-import javax.xml.crypto.Data;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -32,6 +34,8 @@ public class MainViewController implements Initializable, ControlledView {
     private Pane container;
 
     private String currentTheme = "Default";
+
+    private RemoteLibrary library;
 
     public void setViewParent(Router viewParent) {
         router = viewParent;
@@ -57,31 +61,25 @@ public class MainViewController implements Initializable, ControlledView {
         leftViewController.setParentViewController(this);
         rightViewController.setParentViewController(this);
         bottomViewController.setParentViewController(this);
-
+        this.library = new RemoteLibrary(LibraryServer.getInstance().getAddress(), LibraryServer.getInstance().getPort());
+        this.library.connect();
     }
 
+    public Library getCurrentLibrary() {
+        return this.library;
+    }
 
     /**
      * Load a library from DataManager
      */
     public void loadCurrentLibrary() {
-        //boolean result =DataManager.getDataManager().tryAuth("nico", "78736779");
         System.out.println("[MainViewController][loadCurrentLibrary] Getting username");
         leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
 
-        try {
-            System.out.println("[MainViewController][loadCurrentLibrary] Applying library to right view");
-            rightViewController.setCurrentLibrary(DataManager.getDataManager().getCurrentLibrary().get());
-            System.out.println("[MainViewController][loadCurrentLibrary] Done");
+        rightViewController.setCurrentLibrary(this.library);
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
         this.setTheme(DataManager.getDataManager().getCurrentUser().getTheme());
-
     }
 
     /**
