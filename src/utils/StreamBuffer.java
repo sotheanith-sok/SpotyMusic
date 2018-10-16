@@ -159,7 +159,7 @@ class BufferProvider extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-       
+
        synchronized (this.buffer.lock) {
           for (int i = 0; i < len; i++) {
              write(b[off + i]);
