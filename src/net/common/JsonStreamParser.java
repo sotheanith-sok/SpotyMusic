@@ -57,11 +57,6 @@ public class JsonStreamParser implements CompletableRunnable {
             }
         }
 
-        if (this.socket.isReceiveClosed()) {
-            System.out.println("[JsonStreamParser][run][" + this.state + "] Socket not connected or input is closed");
-            this.state = ParserState.CLOSED;
-        }
-
         if (this.state == ParserState.READY) {
             try {
                 InputStream in = this.socket.inputStream();
@@ -83,8 +78,16 @@ public class JsonStreamParser implements CompletableRunnable {
                     }
                     //System.out.println("[JsonSteamParser] Trying to get next token");
                     if (parser.nextToken() == null) {
-                        this.state = ParserState.WAITING;
-                        break;
+                        if (this.socket.isReceiveClosed()) {
+                            System.out.println("[JsonStreamParser][run][" + this.state + "] Socket not connected or input is closed");
+                            this.finished();
+                            this.state = ParserState.CLOSED;
+
+                        } else {
+                            this.state = ParserState.WAITING;
+                            break;
+                        }
+
                     }
 
                 }

@@ -83,7 +83,7 @@ public class ServerSocket {
                         reader.close();
 
                         if (type == PacketType.SYN) {
-                            System.out.println("[ServerSocket][listener] Received SYN packet, creating new SlaveSocket");
+                            //System.out.println("[ServerSocket][listener] Received SYN packet, creating new SlaveSocket");
                             SlaveSocket newSocket = new SlaveSocket(packet.getAddress(), packet.getPort());
                             newSocket.transferPacket(packet);
                             this.sockets.put(key, newSocket);
@@ -104,7 +104,7 @@ public class ServerSocket {
 
     protected void socketClosed(SlaveSocket socket) {
         synchronized (this.socketsLock) {
-            System.out.println("[ServerSocket][socketClosed] Socket to " + socket.remote + ":" + socket.port + " closed");
+            //System.out.println("[ServerSocket][socketClosed] Socket to " + socket.remote + ":" + socket.port + " closed");
             this.sockets.remove(socket.remote.hashCode() ^ socket.port);
         }
     }
@@ -184,7 +184,7 @@ public class ServerSocket {
 
         @Override
         public void onClose(int id) {
-            if (this.state.get() == ESTABLISHED) System.out.println("[SlaveSocket][onClose] Client sent CLOSE packet");
+            //if (this.state.get() == ESTABLISHED) System.out.println("[SlaveSocket][onClose] Client sent CLOSE packet");
             super.onClose(id);
         }
 

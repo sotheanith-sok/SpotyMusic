@@ -68,7 +68,7 @@ public class ClientSocket extends Socket {
 
     @Override
     public void onClose(int id) {
-        if (this.state.get() == ESTABLISHED) System.out.println("[ClientSocket][onClose] Server sent CLOSE packet");
+        //if (this.state.get() == ESTABLISHED) System.out.println("[ClientSocket][onClose] Server sent CLOSE packet");
         super.onClose(id);
     }
 

@@ -350,11 +350,11 @@ public abstract class Socket {
     protected void onMessage(int id, byte[] data, int off, int len) {
         if (this.enforceOrdering(id)) {
             try {
-
+/*
                 Reader reader = new InputStreamReader(new ByteArrayInputStream(data, off, len));
                 char[] c = new char[150];
                 while (reader.read(c, 0, 100) != -1) System.out.println(c);
-
+*/
                 this.receiveBuffer.getOutputStream().write(data, off, len);
             } catch (IOException e) {
                 e.printStackTrace();

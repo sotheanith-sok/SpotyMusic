@@ -94,6 +94,7 @@ public abstract class StreamGenerator implements CompletableRunnable {
     protected void finished() {
         this.state = GeneratorState.COMPLETE;
         if (this.autoClose) {
+            System.out.println("[StreamGenerator][finished] StreamGenerator finished, closing socket");
             this.socket.close();
         }
     }
