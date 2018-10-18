@@ -1,6 +1,7 @@
 package net.connect;
 
 import net.common.Constants;
+import net.lib.Utils;
 
 import java.io.IOException;
 import java.net.*;
@@ -8,6 +9,9 @@ import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @deprecated
+ */
 public class SessionedSocket {
 
     private final Object socketLock;

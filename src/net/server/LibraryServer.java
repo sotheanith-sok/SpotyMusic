@@ -7,7 +7,7 @@ import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import net.common.*;
 import net.common.JsonField;
-import net.connect.Utils;
+import net.lib.Utils;
 import net.lib.ServerSocket;
 import net.lib.Socket;
 import persistence.DataManager;

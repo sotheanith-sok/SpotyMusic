@@ -7,6 +7,8 @@ import java.net.InetAddress;
 
 /**
  * Represents a packet of data that is a part of a communication Socket.
+ *
+ * @deprecated
  */
 public class SessionPacket {
 
