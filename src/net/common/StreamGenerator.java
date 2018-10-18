@@ -1,6 +1,6 @@
 package net.common;
 
-import net.connect.Session;
+import net.lib.Socket;
 import utils.CompletableRunnable;
 
 import java.io.IOException;
@@ -8,15 +8,18 @@ import java.io.OutputStream;
 
 public abstract class StreamGenerator implements CompletableRunnable {
 
-    protected Session session;
+    protected Socket socket;
 
     private GeneratorState state;
 
     protected OutputStream dest;
 
-    public StreamGenerator(Session session) {
-        this.session = session;
+    private boolean autoClose = false;
+
+    public StreamGenerator(Socket socket, boolean autoClose) {
+        this.socket = socket;
         this.state = GeneratorState.NEW;
+        this.autoClose = autoClose;
     }
 
     @Override
@@ -34,16 +37,16 @@ public abstract class StreamGenerator implements CompletableRunnable {
             }
             this.state = GeneratorState.READY;
         }
-/*
-        if (!this.session.isConnected() || !this.session.isOutputOpened()) {
+
+        if (this.socket.isClosed()) {
             this.state = GeneratorState.CLOSED;
         }
-*/
+
         if (this.state == GeneratorState.READY) {
             // transfer data if there is space
-            if (this.session.outputBufferSpace() > 0) {
+            if (this.socket.outputBufferSpace() > 0) {
                 try {
-                    this.transfer(this.session.outputBufferSpace());
+                    this.transfer(this.socket.outputBufferSpace());
 
                 } catch (IOException e) {
                     this.finished();
@@ -66,7 +69,7 @@ public abstract class StreamGenerator implements CompletableRunnable {
             }
 
         } else if (this.state == GeneratorState.WAITING) {
-            if (this.session.outputBufferSpace() > 0) {
+            if (this.socket.outputBufferSpace() > 0) {
                 this.state = GeneratorState.READY;
             }
         }
@@ -75,7 +78,7 @@ public abstract class StreamGenerator implements CompletableRunnable {
     }
 
     protected void initialize() throws IOException {
-        this.dest = this.session.outputStream();
+        this.dest = this.socket.outputStream();
     }
 
     protected abstract void transfer(int maxSize) throws Exception;
@@ -90,11 +93,8 @@ public abstract class StreamGenerator implements CompletableRunnable {
 
     protected void finished() {
         this.state = GeneratorState.COMPLETE;
-        try {
-            this.session.closeSend();
-        } catch (IOException e) {
-            System.err.println("[StreamGenerator][finished] IOException while trying to close session");
-            e.printStackTrace();
+        if (this.autoClose) {
+            this.socket.close();
         }
     }
 
