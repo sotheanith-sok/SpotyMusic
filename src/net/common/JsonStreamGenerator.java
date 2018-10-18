@@ -30,7 +30,8 @@ public abstract class JsonStreamGenerator extends StreamGenerator {
     @Override
     protected void finished() {
         try {
-            this.gen.close();
+            //this.gen.close();
+            this.gen.flush();
 
         } catch (IOException e) {
             System.err.println("[JsonStreamGenerator][finished] IOException while closing JsonGenerator");
