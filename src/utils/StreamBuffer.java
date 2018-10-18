@@ -61,13 +61,7 @@ public class StreamBuffer {
 
     public int capacity() {
         synchronized (lock) {
-            int effectiveTail;
-            if (mark < capacity) {
-                effectiveTail = mark < tail ? mark : tail;
-
-            } else {
-                effectiveTail = tail;
-            }
+            int effectiveTail = mark < capacity ? mark : tail;
 
             if (effectiveTail == head) {
                 return capacity - 1;
