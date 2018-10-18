@@ -73,7 +73,7 @@ public class SessionedSocket {
                     session.close();
 
                 } catch (IOException e) {
-                    System.err.println("[SessionedSocket][shutdown] IOException while closing session");
+                    System.err.println("[SessionedSocket][shutdown] IOException while closing socket");
                     e.printStackTrace();
                 }
             }
@@ -149,7 +149,7 @@ public class SessionedSocket {
                 System.err.println("\tRemoteAddress: " + p.getRemote());
                 System.err.println("\tRemotePort: " + p.getPort());
              } catch (IOException e) {
-                System.err.println("[SessionedSocket][sender] IOException while sending packet");
+                System.err.println("[SessionedSocket][sender] IOException while waitingAck packet");
                 e.printStackTrace();
              }
 
@@ -177,7 +177,7 @@ public class SessionedSocket {
                         try {
                             this.sessions.get(sessPack.getSessionID()).onPacket(sessPack);
                         } catch (InterruptedException e) {
-                            System.err.println("[SessionedSocket][listen] Interrupted while passing packet to Session");
+                            System.err.println("[SessionedSocket][listen] Interrupted while passing packet to Socket");
                             e.printStackTrace();
                         }
 
@@ -198,9 +198,8 @@ public class SessionedSocket {
 
     protected void sessionClosed(int id) {
         synchronized (this.sessionsLock) {
-            //System.out.print("[SessionedSocket][sessionClosed] Session ");
-            //System.out.print(id);
-            //System.out.println(" closed");
+            //System.out.println("[SessionedSocket][sessionClosed] Socket " + id + " closed");
+
             this.sessions.remove(id);
 
             if (!this.running.get() && this.sessions.isEmpty()) System.out.println("[SessionedSocket] SessionedSocket shutdown");
