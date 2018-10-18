@@ -8,6 +8,7 @@ import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 
 public abstract class Socket {
@@ -141,13 +142,12 @@ public abstract class Socket {
             int id;
             // send packet
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
-            DataOutputStream rawOut = new DataOutputStream(dest);
-            CheckedOutputStream check = new CheckedOutputStream(rawOut, new CRC32());
-            DataOutputStream out = new DataOutputStream(rawOut);
+            CheckedOutputStream check = new CheckedOutputStream(dest, new CRC32());
+            DataOutputStream out = new DataOutputStream(check);
             out.writeInt(PacketType.MESSAGE.value);
             out.writeInt(id = messageId.incrementAndGet());
             out.write(data, off, len);
-            rawOut.writeLong(check.getChecksum().getValue());
+            out.writeLong(check.getChecksum().getValue());
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
 
         } catch (SocketTimeoutException e) {
@@ -355,6 +355,11 @@ public abstract class Socket {
     protected void onMessage(int id, byte[] data, int off, int len) {
         if (this.enforceOrdering(id)) {
             try {
+                ByteArrayInputStream in = new ByteArrayInputStream(data, 0, len + 8);
+                DataInputStream read = new DataInputStream(in);
+                CheckedInputStream check = new CheckedInputStream(read, new CRC32());
+                // TODO: read data through check to calculate CRC32
+                // compare calculated CRC32 to received value
 /*
                 Reader reader = new InputStreamReader(new ByteArrayInputStream(data, off, len));
                 char[] c = new char[150];
