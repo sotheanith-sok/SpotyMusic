@@ -1,4 +1,4 @@
-package net.connect;
+package net.lib;
 
 import java.net.*;
 import java.util.Enumeration;
