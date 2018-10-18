@@ -7,6 +7,8 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedOutputStream;
 
 public abstract class Socket {
 
@@ -139,10 +141,13 @@ public abstract class Socket {
             int id;
             // send packet
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(dest);
+            DataOutputStream rawOut = new DataOutputStream(dest);
+            CheckedOutputStream check = new CheckedOutputStream(rawOut, new CRC32());
+            DataOutputStream out = new DataOutputStream(rawOut);
             out.writeInt(PacketType.MESSAGE.value);
             out.writeInt(id = messageId.incrementAndGet());
             out.write(data, off, len);
+            rawOut.writeLong(check.getChecksum().getValue());
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
 
         } catch (SocketTimeoutException e) {
@@ -372,7 +377,7 @@ public abstract class Socket {
             // if acknowledged in order
             this.remoteWindow.set(window);
             synchronized (this.waitingLock) {
-                this.waitingLock.notifyAll();
+               this.waitingLock.notifyAll();
             }
 
         } else {

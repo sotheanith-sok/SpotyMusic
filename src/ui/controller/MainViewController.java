@@ -13,6 +13,8 @@ import ui.component.ControlledView;
 import ui.component.Router;
 
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -62,7 +64,13 @@ public class MainViewController implements Initializable, ControlledView {
         rightViewController.setParentViewController(this);
         bottomViewController.setParentViewController(this);
         this.library = new RemoteLibrary(LibraryServer.getInstance().getAddress(), LibraryServer.getInstance().getPort());
-        this.library.connect();
+       try {
+          this.library.connect();
+       } catch (SocketException e) {
+          e.printStackTrace();
+       } catch (SocketTimeoutException e) {
+          e.printStackTrace();
+       }
     }
 
     public Library getCurrentLibrary() {
