@@ -3,9 +3,9 @@ package net.server;
 import net.common.Constants;
 import net.common.StreamGenerator;
 import net.connect.Session;
+import net.lib.Socket;
 import persistence.LocalSong;
 
-import javax.sound.sampled.AudioInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
@@ -17,10 +17,10 @@ public class SongStreamHandler extends StreamGenerator {
 
     private LocalSong song;
 
-    private Future<AudioInputStream> in;
+    private Future<InputStream> in;
 
-    public SongStreamHandler(Session session, LocalSong song) {
-        super(session);
+    public SongStreamHandler(Socket socket, LocalSong song) {
+        super(socket, true);
         this.song = song;
     }
 
@@ -28,7 +28,7 @@ public class SongStreamHandler extends StreamGenerator {
     protected void initialize() throws IOException {
         super.initialize();
         this.trx = new byte[Constants.PACKET_SIZE];
-        this.in = this.song.getStream();
+        this.in = this.song.getRawStream();
     }
 
     @Override
@@ -43,10 +43,17 @@ public class SongStreamHandler extends StreamGenerator {
                 throw e;
             }
 
+            if (this.socket.isSendClosed()) {
+                in.close();
+                this.finished();
+                return;
+            }
+
             int l = in.read(this.trx, 0, Math.min(trx.length, maxSize));
             this.dest.write(this.trx, 0, l);
             if (l == -1) {
                 in.close();
+                System.out.println("[SongStreamHandler][transfer] End of audio stream");
                 this.finished();
 
             } else if (l == 1) {

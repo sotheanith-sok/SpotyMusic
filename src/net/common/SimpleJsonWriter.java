@@ -1,6 +1,7 @@
 package net.common;
 
 import net.connect.Session;
+import net.lib.Socket;
 
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,8 +13,8 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
 
     private AtomicBoolean running;
 
-    public SimpleJsonWriter(Session session) {
-        super(session);
+    public SimpleJsonWriter(Socket socket, boolean autoClose) {
+        super(socket, autoClose);
 
         this.queueLock = new Object();
         this.que = new LinkedList<>();
@@ -27,15 +28,16 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
                 this.waitingForSource();
 
             } else if (!this.que.isEmpty()) {
-                System.out.println("[SimpleJsonWriter] SimpleJsonWriter writing json");
+                //System.out.println("[SimpleJsonWriter] SimpleJsonWriter writing json");
                 this.counter.reset();
                 JsonField next;
                 while (this.counter.getCount() < maxSize) {
                     if ((next = this.que.pollFirst()) == null) break;
                     next.write(this.gen);
+                    //System.out.println("[SimpleJsonWriter][transfer] Wrote a JsonField");
                 }
             } else {
-                System.out.println("[SimpleJsonWriter] SimpleJsonWriter finished");
+                //System.out.println("[SimpleJsonWriter] SimpleJsonWriter finished");
                 this.finished();
             }
         }
@@ -45,6 +47,7 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
         if (this.running.get()) {
             synchronized (this.queueLock) {
                 this.que.addLast(field);
+                //System.out.println("[SimpletJsonWriter][que] Queued a JsonField");
             }
         } else {
             throw new IllegalStateException("SimpleJsonWriter is closed");
@@ -52,7 +55,7 @@ public class SimpleJsonWriter extends JsonStreamGenerator {
     }
 
     public void complete() {
-        System.out.println("[SimpleJsonWriter] Completed with " + this.que.size() + " items in queue");
+        //System.out.println("[SimpleJsonWriter] Completed with " + this.que.size() + " items in queue");
         this.running.set(false);
     }
 }

@@ -1,6 +1,6 @@
 package net.common;
 
-import net.connect.Session;
+import net.lib.Socket;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -10,8 +10,8 @@ public class IterativeStreamingJsonSerializer<T> extends JsonStreamGenerator {
     private Iterator<T> source;
     private JsonSerializer<T> serializer;
 
-    public IterativeStreamingJsonSerializer(Session session, Iterator<T> source, JsonSerializer<T> serializer) {
-        super(session);
+    public IterativeStreamingJsonSerializer(Socket socket, boolean autoClose, Iterator<T> source, JsonSerializer<T> serializer) {
+        super(socket, autoClose);
         this.source = source;
         this.serializer = serializer;
     }
