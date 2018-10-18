@@ -9,14 +9,16 @@ import javafx.collections.ObservableList;
 import net.common.Constants;
 import net.common.JsonField;
 import net.common.JsonStreamParser;
+import net.common.JsonStreamParser.Handler;
 import net.common.SimpleJsonWriter;
-import net.connect.Session;
 import net.connect.SessionPacket;
-import net.connect.SessionedSocket;
+import net.lib.ClientSocket;
+import net.lib.Socket;
 import utils.CompletableTaskExecutor;
 
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
 
@@ -24,8 +26,6 @@ public class RemoteLibrary implements Library {
 
     private InetAddress address;
     private int port;
-
-    private SessionedSocket socket;
 
     protected CompletableTaskExecutor taskManager;
 
@@ -37,47 +37,41 @@ public class RemoteLibrary implements Library {
         this.address = address;
         this.port = port;
 
-        this.socket = new SessionedSocket(12322, this::noop);
-
         this.taskManager = new CompletableTaskExecutor(Runtime.getRuntime().availableProcessors(), 10);
 
         this.songs = FXCollections.observableList(new LinkedList<>());
         this.albums = FXCollections.observableList(new LinkedList<>());
         this.artists = FXCollections.observableList(new LinkedList<>());
 
-        try {
-            this.socket.init();
-
-        } catch (SocketException e) {
-            System.err.println("[RemoteLibrary] SocketException while opening SessionedSocket");
-            e.printStackTrace();
-        }
-
         System.out.println("[RemoteLibrary] RemoteLibrary instantiated");
     }
 
-    public void connect() {
+    public void connect() throws SocketException, SocketTimeoutException {
         // send request to get all artists
-        Session session = this.getSession();
-        SimpleJsonWriter request = new SimpleJsonWriter(session);
+        Socket socket = this.getConnection();
+        SimpleJsonWriter request = new SimpleJsonWriter(socket, false);
         JsonField.ObjectField packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_ARTISTS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(session, (sess, art) -> {
-            if (art.isString()) this.artists.add(art.getStringValue());
+        this.taskManager.submit(new JsonStreamParser(socket, true, (soc, art) -> {
+            if (art.isString()) {
+                this.artists.add(art.getStringValue());
+                System.out.println("[RemoteLibrary][artistParseHandler] New artist: " + art.getStringValue());
+            }
         }, true));
 
         // send request to get all albums
-        session = this.getSession();
-        request = new SimpleJsonWriter(session);
+        socket = this.getConnection();
+        //socket.debug = true;
+        request = new SimpleJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_ALBUMS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(session, (sess, alb) -> {
+        this.taskManager.submit(new JsonStreamParser(socket, true, (sess, alb) -> {
             if (alb.isObject() && alb.containsKey("title") && alb.containsKey("artist")){
                 this.albums.add(new RemoteAlbum(this, alb.getProperty("title").getStringValue(), alb.getProperty("artist").getStringValue()));
                 System.out.println("[RemoteLibrary][albumParseHandler] New album: " + alb.getProperty("title").getStringValue());
@@ -86,14 +80,15 @@ public class RemoteLibrary implements Library {
         }, true));
 
         // send request to get all songs
-        session = this.getSession();
-        request = new SimpleJsonWriter(session);
+        socket = this.getConnection();
+        //socket.debug = true;
+        request = new SimpleJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_SONGS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(session, (sess, song) -> {
+        this.taskManager.submit(new JsonStreamParser(socket, true, (sess, song) -> {
             if (song.isObject()) {
                 if (song.containsKey("title") &&
                     song.containsKey("artist") &&
@@ -115,26 +110,37 @@ public class RemoteLibrary implements Library {
 
         }, true));
 
-        session = this.getSession();
-        //session.debug = true;
-        request = new SimpleJsonWriter(session);
+        socket = this.getConnection();
+        //socket.debug = true;
+        request = new SimpleJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_SUBSCRIBE);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(session, new ChangeStreamParser(this)));
-        session.addDisconnectListener(() -> System.out.println("[RemoteLibrary] Change subscription disconnected"));
+        this.taskManager.submit(new JsonStreamParser(socket, true, new ChangeStreamParser(this)));
+        //socket.addDisconnectListener(() -> System.out.println("[RemoteLibrary] Change subscription disconnected"));
 
+        /*
+        socket = this.getConnection();
+        request = new SimpleJsonWriter(socket, false);
+        packet = JsonField.emptyObject();
+        packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, "test-file");
+        request.que(packet);
+        request.complete();
+        this.taskManager.submit(request);
+        this.taskManager.submit(new TestFileDownloader(socket));
+*/
     }
 
     public void disconnect() {
-        this.socket.shutdown();
         this.taskManager.shutdown();
     }
 
-    protected Session getSession() {
-        return this.socket.createSession(this.address, this.port);
+    protected Socket getConnection() throws SocketException, SocketTimeoutException {
+        ClientSocket socket = new ClientSocket(this.address, this.port);
+        socket.connect();
+        return socket;
     }
 
     @Override
