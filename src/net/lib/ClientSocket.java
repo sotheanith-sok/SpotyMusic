@@ -19,6 +19,11 @@ public class ClientSocket extends Socket {
         this.socketLock = new Object();
     }
 
+    public ClientSocket(InetAddress remote, int port, int sendBuffer, int receiveBuffer) {
+        super(remote, port, sendBuffer, receiveBuffer);
+        this.socketLock = new Object();
+    }
+
     public void connect() throws SocketException, SocketTimeoutException {
         this.socket = new DatagramSocket(new InetSocketAddress(0));
         this.socket.connect(this.remote, this.port);
@@ -41,6 +46,7 @@ public class ClientSocket extends Socket {
             return null;
 
         } catch (IOException e) {
+            if (this.socket.isClosed()) return null;
             throw e;
         }
     }
@@ -75,7 +81,7 @@ public class ClientSocket extends Socket {
     @Override
     protected void onClosed() {
         this.socket.close();
-        //System.out.println("[ClientSocket][onClosed] ClientSocket closed successfully");
+        if (this.debug <= Constants.FINE) System.out.println("[ClientSocket][onClosed] ClientSocket closed successfully");
         //System.out.println("[ClientSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
     }
 

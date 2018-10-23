@@ -43,9 +43,9 @@ public interface Song {
 
     /**
      * default implementation
-     * */
+     */
     default String getReadableDuration() {
-        int seconds = (int)(this.getDuration()/1000000);
+        int seconds = (int)(this.getDuration());
         return Integer.toString(seconds/60) + ":" + Integer.toString(seconds % 60);
     }
 

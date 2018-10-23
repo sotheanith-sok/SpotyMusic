@@ -9,7 +9,7 @@ import utils.CompletableRunnable;
 import java.io.*;
 import java.util.*;
 
-public class JsonStreamParser implements CompletableRunnable {
+public class JsonStreamParser implements Runnable {
 
     private static JsonFactory factory = new JsonFactory();
 
@@ -27,6 +27,8 @@ public class JsonStreamParser implements CompletableRunnable {
 
     private boolean globalArrayAsStream = false;
 
+    public boolean debug = false;
+
     public JsonStreamParser(Socket socket, boolean autoCloseSocket, Handler handler) {
         this.socket = socket;
         this.autoCloseSocket = autoCloseSocket;
@@ -41,75 +43,82 @@ public class JsonStreamParser implements CompletableRunnable {
         this.globalArrayAsStream = globalArrayAsStream;
     }
 
-    public boolean run() throws Exception {
-        if (this.state == ParserState.NEW) {
-            try {
-                this.initialize();
-                this.state = ParserState.READY;
-                //System.out.println("[JsonStreamParser][run] JsonSteamParser initialized");
+    public void run() {
+        try {
+            if (this.state == ParserState.NEW) {
+                try {
+                    this.initialize();
+                    this.state = ParserState.READY;
+                    //System.out.println("[JsonStreamParser][run] JsonSteamParser initialized");
 
-            } catch (IOException e) {
-                this.finished();
-                this.state = ParserState.ERROR;
-                System.err.println("[JsonStreamParser][update] IOException while creating JsonParser");
-                e.printStackTrace();
-                throw e;
-            }
-        }
-
-        if (this.state == ParserState.READY) {
-            try {
-                InputStream in = this.socket.inputStream();
-
-                for (int i = 0; this.state == ParserState.READY && i < 10; i++) {
-                    if (parser.hasCurrentToken()) {
-                        //System.out.println("[JsonStreamParser][update] processing token");
-                        try {
-                            this.processToken(parser.getCurrentToken(), parser);
-
-                        } catch (IOException e) {
-                            this.finished();
-                            this.state = ParserState.ERROR;
-                            System.err.println("[JsonStreamParser][update] IOException while processing token");
-                            e.printStackTrace();
-                            throw e;
-                        }
-
-                    }
-                    //System.out.println("[JsonSteamParser] Trying to get next token");
-                    if (parser.nextToken() == null) {
-                        if (this.socket.isReceiveClosed()) {
-                            System.out.println("[JsonStreamParser][run][" + this.state + "] Socket not connected or input is closed");
-                            this.finished();
-                            this.state = ParserState.CLOSED;
-
-                        } else {
-                            this.state = ParserState.WAITING;
-                            break;
-                        }
-
-                    }
-
+                } catch (IOException e) {
+                    this.finished();
+                    this.state = ParserState.ERROR;
+                    System.err.println("[JsonStreamParser][update] IOException while creating JsonParser");
+                    e.printStackTrace();
+                    throw e;
                 }
-
-            } catch (IOException e) {
-                this.finished();
-                this.state = ParserState.ERROR;
-                System.err.println("[JsonStreamParser][update] IOException while reading input stream");
-                e.printStackTrace();
-                throw e;
             }
 
-        } else if (this.state == ParserState.WAITING) {
-            if (this.socket.isReceiveClosed()) {
-                this.state = ParserState.CLOSED;
+            while (this.state.isAlive()) {
+                if (this.state == ParserState.READY) {
+                    try {
+                        InputStream in = this.socket.inputStream();
 
-            } else {
-                this.state = ParserState.READY;
+                        for (int i = 0; this.state == ParserState.READY && i < 10; i++) {
+                            if (parser.hasCurrentToken()) {
+                                //System.out.println("[JsonStreamParser][update] processing token");
+                                try {
+                                    this.processToken(parser.getCurrentToken(), parser);
+
+                                } catch (IOException e) {
+                                    this.finished();
+                                    this.state = ParserState.ERROR;
+                                    System.err.println("[JsonStreamParser][update] IOException while processing token");
+                                    e.printStackTrace();
+                                    throw e;
+                                }
+                            }
+                            //System.out.println("[JsonSteamParser] Trying to get next token");
+                            if (parser.nextToken() == null) {
+                                if (this.socket.isReceiveClosed()) {
+                                    if (this.debug)
+                                        System.out.println("[JsonStreamParser][run][" + this.state + "] Socket not connected or input is closed");
+                                    this.finished();
+                                    this.state = ParserState.CLOSED;
+                                    break;
+
+                                } else {
+                                    this.state = ParserState.WAITING;
+                                    break;
+                                }
+
+                            }
+
+                        }
+
+                    } catch (IOException e) {
+                        this.finished();
+                        this.state = ParserState.ERROR;
+                        //System.err.println("[JsonStreamParser][update] IOException while reading input stream");
+                        e.printStackTrace();
+                        throw e;
+                    }
+
+                } else if (this.state == ParserState.WAITING) {
+                    if (this.socket.isReceiveClosed()) {
+                        this.state = ParserState.CLOSED;
+
+                    } else {
+                        Thread.sleep(100);
+                        this.state = ParserState.READY;
+                    }
+                }
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        return !this.state.isAlive();
     }
 
     public ParserState getState() {
@@ -125,7 +134,7 @@ public class JsonStreamParser implements CompletableRunnable {
         //System.out.println("[JsonStreamParser][finished] JsonStreamParser finished");
 
         if (this.autoCloseSocket) {
-            System.out.println("[JsonStreamParser][finished] JsonStream finished, closing socket");
+            if (this.debug) System.out.println("[JsonStreamParser][finished] JsonStream finished, closing socket");
             this.socket.close();
         }
     }
@@ -136,7 +145,7 @@ public class JsonStreamParser implements CompletableRunnable {
     }
 
     protected void processToken(JsonToken token, JsonParser parser) throws IOException {
-        //System.out.println("[JsonStreamParser][processToken] Token: " + token);
+        if (this.debug) System.out.println("[JsonStreamParser][processToken] Token: " + token);
 
         if (token == JsonToken.START_OBJECT) {
             this.contextStack.push(new ParserContext(true));

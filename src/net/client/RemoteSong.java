@@ -11,6 +11,7 @@ import net.lib.Socket;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
@@ -76,7 +77,8 @@ public class RemoteSong implements Song {
 
             Socket socket = null;
             try {
-                socket = this.library.getConnection();
+                socket = this.library.getConnection(Constants.BUFFER_SIZE, 1024 * 150);
+                //socket.debug = Constants.FINE;
 
             } catch (SocketException e) {
                 System.err.println("[RemoteSong][getStream] SocketException while opening connection");
@@ -96,7 +98,7 @@ public class RemoteSong implements Song {
             request.complete();
             library.taskManager.submit(request);
 
-            System.out.println("[RemoteSong][getStream] Request waitingAck");
+            System.out.println("[RemoteSong][getStream] Request sending");
             System.out.println("[RemoteSong][getStream] Waiting for response data");
 
             InputStream in = socket.inputStream();
@@ -131,7 +133,7 @@ public class RemoteSong implements Song {
             }
 
             try {
-                future.complete(AudioSystem.getAudioInputStream(in));
+                future.complete(AudioSystem.getAudioInputStream(new BufferedInputStream(in)));
                 System.out.println("[RemoteSong][getStream] It worked!");
 
             } catch (UnsupportedAudioFileException e) {

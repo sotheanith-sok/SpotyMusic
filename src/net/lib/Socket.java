@@ -1,15 +1,15 @@
 package net.lib;
 
 import net.common.Constants;
-import utils.StreamBuffer;
+import utils.CRC64;
+import utils.RingBuffer;
 
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
+import java.util.zip.Checksum;
 
 public abstract class Socket {
 
@@ -32,7 +32,7 @@ public abstract class Socket {
      */
     protected AtomicInteger remoteWindow;
 
-    protected StreamBuffer sendBuffer;
+    protected RingBuffer sendBuffer;
 
     protected AtomicBoolean waitingAck;
     protected final Object waitingLock;
@@ -51,13 +51,20 @@ public abstract class Socket {
      */
     protected AtomicInteger lastReceivedId;
 
-    protected StreamBuffer receiveBuffer;
+    protected RingBuffer receiveBuffer;
 
     protected long lastReceivedTime;
+    protected long lastAckTime;
 
     protected Thread receiver;
 
+    public int debug = Constants.ERROR;
+
     public Socket(InetAddress remote, int port) {
+        this(remote, port, Constants.BUFFER_SIZE, Constants.BUFFER_SIZE);
+    }
+
+    public Socket(InetAddress remote, int port, int sendBuffer, int receiveBuffer) {
         this.remote = remote;
         this.port = port;
         this.state = new AtomicInteger();
@@ -65,16 +72,17 @@ public abstract class Socket {
         this.messageId = new AtomicInteger(0);
         this.acknowledgedId = new AtomicInteger(0);
         this.remoteWindow = new AtomicInteger(1);
-        this.sendBuffer = new StreamBuffer(Constants.BUFFER_SIZE);
+        this.sendBuffer = new RingBuffer(sendBuffer);
         this.waitingAck = new AtomicBoolean();
         this.waitingLock = new Object();
         this.sender = new Thread(this::sender);
         this.sender.setName("[Socket][sender]");
 
         this.lastReceivedId = new AtomicInteger();
-        this.receiveBuffer = new StreamBuffer(Constants.BUFFER_SIZE);
+        this.receiveBuffer = new RingBuffer(receiveBuffer);
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
+
     }
 
     // public API and convenience methods
@@ -126,7 +134,7 @@ public abstract class Socket {
     protected abstract DatagramSocket getSocket();
 
     protected int getWindow() {
-        return this.receiveBuffer.capacity() > Constants.PACKET_SIZE ? 1 : 0;
+        return Math.max(0, this.receiveBuffer.capacity() / Constants.PACKET_SIZE - 2);
     }
 
     /**
@@ -137,17 +145,19 @@ public abstract class Socket {
      * @param len the length of data to send
      */
     protected void sendMessage(byte[] data, int off, int len) throws SocketTimeoutException, IOException {
-        if (this.state.get() == CLOSED) throw new IllegalStateException("Cannot send message data when connection is not ESTABLISHED");
+        if (this.state.get() == CLOSED || this.state.get() == CLOSE_SENT) throw new IllegalStateException("Cannot send message data when connection being closed");
         try {
             int id;
             // send packet
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
-            CheckedOutputStream check = new CheckedOutputStream(dest, new CRC32());
+            CheckedOutputStream check = new CheckedOutputStream(dest, new CRC64());
             DataOutputStream out = new DataOutputStream(check);
             out.writeInt(PacketType.MESSAGE.value);
             out.writeInt(id = messageId.incrementAndGet());
             out.write(data, off, len);
-            out.writeLong(check.getChecksum().getValue());
+            long checksum = check.getChecksum().getValue();
+            //System.out.println("[Socket][sendMessage] Checksum value: " + checksum);
+            out.writeLong(checksum);
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
 
         } catch (SocketTimeoutException e) {
@@ -189,6 +199,7 @@ public abstract class Socket {
             out.writeInt(this.getWindow());
             this.sendTrivial(dest.toByteArray(), 0, dest.size());
             this.lastReceivedId.set(ackId);
+            if (this.debug <= Constants.FINEST) System.out.println("[Socket][sendAck] Sent Ack ackId=" + ackId);
 
         } catch (IOException e) {
             System.err.println("[Socket][sendAck] IOException while trying to send ACK packet");
@@ -206,6 +217,8 @@ public abstract class Socket {
             out.writeInt(id = this.messageId.incrementAndGet());
             this.sendBuffer.getOutputStream().close();
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
+
+            if (this.debug <= Constants.FINE) System.out.println("[Socket][sendClose][debug] Sent CLOSE packet");
 
             if (this.state.get() == ESTABLISHED) {
                 // if was established, then local initiated close
@@ -234,7 +247,9 @@ public abstract class Socket {
             DataOutputStream out = new DataOutputStream(dest);
             out.writeInt(PacketType.POKE.value);
             out.writeInt(id = this.messageId.incrementAndGet());
+            if (this.debug <= Constants.FINEST) System.out.println("[Socket][sendPoke] Sending POKE id=" + id);
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
+            if (this.debug <= Constants.FINEST) System.out.println("[Socket][sendPoke] Sent POKE id=" + id);
 
         } catch (IOException e) {
             System.err.println("[Socket][sendPoke] IOException while trying to send POKE packet");
@@ -252,38 +267,45 @@ public abstract class Socket {
      * @throws IOException if the socket is closed while sending data
      */
     protected void sendPacket(int id, byte[] packet, int off, int len) throws SocketTimeoutException, IOException {
-        if (this.state.get() == CLOSED || this.state.get() == CLOSE_SENT) throw new IllegalStateException("Cannot send message data when connection being closed");
-        boolean sent = false;
         do {
             if (this.state.get() == CLOSED) throw new IOException("Socket closed while waiting to send");
             if (this.acknowledgedId.get() + 1 == id) {
                 // if next in line to be sent
                 if (this.waitingAck.compareAndSet(false, true)) {
                     // send packet
+                    this.lastSend = packet;
+                    this.offset = off;
+                    this.length = len;
                     this.sendTrivial(packet, off, len);
 
                     // wait for acknowledgement
                     synchronized (this.waitingLock) {
-                        while (!sent) {
-                            if (this.acknowledgedId.get() == id) {
-                                //System.out.println("[Socket][sendPacket] Packet sent and acknowledged!");
-                                sent = true;
-                                this.waitingAck.set(false);
-                                break;
+                        if (this.acknowledgedId.get() == id) {
+                            this.waitingAck.set(false);
+                            break;
 
-                            } else {
-                                try {
-                                    this.waitingLock.wait(Constants.RESEND_DELAY);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                        } else {
+                            try {
+                                this.waitingLock.wait(Constants.RESEND_DELAY);
+                                if (this.acknowledgedId.get() == id) {
+                                    this.waitingAck.set(false);
+                                    break;
                                 }
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
                             }
+                            if (System.currentTimeMillis() - lastReceivedTime > Constants.TIMEOUT_DELAY) {
+                                this.reportTimeout();
+                                throw new SocketTimeoutException("Socket timed out while trying to send packet");
+                            }
+                            if (this.debug <= Constants.INFO) System.out.println("[Socket][sendPacket][INFO] Packet not acknowledged, sending packet again");
                         }
+
                     }
                 }
 
             } else {
-                System.out.println("[Socket][sendPacket] Packet not being sent in order");
+                System.err.println("[Socket][sendPacket] Packet not being sent in order. id=" + id + " lastAcknowledged=" + acknowledgedId.get());
                 try {
                     synchronized (this.waitingLock) {
                         this.waitingLock.wait();
@@ -294,7 +316,9 @@ public abstract class Socket {
                 }
             }
 
-        } while (!sent);
+        } while (true);
+
+        if (this.debug <= Constants.DEBUG) System.out.println("[Socket][sendPacket][DEBUG] Packet id=" + id + " sent and acknowledged");
     }
 
     protected void sendTrivial(byte[] packet, int off, int len) {
@@ -303,9 +327,6 @@ public abstract class Socket {
 
             try {
                 this.getSocket().send(p);
-                this.lastSend = packet;
-                this.offset = off;
-                this.length = len;
 
             } catch (BindException e) {
                 System.err.println("[Socket][sendTrivial] BindException while trying to send packet. Remote address: " + this.remote + ":" + this.port);
@@ -320,21 +341,38 @@ public abstract class Socket {
 
     protected void sender() {
         byte[] trx = new byte[Constants.PACKET_SIZE];
+        lastAckTime = System.currentTimeMillis();
 
+        InputStream src = this.sendBuffer.getInputStream();
         while (this.state.get() != CLOSED && this.state.get() != CLOSE_RECEIVED && (this.sendBuffer.available() > 0 || this.sendBuffer.isWriteOpened())) {
             // if remote can accept, send data
-            if (this.remoteWindow.get() > 0) {
-                try {
-                    InputStream src = this.sendBuffer.getInputStream();
-                    int amnt = src.read(trx, 0, trx.length); // blocks until at least one byte read
-                    if (amnt == -1) break;
-                    //System.out.println("[Socket][sender] Sending " + amnt + " bytes");
-                    this.sendMessage(trx, 0, amnt); // blocks until data sent or socket closed
+            try {
+                if (this.remoteWindow.get() > 0 && src.available() > 0) {
+                    try {
+                        int amnt = src.read(trx, 0, trx.length); // blocks until at least one byte read
+                        if (amnt == -1) break;
+                        //System.out.println("[Socket][sender] Sending " + amnt + " bytes");
+                        this.sendMessage(trx, 0, amnt); // blocks until data sent or socket closed
+                        if (this.debug <= Constants.LOG) System.out.println("[Socket][sender][debug] Sent " + amnt + " bytes of message data");
 
-                } catch (IOException e) {
-                    System.err.println("[Socket][sender] IOException while trying to send data");
-                    e.printStackTrace();
+                    } catch (IOException e) {
+                        System.err.println("[Socket][sender] IOException while trying to send data");
+                        e.printStackTrace();
+                    }
                 }
+            } catch (IOException e) {
+                System.err.println("[Socket][sender] IOException while checking for available data to send");
+                e.printStackTrace();
+            }
+
+            if (System.currentTimeMillis() - this.lastAckTime > Constants.TIMEOUT_DELAY / 2) {
+                this.sendPoke();
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
@@ -355,17 +393,24 @@ public abstract class Socket {
     protected void onMessage(int id, byte[] data, int off, int len) {
         if (this.enforceOrdering(id)) {
             try {
-                ByteArrayInputStream in = new ByteArrayInputStream(data, 0, len + 8);
+                ByteArrayInputStream in = new ByteArrayInputStream(data, off + len, Constants.FOOTER_OVERHEAD);
                 DataInputStream read = new DataInputStream(in);
-                CheckedInputStream check = new CheckedInputStream(read, new CRC32());
-                // TODO: read data through check to calculate CRC32
-                // compare calculated CRC32 to received value
-/*
-                Reader reader = new InputStreamReader(new ByteArrayInputStream(data, off, len));
-                char[] c = new char[150];
-                while (reader.read(c, 0, 100) != -1) System.out.println(c);
-*/
+                long expected = read.readLong();
+
+                Checksum check = new CRC64();
+                check.update(data, 0, len + Constants.HEADER_OVERHEAD);
+                long calculated = check.getValue();
+
+                if (calculated != expected) {
+                    System.err.println("[Socket][onMessage] Checksum mismatch! Calculated = " + calculated + " Received = " + expected);
+                }
+
+                //System.out.write(data, off, len);
+
+                if (this.debug <= Constants.LOG) System.out.println("[Socket][onMessage][LOG] Received " + len + " bytes of message data");
                 this.receiveBuffer.getOutputStream().write(data, off, len);
+                if (this.debug <= Constants.LOG) System.out.println("[Socket][onMessage][LOG] Wrote " + len + " bytes to receive buffer");
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -380,6 +425,7 @@ public abstract class Socket {
     protected void onAck(int ackId, int window) {
         if (this.acknowledgedId.compareAndSet(ackId - 1, ackId)) {
             // if acknowledged in order
+            this.lastAckTime = System.currentTimeMillis();
             this.remoteWindow.set(window);
             synchronized (this.waitingLock) {
                this.waitingLock.notifyAll();
@@ -394,6 +440,8 @@ public abstract class Socket {
 
     protected void onClose(int id) {
         if (enforceOrdering(id)) {
+            if (this.debug <= Constants.FINE) System.out.println("[Socket][onClose][debug] Received CLOSE packet");
+
             if (this.state.get() == ESTABLISHED) {
                 this.state.set(CLOSE_RECEIVED);
 
@@ -447,7 +495,7 @@ public abstract class Socket {
             PacketType type = PacketType.fromValue(reader.readInt());
             int id = reader.readInt();
 
-            //System.out.println("[Socket][onPacket] Received packet of type " + type);
+            if (this.debug <= Constants.FINER) System.out.println("[Socket][onPacket] Received packet: type=" + type + " id=" + id);
 
             if (type == PacketType.SYN) {
                 this.onSyn(pack.getAddress(), pack.getPort(), id);
@@ -457,7 +505,7 @@ public abstract class Socket {
                 this.onAck(id, window);
 
             } else if (type == PacketType.MESSAGE) {
-                this.onMessage(id, packet, 8, pack.getLength() - 8);
+                this.onMessage(id, packet, Constants.HEADER_OVERHEAD, pack.getLength() - Constants.HEADER_OVERHEAD - Constants.FOOTER_OVERHEAD);
 
             } else if (type == PacketType.CLOSE) {
                 this.onClose(id);
@@ -492,9 +540,6 @@ public abstract class Socket {
                     if (this.state.get() == CLOSED) break;
                     if (System.currentTimeMillis() - this.lastReceivedTime > Constants.TIMEOUT_DELAY) {
                         this.reportTimeout();
-
-                    } else {
-                        this.sendPoke();
                     }
 
                 } else {
@@ -515,6 +560,8 @@ public abstract class Socket {
     protected abstract void onTimeout();
 
     protected void reportTimeout() {
+        this.state.set(CLOSED);
+        if (this.debug <= Constants.WARN) System.out.println("[Socket][reportTimeout][WARN] Socket timed out");
         this.onTimeout();
     }
 

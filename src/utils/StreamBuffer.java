@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @deprecated
+ */
 public class StreamBuffer {
 
     protected final Object lock;
@@ -137,7 +140,7 @@ class BufferConsumer extends InputStream {
         synchronized (buffer.lock) {
             if (available() == 0 && buffer.writeOpened.get()) {
                 try {
-                    //System.out.println("[StreamBuffer][InputStream] available() = 0");
+                    System.out.println("[StreamBuffer][InputStream] available() = 0");
                     buffer.lock.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -145,9 +148,10 @@ class BufferConsumer extends InputStream {
             }
 
             if (available() > 0) {
-                int d = buffer.buffer[buffer.tail];
+                byte d = buffer.buffer[buffer.tail];
                 buffer.tail++;
                 buffer.readSinceReset++;
+                buffer.readSinceMark++;
                 buffer.tail %= buffer.capacity;
 
                 if (buffer.mark < buffer.capacity) {
@@ -184,12 +188,12 @@ class BufferConsumer extends InputStream {
                 } catch (InterruptedException e) {}
 
                 if (!buffer.readOpened.get() && buffer.available() == 0) {
-                    //System.err.println("[SteamBuffer][BufferConsumer][read] StreamBuffer Consumer closed while waiting for input");
+                    System.err.println("[SteamBuffer][BufferConsumer][read] StreamBuffer Consumer closed while waiting for input");
                     return -1;
                 }
 
                 if (buffer.available() == 0 && !buffer.writeOpened.get()) {
-                    //System.err.println("[StreamBuffer][BufferConsumer][read] StreamBuffer Producer closed while waiting for input");
+                    System.err.println("[StreamBuffer][BufferConsumer][read] StreamBuffer Producer closed while waiting for input");
                     return -1;
                 }
 

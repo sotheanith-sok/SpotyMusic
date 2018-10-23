@@ -2,12 +2,13 @@ package net.common;
 
 public class Constants {
     // connect package
-    public static final int PACKET_SIZE = 1024;
+    public static final int PACKET_SIZE = 1024 * 20;
     public static final int HEADER_OVERHEAD = 2 * 4;
-    public static final int PACKET_BUFFER_SIZE = PACKET_SIZE + HEADER_OVERHEAD;
+    public static final int FOOTER_OVERHEAD = 8;
+    public static final int PACKET_BUFFER_SIZE = PACKET_SIZE + HEADER_OVERHEAD + FOOTER_OVERHEAD;
     public static final long RESEND_DELAY = 4096;
     public static final long TIMEOUT_DELAY = 16384;
-    public static final int BUFFER_SIZE = 1024 * 10;
+    public static final int BUFFER_SIZE = 1024 * 200;
 
     // client package
     public static final int MIN_BUFFERED_DATA = 2048;
