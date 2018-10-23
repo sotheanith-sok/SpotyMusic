@@ -32,7 +32,7 @@ public class Main extends Application {
         mainRouter.setView(splashID);
         Scene scene = new Scene(mainRouter, 1280, 720);
 
-        primaryStage.setTitle("Spusic");
+        primaryStage.setTitle("SpotyMusic");
         //primaryStage.getIcons().add(new Image(logoFile));
 
         primaryStage.setOnCloseRequest(t -> {

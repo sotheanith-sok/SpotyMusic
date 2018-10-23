@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.text.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" styleClass="BottomView" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.BottomViewController">
+<AnchorPane prefHeight="400.0" prefWidth="600.0" styleClass="BottomView" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.controller.BottomViewController">
    <children>
       <GridPane alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
@@ -35,16 +44,25 @@
                <children>
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2">
                      <children>
-                        <Button id="previousButton" fx:id="previousSongBtn" mnemonicParsing="false" prefWidth="75.0" text="Previous">
+                        <Button id="previousButton" fx:id="previousSongBtn" mnemonicParsing="false" prefWidth="100.0">
                            <HBox.margin>
                               <Insets right="10.0" />
                            </HBox.margin>
+                           <graphic>
+                              <FontAwesomeIconView glyphName="STEP_BACKWARD" size="18" />
+                           </graphic>
                         </Button>
-                        <Button id="playButton" fx:id="playPauseSongBtn" mnemonicParsing="false" prefWidth="100.0" text="Play" />
-                        <Button id="nextButton" fx:id="nextSongBtn" mnemonicParsing="false" prefWidth="75.0" text="Next">
+                        <Button id="playButton" fx:id="playPauseSongBtn" mnemonicParsing="false" prefWidth="100.0">
+                           <graphic>
+                              <FontAwesomeIconView glyphName="PLAY" size="18" />
+                           </graphic></Button>
+                        <Button id="nextButton" fx:id="nextSongBtn" mnemonicParsing="false" prefWidth="100.0">
                            <HBox.margin>
                               <Insets left="10.0" />
                            </HBox.margin>
+                           <graphic>
+                              <FontAwesomeIconView glyphName="STEP_FORWARD" size="18" />
+                           </graphic>
                         </Button>
                      </children>
                      <GridPane.margin>
