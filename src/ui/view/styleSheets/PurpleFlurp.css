@@ -182,11 +182,19 @@ Song scrubbing slider in Bottom View
 
 }
 
+.BottomView #songScrubbingSlider .track{
+    -fx-background-color: #a3a3a3;
+}
+
 /**
 Volume slider in Bottom View
  */
 .BottomView #volumeSlider{
 
+}
+
+.BottomView #volumeSlider .track{
+    -fx-background-color: #a3a3a3;
 }
 
 /**
@@ -221,6 +229,21 @@ Next button in Bottom View
  */
 .BottomView #nextButton{
 
+}
+
+/*
+ menu dropdown
+*/
+.BottomView #menuDropdown {
+    -fx-background-color: #3f1bc1;
+    -fx-border-color: #340fbc;
+    -fx-border-width: 1;
+    -fx-border-style: solid;
+}
+
+.BottomView #importSong, #theme {
+    -fx-text-fill: #E7EFDD;
+    -fx-background-color: #2B2B2B;
 }
 
 /**
@@ -492,6 +515,46 @@ Close button in DetailView
 
 }
 
+.FileImportView *{
+    -fx-text-fill: #E7EFDD;
+
+}
+.FileImportView{
+    -fx-background-color: #424040;
+}
+.FileImportView .button{
+    -fx-background-color: #424040;
+    -fx-text-fill: #E7EFDD;
+}
+.FileImportView .text-field{
+    -fx-background-color: #424040;
+    -fx-text-fill: #E7EFDD;
+    -fx-prompt-text-fill: #E7EFDD;
+}
+.FileImportView .list-view{
+    -fx-background-color: #424040;
+}
+.ThemeSelectorView .label{
+    -fx-text-fill:  #E7EFDD;
+}
+.ThemeSelectorView {
+    -fx-background-color: #424040;
+}
+
+.ThemeSelectorView .list-view{
+    -fx-background-color: #424040;
+}
+.ThemeSelectorView .list-view .list-cell{
+    -fx-background-color:  #373737;
+    -fx-text-fill: #E7EFDD;
+}
+.ThemeSelectorView .list-view .list-cell:selected{
+    -fx-background-color:  #424040;
+}
+.ThemeSelectorView .button{
+    -fx-background-color: #424040;
+    -fx-text-fill: #E7EFDD;
+}
 
 
 
