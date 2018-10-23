@@ -118,10 +118,11 @@ public class RemoteLibrary implements Library {
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(socket, true, new ChangeStreamParser(this)));
+        JsonStreamParser parser = new JsonStreamParser(socket, true, new ChangeStreamParser(this));
+        parser.debug = true;
+        this.taskManager.submit(parser);
         //socket.addDisconnectListener(() -> System.out.println("[RemoteLibrary] Change subscription disconnected"));
-
-
+/*
         socket = this.getConnection();
         request = new SimpleJsonWriter(socket, false);
         packet = JsonField.emptyObject();
@@ -130,7 +131,7 @@ public class RemoteLibrary implements Library {
         request.complete();
         this.taskManager.submit(request);
         this.taskManager.submit(new TestFileDownloader(socket));
-
+*/
     }
 
     public void disconnect() {
@@ -139,6 +140,12 @@ public class RemoteLibrary implements Library {
 
     protected Socket getConnection() throws SocketException, SocketTimeoutException {
         ClientSocket socket = new ClientSocket(this.address, this.port);
+        socket.connect();
+        return socket;
+    }
+
+    protected Socket getConnection(int sendBuffer, int receiveBuffer) throws SocketException, SocketTimeoutException {
+        ClientSocket socket = new ClientSocket(this.address, this.port, sendBuffer, receiveBuffer);
         socket.connect();
         return socket;
     }

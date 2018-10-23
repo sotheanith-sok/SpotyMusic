@@ -1,9 +1,9 @@
 package ui.controller;
+
 import connect.Song;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import utils.SongStreamer;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
@@ -47,8 +48,7 @@ public class BottomViewController implements Initializable {
    @FXML
    private ProgressBar progressBar;
 
-
-   private Clip clip;
+   private SongStreamer streamer;
    private long clipTime = 0;
    private Song song;
    private MainViewController parentViewController;
@@ -66,7 +66,9 @@ public class BottomViewController implements Initializable {
    public void initialize(URL location, ResourceBundle resources) {
       //Create Clip
       try {
-         clip = AudioSystem.getClip();
+         //clip = AudioSystem.getClip();
+         SourceDataLine line = AudioSystem.getSourceDataLine(null);
+         this.streamer = new SongStreamer(line);
       } catch (LineUnavailableException e) {
          e.printStackTrace();
       }
@@ -122,26 +124,18 @@ public class BottomViewController implements Initializable {
    public void playASong(Song song) {
       if (song != null) {
          this.song = song;
+         Future<AudioInputStream> task = song.getStream();
          Runnable runnable= () -> {
             try {
-               if (clip.isOpen()) {
-                  clip.close();
-               }
-               boolean done = song.getStream().isDone();
-               if(done){
-                  clip.open(song.getStream().get());
+               if(task.isDone()){
+                   this.streamer.play(task.get());
                }else{
                   progressBar.setVisible(true);
                   progressBar.setVisible(true);
-                  clip.open(song.getStream().get(5,TimeUnit.SECONDS));
+                   this.streamer.play(task.get(5, TimeUnit.SECONDS));
                }
-               clip.start();
                progressBar.setVisible(false);
                progressBar.setVisible(false);
-            } catch (LineUnavailableException e) {
-               e.printStackTrace();
-            } catch (IOException e) {
-               e.printStackTrace();
             } catch (InterruptedException e) {
                e.printStackTrace();
             } catch (ExecutionException e) {
@@ -152,7 +146,6 @@ public class BottomViewController implements Initializable {
          };
          new Thread(runnable).start();
       }
-
    }
 
    /**
@@ -162,12 +155,11 @@ public class BottomViewController implements Initializable {
       if (song == null) {
          playASong(parentViewController.getCurrentSong());
       }
-      if (clip.isRunning()) {
-         clipTime = clip.getMicrosecondPosition();
-         clip.stop();
+      if (this.streamer.isPlaying()) {
+         this.streamer.stop();
+
       } else {
-         clip.setMicrosecondPosition(clipTime);
-         clip.start();
+         this.streamer.resume();
       }
    }
 
@@ -177,7 +169,7 @@ public class BottomViewController implements Initializable {
    private void updateUIElements() {
       if (song != null) {
          //Update Play or Pause Button
-         if (clip.isRunning()) {
+         if (this.streamer.isPlaying()) {
             playPauseSongBtn.setText("Pause");
          } else {
             playPauseSongBtn.setText("Play");
@@ -188,15 +180,17 @@ public class BottomViewController implements Initializable {
 
          //Update timestamp
 
-         long currentTimestamp = TimeUnit.MICROSECONDS.toSeconds(clip.getMicrosecondPosition());
-         long length = TimeUnit.MICROSECONDS.toSeconds(clip.getMicrosecondLength());
-         timestamp.setText(Long.toString(currentTimestamp) + "/" + Long.toString(length));
+         long currentTimestamp = TimeUnit.MICROSECONDS.toSeconds(streamer.getMicrosecondPosition());
+         //long length = TimeUnit.MICROSECONDS.toSeconds(streamer.getMicrosecondLength());
+         //timestamp.setText(Long.toString(currentTimestamp) + "/" + Long.toString(length));
+         timestamp.setText(Long.toString(currentTimestamp));
 
          //Update slider
          if (!scrubbingSliderControl) {
             songScrubbingSlider.setMin(0);
-            songScrubbingSlider.setMax(clip.getMicrosecondLength());
-            songScrubbingSlider.setValue(clip.getMicrosecondPosition());
+            //songScrubbingSlider.setMax(clip.getMicrosecondLength());
+            songScrubbingSlider.setMax(10000);
+            songScrubbingSlider.setValue(streamer.getMicrosecondPosition());
          }
       }
       if(progressBar.isVisible() && progressLabel.isVisible()){
@@ -234,7 +228,7 @@ public class BottomViewController implements Initializable {
     * @param value microseconds position that should be skip to.
     */
    public void scrubbingSong(double value) {
-      clip.setMicrosecondPosition((long) value);
+      //clip.setMicrosecondPosition((long) value);
    }
 
    /**
@@ -242,13 +236,13 @@ public class BottomViewController implements Initializable {
     *
     * @param value new volume
     */
-   public void adjustVolume(double value) {
+   public void adjustVolume(double value) {/*
       if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
          FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
          double gain = value / 100;
          float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
          gainControl.setValue(dB);
-      }
+      }*/
    }
    private void showImportSongSelector(){
       try {
