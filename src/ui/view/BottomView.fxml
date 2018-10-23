@@ -49,19 +49,19 @@
                               <Insets right="10.0" />
                            </HBox.margin>
                            <graphic>
-                              <FontAwesomeIconView glyphName="STEP_BACKWARD" size="18" />
+                              <FontAwesomeIconView glyphName="STEP_BACKWARD" size="18" styleClass="fx-icon" />
                            </graphic>
                         </Button>
                         <Button id="playButton" fx:id="playPauseSongBtn" mnemonicParsing="false" prefWidth="100.0">
                            <graphic>
-                              <FontAwesomeIconView glyphName="PLAY" size="18" />
+                              <FontAwesomeIconView glyphName="PLAY" size="18" styleClass="fx-icon" />
                            </graphic></Button>
                         <Button id="nextButton" fx:id="nextSongBtn" mnemonicParsing="false" prefWidth="100.0">
                            <HBox.margin>
                               <Insets left="10.0" />
                            </HBox.margin>
                            <graphic>
-                              <FontAwesomeIconView glyphName="STEP_FORWARD" size="18" />
+                              <FontAwesomeIconView glyphName="STEP_FORWARD" size="18" styleClass="fx-icon" />
                            </graphic>
                         </Button>
                      </children>

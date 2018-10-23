@@ -87,25 +87,10 @@ Style bottomview by itself
 }
 
 /**
-Previous button in Bottom View
-*/
-.BottomView #previousButton{
-    -fx-background-color: #077381;
-    -fx-text-fill: #cbf3ff;
-}
-/**
-Play button in Bottom View
+FX Icons on Bottom View
  */
-.BottomView #playButton{
-    -fx-background-color: #077381;
-    -fx-text-fill: #cbf3ff;
-}
-/**
-Next button in Bottom View
- */
-.BottomView #nextButton{
-    -fx-background-color: #077381;
-    -fx-text-fill: #cbf3ff;
+.BottomView .fx-icon {
+    -fx-fill: #cbf3ff;
 }
 
 .RightView .tab-pane .tab .tab-label , .RightView .tab-pane .tab-header-area .tab{

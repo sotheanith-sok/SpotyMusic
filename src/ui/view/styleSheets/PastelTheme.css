@@ -47,6 +47,10 @@ BottomView and its children
 
 }
 
+.BottomView .fx-icon {
+    -fx-fill: #000000;
+}
+
 /**
 Leftview only
  */
