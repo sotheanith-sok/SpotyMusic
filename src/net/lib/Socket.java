@@ -43,8 +43,10 @@ public abstract class Socket {
     protected byte[] lastSend;
     protected int offset;
     protected int length;
+    protected final Object senderLock;
+    protected AtomicBoolean reversePoke;
 
-    // receiving
+   // receiving
     /**
      * The ID of the last packet that was received and acknowledged.
      * Used to enforce packet ordering.
@@ -77,9 +79,12 @@ public abstract class Socket {
         this.waitingLock = new Object();
         this.sender = new Thread(this::sender);
         this.sender.setName("[Socket][sender]");
+        this.senderLock = new Object();
+        this.reversePoke = new AtomicBoolean(false);
 
         this.lastReceivedId = new AtomicInteger();
-        this.receiveBuffer = new RingBuffer(receiveBuffer);
+        this.receiveBuffer = new RingBuffer(receiveBuffer, 256, receiveBuffer);
+        this.receiveBuffer.setLowWaterMarkListener(this::reversePoke);
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
 
@@ -126,6 +131,14 @@ public abstract class Socket {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void reversePoke() {
+       this.reversePoke.set(true);
+       synchronized (this.senderLock) {
+          this.senderLock.notifyAll();
+       }
+       System.out.println("[Socket][reversePoke] Reverse Poke!");
     }
 
     // sending system
@@ -345,7 +358,11 @@ public abstract class Socket {
 
         InputStream src = this.sendBuffer.getInputStream();
         while (this.state.get() != CLOSED && this.state.get() != CLOSE_RECEIVED && (this.sendBuffer.available() > 0 || this.sendBuffer.isWriteOpened())) {
-            // if remote can accept, send data
+           if (this.reversePoke.get()) {
+              this.sendAck(this.lastReceivedId.get());
+           }
+
+           // if remote can accept, send data
             try {
                 if (this.remoteWindow.get() > 0 && src.available() > 0) {
                     try {
@@ -369,10 +386,12 @@ public abstract class Socket {
                 this.sendPoke();
             }
 
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            synchronized (this.senderLock) {
+               try {
+                  this.senderLock.wait(100);
+               } catch (InterruptedException e) {
+                  e.printStackTrace();
+               }
             }
         }
 
@@ -430,6 +449,15 @@ public abstract class Socket {
             synchronized (this.waitingLock) {
                this.waitingLock.notifyAll();
             }
+            synchronized (this.senderLock) {
+               this.senderLock.notifyAll();
+            }
+
+        } else if (this.acknowledgedId.get() == ackId) {
+           this.remoteWindow.set(window);
+           synchronized (this.senderLock) {
+              this.senderLock.notifyAll();
+           }
 
         } else {
             // if not acknowledged in order

@@ -59,7 +59,9 @@ public class SongStreamer {
                                 this.newSource.set(false);
                             }
 
+                            //System.out.println("[SongStreamer][streamer] Reading from socket");
                             int amnt = this.source.read(trx, 0, trx.length);
+                            //System.out.println("[SongStreamer][streamer] Writing to SourceDataLine");
                             this.dest.write(trx, 0, amnt);
                             //System.out.println("[SongStreamer][streamer] Wrote " + amnt + " bytes to SourceDataLine");
 
