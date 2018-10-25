@@ -1,6 +1,7 @@
 package persistence;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
@@ -63,19 +64,10 @@ public class FileImportTask implements Runnable {
     @Override
     public void run() {
         try {
-            AudioFileFormat format = AudioSystem.getAudioFileFormat(this.src);
-            Map<String, Object> properties = format.properties();
-            System.out.println("Properties of AudioFile: " + this.src.getName());
-            for (String s : properties.keySet()) {
-                System.out.print("\t");
-                System.out.println(s);
-            }
-
-            long duration = Math.round(format.getFrameLength() / format.getFormat().getFrameRate());
             (new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album)).mkdirs();
-            this.dest = new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album + "/" + this.title);
+            this.dest = new File("SpotyMusic/Media/Artists/" + this.artist + "/" + this.album + "/" + this.title + ".wav");
 
-           this.dest.createNewFile();
+            this.dest.createNewFile();
 
             CheckedInputStream check = new CheckedInputStream(new FileInputStream(this.src), new CRC32());
             BufferedInputStream in = new BufferedInputStream(check);
@@ -95,6 +87,10 @@ public class FileImportTask implements Runnable {
             }
             in.close();
             out.close();
+
+            AudioInputStream metadataReader = AudioSystem.getAudioInputStream(this.dest);
+            long duration = Math.round(metadataReader.getFrameLength() / metadataReader.getFormat().getFrameRate());
+            metadataReader.close();
 
             this.handler.onFileImported(title, artist, album, duration, this.dest, check.getChecksum().getValue());
 

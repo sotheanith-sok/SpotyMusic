@@ -43,6 +43,10 @@ BottomView and its children
 
 }
 
+.BottomView .fx-icon {
+    -fx-fill: #E7EFDD;
+}
+
 /**
 Leftview only
  */
@@ -414,8 +418,7 @@ table-row-cell of the table-view of AlbumListView
     /*
     -fx-background-color: -fx-table-cell-border-color, #424242;
     -fx-background-insets: 0, 0 0 1 0;
-    -fx-padding: 0.0em; /* 0 */
-    */
+    -fx-padding: 0.0em; 0 */
 }
 
 

@@ -1,15 +1,7 @@
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
-import javafx.stage.WindowEvent;
 import persistence.DataManager;
 import ui.component.Router;
 
@@ -40,7 +32,7 @@ public class Main extends Application {
         mainRouter.setView(splashID);
         Scene scene = new Scene(mainRouter, 1280, 720);
 
-        primaryStage.setTitle("Spusic");
+        primaryStage.setTitle("SpotyMusic");
         //primaryStage.getIcons().add(new Image(logoFile));
 
         primaryStage.setOnCloseRequest(t -> {

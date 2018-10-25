@@ -179,25 +179,11 @@ Timestamp label in Bottom View
 }
 
 /**
-Previous button in Bottom View
+FX Icons on Bottom View
  */
-.BottomView #previousButton{
+.BottomView .fx-icon {
 
 }
-
-/**
-Play button in Bottom View
- */
-.BottomView #playButton{
-
-}
-/**
-Next button in Bottom View
- */
-.BottomView #nextButton{
-
-}
-
 /**
 PlaylistListView and its children
  */

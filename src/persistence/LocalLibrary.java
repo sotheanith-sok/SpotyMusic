@@ -78,20 +78,6 @@ public class LocalLibrary implements Library {
         System.out.println(" playlists");
     }
 
-    protected void addSong(LocalSong song) {
-        this.songs.add(song);
-        song.setLibrary(this);
-        if (!this.album_map.containsKey(song.getAlbumTitle())) {
-            LocalAlbum newAlbum = new LocalAlbum(song.getAlbumTitle(), song.getArtist(), this);
-            this.album_map.put(newAlbum.getTitle(), newAlbum);
-            this.albums.add(newAlbum);
-        }
-        if (!this.artists.contains(song.getArtist())) {
-            this.artists.add(song.getArtist());
-        }
-        DataManager.getDataManager().saveLibrary();
-    }
-
     @Override
     public ObservableList<? extends Album> getAlbums() {
         return this.albums;
@@ -135,21 +121,6 @@ public class LocalLibrary implements Library {
     @Override
     public ObservableList<? extends Playlist> getPlaylists() {
         return this.playlists;
-    }
-
-    @Override
-    public Future<Boolean> importSong(File song, String title, String artist, String album) throws SecurityException {
-        return DataManager.getDataManager().importFile(song, title, artist, album);
-    }
-
-    public Future<Boolean> importSong(File song, String title, String artist, String album, FileImportTask.FileImportProgressListener listener) {
-        return DataManager.getDataManager().importFile(song, title, artist, album, listener);
-    }
-
-    @Override
-    public Future<Boolean> deleteSong(Song song) throws SecurityException {
-        this.songs.remove(song);
-        return DataManager.getDataManager().saveLibrary();
     }
 
     @Override
