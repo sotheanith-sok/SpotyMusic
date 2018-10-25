@@ -23,7 +23,12 @@ public class RingBuffer {
     private final AtomicBoolean writeOpened;
     private final AtomicBoolean readOpened;
 
-    public RingBuffer(int size) {
+    private final int lowWaterMark;
+    private final int highWaterMark;
+
+    private Runnable onLowMark;
+
+    public RingBuffer(int size, int lowWaterMark, int highWaterMark) {
         this.size = size;
         this.buffer = new byte[size];
 
@@ -38,6 +43,13 @@ public class RingBuffer {
 
         this.writeOpened = new AtomicBoolean(true);
         this.readOpened = new AtomicBoolean(true);
+
+        this.lowWaterMark = lowWaterMark;
+        this.highWaterMark = highWaterMark;
+    }
+
+    public RingBuffer(int size) {
+       this(size, 0, size);
     }
 
     public int size() {
@@ -68,6 +80,10 @@ public class RingBuffer {
 
     public OutputStream getOutputStream() {
         return this.new BufferProvider();
+    }
+
+    public void setLowWaterMarkListener(Runnable listener) {
+       this.onLowMark = listener;
     }
 
     public boolean isWriteOpened() {
@@ -216,6 +232,7 @@ public class RingBuffer {
         public int read(byte[] b, int off, int len) {
             synchronized (lock) {
                 if (!readOpened.get()) return -1;
+
                 while (available() == 0) {
                     if (!writeOpened.get()) readOpened.set(false);
                     if (!readOpened.get()) return -1;
@@ -237,6 +254,7 @@ public class RingBuffer {
                 }
 
                 lock.notifyAll();
+                if (available() <= lowWaterMark && onLowMark != null) onLowMark.run();
                 return toRead;
             }
         }

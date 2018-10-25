@@ -2,7 +2,7 @@ package net.common;
 
 public class Constants {
     // connect package
-    public static final int PACKET_SIZE = 1024 * 20;
+    public static final int PACKET_SIZE = 1024 * 17;
     public static final int HEADER_OVERHEAD = 2 * 4;
     public static final int FOOTER_OVERHEAD = 8;
     public static final int PACKET_BUFFER_SIZE = PACKET_SIZE + HEADER_OVERHEAD + FOOTER_OVERHEAD;
