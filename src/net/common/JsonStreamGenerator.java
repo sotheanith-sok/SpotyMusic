@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import net.connect.Session;
+import net.lib.Socket;
 import utils.CountingOutputStream;
 
 import java.io.IOException;
@@ -16,8 +17,8 @@ public abstract class JsonStreamGenerator extends StreamGenerator {
 
     protected CountingOutputStream counter;
 
-    public JsonStreamGenerator(Session session) {
-        super(session);
+    public JsonStreamGenerator(Socket socket, boolean autoClose) {
+        super(socket, autoClose);
     }
 
     @Override
@@ -29,7 +30,8 @@ public abstract class JsonStreamGenerator extends StreamGenerator {
     @Override
     protected void finished() {
         try {
-            this.gen.close();
+            //this.gen.close();
+            this.gen.flush();
 
         } catch (IOException e) {
             System.err.println("[JsonStreamGenerator][finished] IOException while closing JsonGenerator");

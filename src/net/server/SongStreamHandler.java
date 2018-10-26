@@ -3,58 +3,71 @@ package net.server;
 import net.common.Constants;
 import net.common.StreamGenerator;
 import net.connect.Session;
+import net.lib.Socket;
 import persistence.LocalSong;
 
-import javax.sound.sampled.AudioInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class SongStreamHandler extends StreamGenerator {
+public class SongStreamHandler implements Runnable {
 
     private byte[] trx;
 
+    private Socket socket;
+    private OutputStream dest;
+
     private LocalSong song;
 
-    private Future<AudioInputStream> in;
+    private Future<InputStream> in;
 
-    public SongStreamHandler(Session session, LocalSong song) {
-        super(session);
+    public SongStreamHandler(Socket socket, LocalSong song) {
+        this.socket = socket;
         this.song = song;
     }
 
-    @Override
     protected void initialize() throws IOException {
-        super.initialize();
+        this.dest = this.socket.outputStream();
         this.trx = new byte[Constants.PACKET_SIZE];
-        this.in = this.song.getStream();
+        this.in = this.song.getRawStream();
     }
 
     @Override
-    protected void transfer(int maxSize) throws Exception {
-        if (in.isDone()) {
-            InputStream in;
-            try {
-                in = this.in.get();
+    public void run() {
+        try {
+            this.initialize();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-            } catch (ExecutionException e){
-                // well thats a problem...
-                throw e;
+        InputStream in  = null;
+        try {
+            in = this.in.get();
+            System.out.println("[SongStreamHandler][run] Audio file opened");
+
+            int amnt = 0;
+            while (!this.socket.isSendClosed() && (amnt = in.read(trx, 0, trx.length)) != -1) {
+                this.dest.write(trx, 0, amnt);
             }
 
-            int l = in.read(this.trx, 0, Math.min(trx.length, maxSize));
-            this.dest.write(this.trx, 0, l);
-            if (l == -1) {
+            if (this.socket.isSendClosed()) {
+                System.out.println("[SongStreamHandler][run] Socket is closed");
                 in.close();
-                this.finished();
 
-            } else if (l == 1) {
-                this.waitingForSource();
+            } else {
+                System.out.println("[SongStreamHandler][run] End of file");
+                in.close();
+                this.socket.close();
             }
 
-        } else {
-            this.waitingForSource();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

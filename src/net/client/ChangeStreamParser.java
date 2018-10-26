@@ -4,6 +4,7 @@ import net.common.Constants;
 import net.common.JsonField;
 import net.common.JsonStreamParser;
 import net.connect.Session;
+import net.lib.Socket;
 
 public class ChangeStreamParser implements JsonStreamParser.Handler {
 
@@ -14,7 +15,7 @@ public class ChangeStreamParser implements JsonStreamParser.Handler {
     }
 
     @Override
-    public void handle(Session session, JsonField field) {
+    public void handle(Socket sessisocketon, JsonField field) {
         String type = field.getProperty(Constants.EVENT_TYPE_PROPERTY).getStringValue();
         System.out.println("[ChangeStreamParser][handle] Received \"" + type + "\" event");
         switch (type) {

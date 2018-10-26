@@ -6,7 +6,7 @@ import javafx.collections.SetChangeListener;
 import net.common.Constants;
 import net.common.JsonField;
 import net.common.SimpleJsonWriter;
-import net.connect.Session;
+import net.lib.Socket;
 import persistence.LocalSong;
 
 import java.io.IOException;
@@ -17,8 +17,8 @@ public class ChangeSubscriptionHandler extends SimpleJsonWriter {
 
     private LibraryServer server;
 
-    public ChangeSubscriptionHandler(Session session, LibraryServer server) {
-        super(session);
+    public ChangeSubscriptionHandler(Socket socket, LibraryServer server) {
+        super(socket, true);
         this.server = server;
     }
 
@@ -56,6 +56,7 @@ public class ChangeSubscriptionHandler extends SimpleJsonWriter {
                     event.setProperty("duration", JsonField.fromInt(song.getDuration()));
                     event.setProperty("id", JsonField.fromInt(song.getId()));
                     this.que(event);
+                    System.out.println("[ChangeSubscriptionHandler][onSongChange] Sending SONG_ADDED event");
                 }
 
             } else if (c.wasRemoved()) {
@@ -65,6 +66,7 @@ public class ChangeSubscriptionHandler extends SimpleJsonWriter {
                     event.setProperty(Constants.EVENT_TYPE_PROPERTY, JsonField.fromString(Constants.EVENT_SONG_REMOVED));
                     event.setProperty("id", JsonField.fromInt(song.getId()));
                     this.que(event);
+                    System.out.println("[ChangeSubscriptionHandler][onSongChange] Sending SONG_REMOVED event");
                 }
             }
         }

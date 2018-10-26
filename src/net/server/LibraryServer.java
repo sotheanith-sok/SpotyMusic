@@ -7,14 +7,13 @@ import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import net.common.*;
 import net.common.JsonField;
-import net.connect.Session;
-import net.connect.SessionPacket;
-import net.connect.SessionedSocket;
+import net.lib.Utils;
+import net.lib.ServerSocket;
+import net.lib.Socket;
 import persistence.DataManager;
 import persistence.LocalSong;
 import utils.CompletableTaskExecutor;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.LinkedHashMap;
@@ -25,7 +24,7 @@ public class LibraryServer {
 
     private static LibraryServer instance;
 
-    private final SessionedSocket socket;
+    private final ServerSocket socket;
 
     protected ObservableList<LocalSong> songs;
 
@@ -36,7 +35,7 @@ public class LibraryServer {
     private CompletableTaskExecutor taskManager;
 
     private LibraryServer() throws SocketException {
-        this.socket = new SessionedSocket(12321, this::handlePacket);
+        this.socket = new ServerSocket(Utils.getSocketAddress(12321), this::handleSocket);
         this.songs = DataManager.getDataManager().getSongs();
         this.songs.addListener(this::onChanged);
 
@@ -50,7 +49,7 @@ public class LibraryServer {
 
         this.taskManager = new CompletableTaskExecutor(Runtime.getRuntime().availableProcessors(), 10);
 
-        this.socket.init();
+        this.socket.open();
 
         System.out.println("[LibraryServer] LibraryServer initialized");
     }
@@ -59,35 +58,29 @@ public class LibraryServer {
         if (instance == null) {
             try {
                 instance = new LibraryServer();
+
             } catch (SocketException e) {
                 System.err.println("[LibraryServer][getInstance] SocketException while creating LibraryServer!");
                 e.printStackTrace();
-                System.exit(-2);
             }
         }
         return instance;
     }
 
     public InetAddress getAddress() {
-        return this.socket.getAddress();
+        return this.socket.localAddress();
     }
 
     public int getPort() {
         return this.socket.getPort();
     }
 
-    private void handlePacket(SessionPacket packet) {
-        if (packet.getType() == SessionPacket.PacketType.SESSION_INIT) {
-            Session session = this.socket.createSession(packet);
-            System.out.println("[LibraryServer][handlePacket] New session opened");
-            this.taskManager.submit(new JsonStreamParser(session, this::handleRequest));
-
-        } else {
-            System.out.println("[LibraryServer][handlePacket] Received non session-init packet with unrecognized session ID");
-        }
+    private void handleSocket(Socket socket) {
+        System.out.println("[LibraryServer][handleSocket] New connection");
+        this.taskManager.submit(new JsonStreamParser(socket, false, this::handleRequest));
     }
 
-    private void handleRequest(Session session, JsonField request) {
+    private void handleRequest(Socket socket, JsonField request) {
         if (!request.isObject()) {
             System.err.println("[LibraryServer][handleRequest] Received malformed request");
             return;
@@ -95,24 +88,19 @@ public class LibraryServer {
 
         if (!request.containsKey(Constants.REQUEST_TYPE_PROPERTY)) {
             System.err.println("[LibraryServer][handleRequest] Request Packet does not contain REQUEST_TYPE property");
-            try {
-                session.close();
-            } catch (IOException e) {
-                System.err.println("[LibraryServer][handleRequest] IOException while closing bad request");
-                e.printStackTrace();
-            }
+            socket.close();
             return;
         }
         String type = request.getProperty(Constants.REQUEST_TYPE_PROPERTY).getStringValue();
         System.out.println("[LibraryServer][handleRequest] Received request of type \"" + type + "\"");
         switch (type) {
             case Constants.REQUEST_LIST_ARTISTS :
-                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(session, this.artists.iterator(), (artist, gen) -> {
+                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(socket, true, this.artists.iterator(), (artist, gen) -> {
                     gen.writeString(artist);
                 }));
                 break;
             case Constants.REQUEST_LIST_ALBUMS :
-                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(session, this.albums.entrySet().iterator(), (album, gen) -> {
+                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(socket, true, this.albums.entrySet().iterator(), (album, gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField("title", album.getKey());
                     gen.writeStringField("artist", album.getValue());
@@ -120,7 +108,7 @@ public class LibraryServer {
                 }));
                 break;
             case Constants.REQUEST_LIST_SONGS :
-                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(session, this.songs.iterator(), (song, gen) -> {
+                this.taskManager.submit(new IterativeStreamingJsonSerializer<>(socket, true, this.songs.iterator(), (song, gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField("title", song.getTitle());
                     gen.writeStringField("artist", song.getArtist());
@@ -131,19 +119,23 @@ public class LibraryServer {
                 }));
                 break;
             case Constants.REQUEST_STREAM_SONG :
-                this.handleStreamSong(session, request.getProperty("id").getLongValue());
+                this.handleStreamSong(socket, request.getProperty("id").getLongValue());
                 break;
             case Constants.REQUEST_SUBSCRIBE :
-                this.taskManager.submit(new ChangeSubscriptionHandler(session, this));
+                //socket.debug = true;
+                this.taskManager.submit(new ChangeSubscriptionHandler(socket, this));
                 System.out.println("[LibraryServer][handleRequest] New subscription");
-                session.addDisconnectListener(() -> System.out.println("[LibraryServer] ChangeSubscription disconnected"));
+                //socket.addDisconnectListener(() -> System.out.println("[LibraryServer] ChangeSubscription disconnected"));
+                break;
+            case "test-file" :
+                this.taskManager.submit(new TestFileStreamer(socket));
                 break;
             default : System.err.println("[LibraryServer][handleRequest] Unrecognized request type: " +
                     request.getProperty(Constants.REQUEST_TYPE_PROPERTY).getStringValue());
         }
     }
 
-    private void handleStreamSong(Session session, long id) {
+    private void handleStreamSong(Socket socket, long id) {
         LocalSong song = null;
         for (LocalSong s : this.songs) {
             if (s.getId() == id){
@@ -154,12 +146,10 @@ public class LibraryServer {
 
         if (song == null) {
             System.err.println("[LibraryServer][handleStreamSong] Unable to process request. Song ID not found");
-            try {
-                session.close();
-            } catch (IOException e) {}
+            socket.close();
 
         } else {
-            this.taskManager.submit(new SongStreamHandler(session, song));
+            this.taskManager.submit(new SongStreamHandler(socket, song));
         }
     }
 

@@ -8,8 +8,7 @@ import connect.Song;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -136,6 +135,10 @@ public class LocalSong implements Song {
    @Override
    public Future<AudioInputStream> getStream() {
       return DataManager.getDataManager().executor.submit(this.new GetStreamTask());
+   }
+
+   public Future<InputStream> getRawStream() {
+      return DataManager.getDataManager().executor.submit(() -> new BufferedInputStream(new FileInputStream(this.path)));
    }
 
    /**

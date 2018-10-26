@@ -1,27 +1,29 @@
 package net.common;
 
-import net.connect.Session;
-import utils.CompletableRunnable;
+import net.lib.Socket;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-public abstract class StreamGenerator implements CompletableRunnable {
+public abstract class StreamGenerator implements Runnable {
 
-    protected Session session;
+    protected Socket socket;
 
     private GeneratorState state;
 
     protected OutputStream dest;
 
-    public StreamGenerator(Session session) {
-        this.session = session;
+    private boolean autoClose = false;
+
+    public StreamGenerator(Socket socket, boolean autoClose) {
+        this.socket = socket;
         this.state = GeneratorState.NEW;
+        this.autoClose = autoClose;
     }
 
     @Override
-    public boolean run() throws Exception {
-        if (this.state == GeneratorState.NEW) {
+    public void run() {
+        try {
             try {
                 this.initialize();
 
@@ -33,49 +35,53 @@ public abstract class StreamGenerator implements CompletableRunnable {
                 throw e;
             }
             this.state = GeneratorState.READY;
-        }
-/*
-        if (!this.session.isConnected() || !this.session.isOutputOpened()) {
-            this.state = GeneratorState.CLOSED;
-        }
-*/
-        if (this.state == GeneratorState.READY) {
-            // transfer data if there is space
-            if (this.session.outputBufferSpace() > 0) {
-                try {
-                    this.transfer(this.session.outputBufferSpace());
 
-                } catch (IOException e) {
-                    this.finished();
-                    this.state = GeneratorState.ERROR;
-                    System.err.println("[StreamGenerator][update] IOException while transferring data");
-                    e.printStackTrace();
-                    throw e;
-
-                } catch (Exception e) {
-                    this.finished();
-                    this.state = GeneratorState.ERROR;
-                    System.err.println("[StreamGenerator][update] Non-IO related Exception while transferring data");
-                    e.printStackTrace();
-                    throw e;
+            while (this.state.isAlive()) {
+                if (this.socket.isClosed()) {
+                    this.state = GeneratorState.CLOSED;
                 }
 
-            } else {
-                // if no space, switch to waiting
-                this.state = GeneratorState.WAITING;
+                if (this.state == GeneratorState.READY) {
+                    // transfer data if there is space
+                    if (this.socket.outputBufferSpace() > 0) {
+                        try {
+                            this.transfer(this.socket.outputBufferSpace());
+
+                        } catch (IOException e) {
+                            this.finished();
+                            this.state = GeneratorState.ERROR;
+                            System.err.println("[StreamGenerator][update] IOException while transferring data");
+                            e.printStackTrace();
+                            throw e;
+
+                        } catch (Exception e) {
+                            this.finished();
+                            this.state = GeneratorState.ERROR;
+                            System.err.println("[StreamGenerator][update] Non-IO related Exception while transferring data");
+                            e.printStackTrace();
+                            throw e;
+                        }
+
+                    } else {
+                        // if no space, switch to waiting
+                        this.state = GeneratorState.WAITING;
+                    }
+
+                } else if (this.state == GeneratorState.WAITING) {
+                    if (this.socket.outputBufferSpace() > 0) {
+                        Thread.sleep(250);
+                        this.state = GeneratorState.READY;
+                    }
+                }
             }
 
-        } else if (this.state == GeneratorState.WAITING) {
-            if (this.session.outputBufferSpace() > 0) {
-                this.state = GeneratorState.READY;
-            }
+        } catch(Exception e) {
+            e.printStackTrace();
         }
-
-        return !this.state.isAlive();
     }
 
     protected void initialize() throws IOException {
-        this.dest = this.session.outputStream();
+        this.dest = this.socket.outputStream();
     }
 
     protected abstract void transfer(int maxSize) throws Exception;
@@ -90,11 +96,9 @@ public abstract class StreamGenerator implements CompletableRunnable {
 
     protected void finished() {
         this.state = GeneratorState.COMPLETE;
-        try {
-            this.session.closeSend();
-        } catch (IOException e) {
-            System.err.println("[StreamGenerator][finished] IOException while trying to close session");
-            e.printStackTrace();
+        if (this.autoClose) {
+            //System.out.println("[StreamGenerator][finished] StreamGenerator finished, closing socket");
+            this.socket.close();
         }
     }
 
