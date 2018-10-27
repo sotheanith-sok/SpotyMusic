@@ -36,7 +36,7 @@ public class Socketplexer {
     private final Object outputsLock;
     private HashMap<Integer, RingBuffer> outputChannels;
 
-    private AsyncJsonStreamWriter controlWriter;
+    private AsyncJsonStreamGenerator controlWriter;
 
     private final Object inputsLock;
     private HashMap<Integer, RingBuffer> inputChannels;
@@ -51,7 +51,6 @@ public class Socketplexer {
      */
     public Socketplexer(Socket socket, ExecutorService executor) {
         this.socket = socket;
-        ExecutorService executor1 = executor;
 
         this.outputChannels = new HashMap<>();
         this.inputChannels = new HashMap<>();
@@ -71,7 +70,7 @@ public class Socketplexer {
         synchronized (this.outputsLock) {
             this.outputChannels.put(0, controlSendBuf);
         }
-        this.controlWriter = new AsyncJsonStreamWriter(controlSendBuf.getOutputStream());
+        this.controlWriter = new AsyncJsonStreamGenerator(controlSendBuf.getOutputStream());
         executor.submit(this.controlWriter);
 
         executor.submit(this::demultiplexer);
@@ -98,10 +97,12 @@ public class Socketplexer {
 
                 try {
                     if (!buffer.isReadOpened()) {
-                        JsonField.ObjectField closePacket = JsonField.emptyObject();
-                        closePacket.setProperty(COMMAND_FIELD_NAME, COMMAND_CLOSE_CHANNEL);
-                        closePacket.setProperty(CHANNEL_ID_FIELD_NAME, channel);
-                        this.controlWriter.enqueue(closePacket);
+                        this.controlWriter.enqueue((gen) -> {
+                            gen.writeStartObject();
+                            gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_CHANNEL);
+                            gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
+                            gen.writeEndObject();
+                        });
 
                     } else if (buffer.available() > 0) {
                         int length = buffer.getInputStream().read(trx, 0, trx.length);
@@ -262,8 +263,8 @@ public class Socketplexer {
      * @param packet the received packet
      */
     private void onOpenChannel(JsonField.ObjectField packet) {
-        int bufferSize = (int) packet.getProperty(BUFFER_SIZE_FIELD_NAME).getLongValue();
-        int channel = (int) packet.getProperty(CHANNEL_ID_FIELD_NAME).getLongValue();
+        int bufferSize = (int) packet.getLongProperty(BUFFER_SIZE_FIELD_NAME);
+        int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         RingBuffer buffer = new RingBuffer(bufferSize);
 
         synchronized (this.inputsLock) {
@@ -276,10 +277,12 @@ public class Socketplexer {
             }
         }
 
-        JsonField.ObjectField ackPacket = JsonField.emptyObject();
-        ackPacket.setProperty(COMMAND_FIELD_NAME, COMMAND_OPEN_ACK);
-        ackPacket.setProperty(CHANNEL_ID_FIELD_NAME, channel);
-        this.controlWriter.enqueue(ackPacket);
+        this.controlWriter.enqueue((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_OPEN_ACK);
+            gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
+            gen.writeEndObject();
+        });
     }
 
     /**
@@ -289,7 +292,7 @@ public class Socketplexer {
      * @param packet the received packet
      */
     private void onOpenAck(JsonField.ObjectField packet) {
-        int channel = (int) packet.getProperty(CHANNEL_ID_FIELD_NAME).getLongValue();
+        int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         synchronized (this.outputsLock) {
             RingBuffer buffer = this.pendingChannels.get(channel);
             this.pendingChannels.remove(channel);
@@ -304,7 +307,7 @@ public class Socketplexer {
      * @param packet the received packet
      */
     private void onCloseChannel(JsonField.ObjectField packet) {
-        int channel = (int) packet.getProperty(CHANNEL_ID_FIELD_NAME).getLongValue();
+        int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         synchronized (this.inputsLock) {
             RingBuffer buffer = this.inputChannels.get(channel);
             this.inputChannels.remove(channel);
@@ -314,10 +317,12 @@ public class Socketplexer {
             } catch (IOException e) {}
         }
 
-        JsonField.ObjectField ackPacket = JsonField.emptyObject();
-        ackPacket.setProperty(COMMAND_FIELD_NAME, COMMAND_CLOSE_ACK);
-        ackPacket.setProperty(CHANNEL_ID_FIELD_NAME, channel);
-        this.controlWriter.enqueue(ackPacket);
+        this.controlWriter.enqueue((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_ACK);
+            gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
+            gen.writeEndObject();
+        });
 
         this.checkShouldClose();
     }
@@ -364,7 +369,7 @@ public class Socketplexer {
         if (!field.isObject()) return;
 
         JsonField.ObjectField packet = (JsonField.ObjectField) field;
-        String type = packet.getProperty(COMMAND_FIELD_NAME).getStringValue();
+        String type = packet.getStringProperty(COMMAND_FIELD_NAME);
         switch (type) {
             case COMMAND_OPEN_CHANNEL: this.onOpenChannel(packet); break;
             case COMMAND_OPEN_ACK: this.onOpenAck(packet); break;
