@@ -8,6 +8,10 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * A Runnable class that can be used to run {@link DeferredJsonGenerator}s in a dedicated thread, allowing for
+ * asynchronous generation of a JSON stream.
+ */
 public class AsyncJsonStreamGenerator implements Runnable {
 
     private static JsonFactory factory = new JsonFactory();
@@ -19,6 +23,11 @@ public class AsyncJsonStreamGenerator implements Runnable {
 
     private AtomicBoolean running;
 
+    /**
+     * Creates a new AsyncJsonStreamGenerator that will write JSON to the provided OutputStream.
+     *
+     * @param out an OutputStream to write to
+     */
     public AsyncJsonStreamGenerator(OutputStream out) {
         this.out = out;
         this.queueLock = new Object();
@@ -26,6 +35,11 @@ public class AsyncJsonStreamGenerator implements Runnable {
         this.running = new AtomicBoolean(true);
     }
 
+    /**
+     * Enqueues the given {@link DeferredJsonGenerator} to be run asynchronously.
+     *
+     * @param gen the deferred generator to enqueue
+     */
     public void enqueue(DeferredJsonGenerator gen) {
         synchronized (this.queueLock) {
             this.queue.addLast(gen);
@@ -33,6 +47,11 @@ public class AsyncJsonStreamGenerator implements Runnable {
         }
     }
 
+    /**
+     * Closes the AsyncJsonStreamGenerator. Any DeferredJsonGenerators that are currently being executed will be
+     * completed before the AsyncJsonStreamGenerator closes, the underlying OutputStream is closed, and the thread
+     * {@link #run()} function returns.
+     */
     public void close() {
         this.running.set(false);
         synchronized (this.queueLock) {
