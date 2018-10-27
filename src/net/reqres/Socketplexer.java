@@ -1,5 +1,6 @@
 package net.reqres;
 
+import net.Constants;
 import net.common.*;
 import net.lib.Socket;
 import utils.RingBuffer;
@@ -128,6 +129,17 @@ public class Socketplexer {
             }
         }
 
+        synchronized (this.inputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+                try {
+                    entry.getValue().getInputStream().close();
+                } catch (IOException e) {
+                    System.err.println("[Socketplexer][terminate] IOException while closing sending sub-buffer");
+                    //e.printStackTrace();
+                }
+            }
+        }
+
         System.out.println("[Socketplexer][multiplexer] Socketplexer multiplexing thread shutting down");
     }
 
@@ -161,6 +173,17 @@ public class Socketplexer {
 
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+
+        synchronized (this.outputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+                try {
+                    entry.getValue().getOutputStream().close();
+                } catch (IOException e) {
+                    System.err.println("[Socketplexer][demultiplexer] IOException while closing receiving sub-buffer");
+                    //e.printStackTrace();
+                }
             }
         }
 
@@ -254,6 +277,35 @@ public class Socketplexer {
                 return future;
             }
         }
+    }
+
+    /**
+     * Forcibly terminates all channels and closes the underlying Socket.
+     */
+    public void terminate() {
+        synchronized (this.outputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
+                try {
+                    entry.getValue().getOutputStream().close();
+                } catch (IOException e) {
+                    System.err.println("[Socketplexer][terminate] IOException while closing receiving sub-buffer");
+                    //e.printStackTrace();
+                }
+            }
+        }
+
+        synchronized (this.inputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+                try {
+                    entry.getValue().getInputStream().close();
+                } catch (IOException e) {
+                    System.err.println("[Socketplexer][terminate] IOException while closing sending sub-buffer");
+                    //e.printStackTrace();
+                }
+            }
+        }
+
+        this.socket.close();
     }
 
     /**
