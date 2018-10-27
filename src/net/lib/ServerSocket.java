@@ -1,6 +1,6 @@
 package net.lib;
 
-import net.common.Constants;
+import net.Constants;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;

@@ -1,6 +1,6 @@
 package net.client;
 
-import net.common.Constants;
+import net.Constants;
 import net.lib.Socket;
 import persistence.DataManager;
 

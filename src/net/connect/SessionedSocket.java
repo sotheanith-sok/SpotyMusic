@@ -1,6 +1,6 @@
 package net.connect;
 
-import net.common.Constants;
+import net.Constants;
 import net.lib.Utils;
 
 import java.io.IOException;

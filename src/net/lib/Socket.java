@@ -1,6 +1,6 @@
 package net.lib;
 
-import net.common.Constants;
+import net.Constants;
 import utils.CRC64;
 import utils.RingBuffer;
 
@@ -138,7 +138,7 @@ public abstract class Socket {
        synchronized (this.senderLock) {
           this.senderLock.notifyAll();
        }
-       System.out.println("[Socket][reversePoke] Reverse Poke!");
+       //System.out.println("[Socket][reversePoke] Reverse Poke!");
     }
 
     // sending system

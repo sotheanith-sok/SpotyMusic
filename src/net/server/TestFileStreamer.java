@@ -1,6 +1,6 @@
 package net.server;
 
-import net.common.Constants;
+import net.Constants;
 import net.common.StreamGenerator;
 import net.lib.Socket;
 import persistence.DataManager;

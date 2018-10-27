@@ -3,7 +3,7 @@ package net.server;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.SetChangeListener;
-import net.common.Constants;
+import net.Constants;
 import net.common.JsonField;
 import net.common.SocketJsonWriter;
 import net.lib.Socket;

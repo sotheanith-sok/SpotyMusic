@@ -1,6 +1,6 @@
 package net.connect;
 
-import net.common.Constants;
+import net.Constants;
 import utils.StreamBuffer;
 
 import java.io.*;

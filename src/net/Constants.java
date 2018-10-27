@@ -1,4 +1,4 @@
-package net.common;
+package net;
 
 public class Constants {
     // connect package
@@ -11,10 +11,10 @@ public class Constants {
     public static final int BUFFER_SIZE = 1024 * 200;
 
     // client package
-    public static final int MIN_BUFFERED_DATA = 2048;
+    public static final int MIN_BUFFERED_DATA = 1024 * 8;
 
     // client and server packages
-    public static final String REQUEST_TYPE_PROPERTY = "type";
+    public static final String REQUEST_TYPE_PROPERTY = "REQUEST_TYPE";
     public static final String REQUEST_LIST_ARTISTS = "list-artists";
     public static final String REQUEST_LIST_ALBUMS = "list-albums";
     public static final String REQUEST_LIST_SONGS = "list-songs";

@@ -1,11 +1,11 @@
 package net.lib;
 
-import net.common.Constants;
+import net.Constants;
 
 import java.io.IOException;
 import java.net.*;
 
-import static net.common.Constants.PACKET_BUFFER_SIZE;
+import static net.Constants.PACKET_BUFFER_SIZE;
 
 public class ClientSocket extends Socket {
 

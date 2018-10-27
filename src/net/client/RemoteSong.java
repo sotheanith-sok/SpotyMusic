@@ -3,7 +3,7 @@ package net.client;
 import com.fasterxml.jackson.core.JsonFactory;
 import connect.Library;
 import connect.Song;
-import net.common.Constants;
+import net.Constants;
 import net.common.JsonField;
 import net.common.SocketJsonWriter;
 import net.lib.Socket;
