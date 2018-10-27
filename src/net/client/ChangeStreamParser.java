@@ -2,11 +2,10 @@ package net.client;
 
 import net.common.Constants;
 import net.common.JsonField;
-import net.common.JsonStreamParser;
-import net.connect.Session;
+import net.common.SocketJsonParser;
 import net.lib.Socket;
 
-public class ChangeStreamParser implements JsonStreamParser.Handler {
+public class ChangeStreamParser implements SocketJsonParser.Handler {
 
     private RemoteLibrary library;
 

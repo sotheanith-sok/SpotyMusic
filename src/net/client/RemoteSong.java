@@ -5,7 +5,7 @@ import connect.Library;
 import connect.Song;
 import net.common.Constants;
 import net.common.JsonField;
-import net.common.SimpleJsonWriter;
+import net.common.SocketJsonWriter;
 import net.lib.Socket;
 
 import javax.sound.sampled.AudioInputStream;
@@ -90,7 +90,7 @@ public class RemoteSong implements Song {
             }
             System.out.println("[RemoteSong][getStream] Opened Socket");
 
-            SimpleJsonWriter request = new SimpleJsonWriter(socket, false);
+            SocketJsonWriter request = new SocketJsonWriter(socket, false);
             JsonField.ObjectField packet = JsonField.emptyObject();
             packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_STREAM_SONG);
             packet.setProperty("id", this.getId());

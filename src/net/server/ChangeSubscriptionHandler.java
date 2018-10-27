@@ -5,7 +5,7 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.SetChangeListener;
 import net.common.Constants;
 import net.common.JsonField;
-import net.common.SimpleJsonWriter;
+import net.common.SocketJsonWriter;
 import net.lib.Socket;
 import persistence.LocalSong;
 
@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-public class ChangeSubscriptionHandler extends SimpleJsonWriter {
+public class ChangeSubscriptionHandler extends SocketJsonWriter {
 
     private LibraryServer server;
 

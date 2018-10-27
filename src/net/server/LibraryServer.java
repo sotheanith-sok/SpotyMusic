@@ -77,7 +77,7 @@ public class LibraryServer {
 
     private void handleSocket(Socket socket) {
         System.out.println("[LibraryServer][handleSocket] New connection");
-        this.taskManager.submit(new JsonStreamParser(socket, false, this::handleRequest));
+        this.taskManager.submit(new SocketJsonParser(socket, false, this::handleRequest));
     }
 
     private void handleRequest(Socket socket, JsonField request) {

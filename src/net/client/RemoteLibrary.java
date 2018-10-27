@@ -8,9 +8,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import net.common.Constants;
 import net.common.JsonField;
-import net.common.JsonStreamParser;
-import net.common.JsonStreamParser.Handler;
-import net.common.SimpleJsonWriter;
+import net.common.SocketJsonParser;
+import net.common.SocketJsonWriter;
 import net.connect.SessionPacket;
 import net.lib.ClientSocket;
 import net.lib.Socket;
@@ -49,13 +48,13 @@ public class RemoteLibrary implements Library {
     public void connect() throws SocketException, SocketTimeoutException {
         // send request to get all artists
         Socket socket = this.getConnection();
-        SimpleJsonWriter request = new SimpleJsonWriter(socket, false);
+        SocketJsonWriter request = new SocketJsonWriter(socket, false);
         JsonField.ObjectField packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_ARTISTS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(socket, true, (soc, art) -> {
+        this.taskManager.submit(new SocketJsonParser(socket, true, (soc, art) -> {
             if (art.isString()) {
                 this.artists.add(art.getStringValue());
                 System.out.println("[RemoteLibrary][artistParseHandler] New artist: " + art.getStringValue());
@@ -65,13 +64,13 @@ public class RemoteLibrary implements Library {
         // send request to get all albums
         socket = this.getConnection();
         //socket.debug = true;
-        request = new SimpleJsonWriter(socket, false);
+        request = new SocketJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_ALBUMS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(socket, true, (sess, alb) -> {
+        this.taskManager.submit(new SocketJsonParser(socket, true, (sess, alb) -> {
             if (alb.isObject() && alb.containsKey("title") && alb.containsKey("artist")){
                 this.albums.add(new RemoteAlbum(this, alb.getProperty("title").getStringValue(), alb.getProperty("artist").getStringValue()));
                 System.out.println("[RemoteLibrary][albumParseHandler] New album: " + alb.getProperty("title").getStringValue());
@@ -82,13 +81,13 @@ public class RemoteLibrary implements Library {
         // send request to get all songs
         socket = this.getConnection();
         //socket.debug = true;
-        request = new SimpleJsonWriter(socket, false);
+        request = new SocketJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_LIST_SONGS);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        this.taskManager.submit(new JsonStreamParser(socket, true, (sess, song) -> {
+        this.taskManager.submit(new SocketJsonParser(socket, true, (sess, song) -> {
             if (song.isObject()) {
                 if (song.containsKey("title") &&
                     song.containsKey("artist") &&
@@ -112,19 +111,19 @@ public class RemoteLibrary implements Library {
 
         socket = this.getConnection();
         //socket.debug = true;
-        request = new SimpleJsonWriter(socket, false);
+        request = new SocketJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, Constants.REQUEST_SUBSCRIBE);
         request.que(packet);
         request.complete();
         this.taskManager.submit(request);
-        JsonStreamParser parser = new JsonStreamParser(socket, true, new ChangeStreamParser(this));
+        SocketJsonParser parser = new SocketJsonParser(socket, true, new ChangeStreamParser(this));
         parser.debug = true;
         this.taskManager.submit(parser);
         //socket.addDisconnectListener(() -> System.out.println("[RemoteLibrary] Change subscription disconnected"));
 /*
         socket = this.getConnection();
-        request = new SimpleJsonWriter(socket, false);
+        request = new SocketJsonWriter(socket, false);
         packet = JsonField.emptyObject();
         packet.setProperty(Constants.REQUEST_TYPE_PROPERTY, "test-file");
         request.que(packet);
