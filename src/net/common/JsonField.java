@@ -257,6 +257,22 @@ public abstract class JsonField {
         public void setProperty(String name, Map<String, JsonField> value) {
             this.properties.put(name, JsonField.fromObject(value));
         }
+
+        public boolean getBooleanProperty(String name) {
+            return this.properties.get(name).getBooleanValue();
+        }
+
+        public long getLongProperty(String name) {
+            return this.properties.get(name).getLongValue();
+        }
+
+        public float getFloatProperty(String name) {
+            return this.properties.get(name).getFloatValue();
+        }
+
+        public String getStringProperty(String name) {
+            return this.properties.get(name).getStringValue();
+        }
     }
 
     public static ArrayField fromArray(List<JsonField> elements) { return new ArrayField(elements); }
