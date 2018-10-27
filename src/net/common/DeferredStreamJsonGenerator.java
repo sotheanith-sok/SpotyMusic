@@ -13,19 +13,19 @@ public class DeferredStreamJsonGenerator implements Runnable {
 
     private boolean autoClose;
 
-    private Generator generator;
+    private DeferredJsonGenerator generator;
 
     private OutputStream out;
 
     /**
-     * Creates a new DeferredStreamJsonGenerator which invokes the given {@link Generator} to generate
+     * Creates a new DeferredStreamJsonGenerator which invokes the given {@link DeferredJsonGenerator} to generate
      * JSON at a later time.
      *
      * @param output an OutputStream to write JSON to
      * @param autoClose whether the given OutputStream should be closed when the given generator is finished
-     * @param gen a {@link Generator} to invoke
+     * @param gen a {@link DeferredJsonGenerator} to invoke
      */
-    public DeferredStreamJsonGenerator(OutputStream output, boolean autoClose, Generator gen) {
+    public DeferredStreamJsonGenerator(OutputStream output, boolean autoClose, DeferredJsonGenerator gen) {
         this.out = output;
         this.autoClose = autoClose;
         this.generator = gen;
@@ -56,8 +56,4 @@ public class DeferredStreamJsonGenerator implements Runnable {
         }
     }
 
-    @FunctionalInterface
-    public interface Generator {
-        void generate(JsonGenerator gen) throws IOException;
-    }
 }
