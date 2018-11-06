@@ -108,6 +108,10 @@ public class RequestServer {
         }
     }
 
+    public ServerSocket getServerSocket() {
+        return this.socket;
+    }
+
     /**
      * Registers a {@link RequestHandler} to handle requests of the given type.
      *
