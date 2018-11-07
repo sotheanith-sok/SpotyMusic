@@ -11,9 +11,7 @@ import net.common.JsonStreamParser;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,11 +30,11 @@ public class MulticastPacketSocket {
 
     private AtomicBoolean running;
 
-    public MulticastPacketSocket(InetAddress address, ExecutorService executor) throws IOException {
+    public MulticastPacketSocket(InetSocketAddress address, ExecutorService executor) throws IOException {
         this.executor = executor;
-        this.multicastSocket = new MulticastSocket();
+        this.multicastSocket = new MulticastSocket(address.getPort());
         this.multicastSocket.setSoTimeout((int) Constants.RESEND_DELAY / 2);
-        this.multicastSocket.joinGroup(address);
+        this.multicastSocket.joinGroup(address.getAddress());
         this.lock = new Object();
         this.handlers = new ConcurrentHashMap<>();
         this.running = new AtomicBoolean(true);
@@ -72,6 +70,10 @@ public class MulticastPacketSocket {
                 });
                 parser.run();
 
+            } catch (SocketTimeoutException e) {
+                // if timed out, don't printStackTrace.
+                // timing out occasionally prevents receiver thread from blocking indefinitely
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -95,6 +97,21 @@ public class MulticastPacketSocket {
         }
     }
 
+    public void send(JsonField.ObjectField packet, InetAddress dest) {
+        try {
+            ByteArrayOutputStream strm = new ByteArrayOutputStream();
+            JsonGenerator gen = factory.createGenerator(strm, JsonEncoding.UTF8);
+            packet.write(gen);
+            gen.close();
+            strm.close();
+            this.send(strm.toByteArray(), 0, strm.size(), dest);
+
+        } catch (IOException e) {
+            System.err.println("[MulticastPacketSocket][send] IOException while sending unicast packet");
+            e.printStackTrace();
+        }
+    }
+
     public void send(DeferredJsonGenerator packet) {
         try {
             ByteArrayOutputStream strm = new ByteArrayOutputStream();
@@ -110,8 +127,32 @@ public class MulticastPacketSocket {
         }
     }
 
-    protected void send(byte[] data, int offset, int length) throws IOException {
+    public void send(DeferredJsonGenerator packet, InetAddress dest) {
+        try {
+            ByteArrayOutputStream strm = new ByteArrayOutputStream();
+            JsonGenerator gen = factory.createGenerator(strm, JsonEncoding.UTF8);
+            packet.generate(gen);
+            gen.close();
+            strm.close();
+            this.send(strm.toByteArray(), 0, strm.size(), dest);
+
+        } catch (IOException e) {
+            System.err.println("[MulticastPacketSocket][send] IOException while sending unicast packet");
+            e.printStackTrace();
+        }
+    }
+
+    private void send(byte[] data, int offset, int length) throws IOException {
         DatagramPacket packet = new DatagramPacket(data, offset, length);
+        synchronized (this.lock) {
+            this.multicastSocket.send(packet);
+        }
+    }
+
+    private void send(byte[] data, int offset, int length, InetAddress dest) throws IOException {
+        DatagramPacket packet = new DatagramPacket(data, offset, length);
+        packet.setAddress(dest);
+        packet.setPort(this.multicastSocket.getPort());
         synchronized (this.lock) {
             this.multicastSocket.send(packet);
         }
