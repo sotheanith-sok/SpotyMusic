@@ -10,12 +10,12 @@ import net.reqres.RequestHandler;
 import net.reqres.RequestServer;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+// TODO: save mesh network configurations
 
 public class MeshNode {
 
@@ -33,20 +33,22 @@ public class MeshNode {
 
     private RequestServer server;
 
-    private Map<Integer, InetAddress> nodes;
+    private Map<Integer, InetSocketAddress> nodes;
 
     private HashMap<Integer, MeshConfiguration> configs;
 
-    public MeshNode(HashMap<Integer, MeshConfiguration> configs, InetAddress multicastAddress) throws IOException {
-        this(configs, new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 64, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>()), multicastAddress);
+    private List<NodeConnectListener> nodeConnectListeners;
+
+    public MeshNode(HashMap<Integer, MeshConfiguration> configs, InetSocketAddress multicastAddress, SocketAddress serverAddress) throws IOException {
+        this(configs, new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 64, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>()), multicastAddress, serverAddress);
     }
 
-    public MeshNode(HashMap<Integer, MeshConfiguration> configs, ExecutorService executor, InetAddress multicastAddress) throws IOException {
+    public MeshNode(HashMap<Integer, MeshConfiguration> configs, ExecutorService executor, InetSocketAddress multicastAddress, SocketAddress serverAddress) throws IOException {
         this.executor = executor;
         this.nodes = new ConcurrentHashMap<>();
         this.configs = configs == null ? new HashMap<>() : configs;
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
-        this.server = new RequestServer(this.executor, 12321);
+        this.server = new RequestServer(this.executor, serverAddress);
 
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_QUERY, this::onNetQuery);
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_INFO, this::onNetInfo);
@@ -54,11 +56,14 @@ public class MeshNode {
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_CONFIG, this::onNodeConfig);
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_ACTIVE, this::onNodeActive);
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_GONE, this::onNodeGone);
+        this.multicastSocket.addHandler(PACKET_TYPE_NODE_ADVERT, this::onNodeAdvert);
 
         this.network_id = -1;
         this.master_id = -2;
         this.node_id = -3;
         this.node_count = new AtomicInteger(0);
+
+        this.nodeConnectListeners = new LinkedList<>();
 
         this.executor.submit(this::search);
     }
@@ -68,11 +73,7 @@ public class MeshNode {
         System.out.println("[MeshNode][init] Looking for existing mesh networks");
 
         // send a query for existing networks
-        this.multicastSocket.send((gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_QUERY);
-            gen.writeEndObject();
-        });
+        this.sendNetQuery();
 
         try {
             Thread.sleep(Constants.TIMEOUT_DELAY);
@@ -94,7 +95,15 @@ public class MeshNode {
         this.multicastSocket.addHandler(packetType, handler);
     }
 
-    public void sendMulticastPacket(DeferredJsonGenerator packet) {
+    public void addNodeConnectListener(NodeConnectListener listener) {
+        this.nodeConnectListeners.add(listener);
+    }
+
+    public void removeNodeConnectListener(NodeConnectListener listener) {
+        this.nodeConnectListeners.remove(listener);
+    }
+
+    public void broadcastPacket(DeferredJsonGenerator packet) {
         this.multicastSocket.send(packet);
     }
 
@@ -104,23 +113,15 @@ public class MeshNode {
 
     public Socket tryConnect(int nodeId) throws NodeUnavailableException, SocketException, SocketTimeoutException {
         if (this.nodes.containsKey(nodeId)) {
-            ClientSocket socket = new ClientSocket(this.nodes.get(nodeId), 12321);
+            ClientSocket socket = new ClientSocket(this.nodes.get(nodeId));
 
             try {
                 socket.connect();
                 return socket;
 
-            } catch (SocketException e) {
-                throw e;
-
             } catch (SocketTimeoutException e) {
                 this.nodes.remove(nodeId);
-                this.multicastSocket.send((gen) -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_GONE);
-                    gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, nodeId);
-                    gen.writeEndObject();
-                });
+                this.sendNodeGone(nodeId);
 
                 throw e;
             }
@@ -163,7 +164,72 @@ public class MeshNode {
         this.node_count.set(config.node_count);
 
         this.id_generator = new Random(this.network_id);
-        for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt(Integer.MAX_VALUE);
+        for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
+    }
+
+    private void sendNetInfo() {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_INFO);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NET_ID, this.network_id);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_MASTER_ID, this.master_id);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.get());
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNetQuery() {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_QUERY);
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNetJoin() {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NET_JOIN);
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNodeConfig() {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_CONFIG);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.id_generator.nextInt());
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.incrementAndGet());
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNodeActive() {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNodeGone(int node_id) {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_GONE);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, node_id);
+            gen.writeEndObject();
+        });
+    }
+
+    private void sendNodeAdvert(InetAddress dest) {
+        this.multicastSocket.send((gen) -> {
+            gen.writeStartObject();
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ADVERT);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
+            gen.writeNumberField(PROPERTY_PORT_NUMBER, this.server.getServerSocket().getPort());
+            gen.writeEndObject();
+        }, dest);
     }
 
     private void onNetInfo(JsonField.ObjectField packet, InetAddress address) {
@@ -178,12 +244,7 @@ public class MeshNode {
                 this.master_id = Math.min(this.node_id, (int) packet.getLongProperty(MeshConfiguration.PROPERTY_MASTER_ID));
                 this.node_count.set(Math.max(config.node_count, (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT)));
                 System.out.println("[MeshNode][onNetInfo] Joining known mesh network");
-                this.multicastSocket.send((gen) -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
-                    gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
-                    gen.writeEndObject();
-                });
+                this.sendNodeActive();
 
             } else {
                 // new network discovered
@@ -193,11 +254,7 @@ public class MeshNode {
                 System.out.println("[MeshNode][onNetInfo] Joining newly discovered mesh network");
 
                 // send request to join
-                this.multicastSocket.send((gen) -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NET_JOIN);
-                    gen.writeEndObject();
-                });
+                this.sendNetJoin();
             }
         }
     }
@@ -205,27 +262,14 @@ public class MeshNode {
     private void onNetQuery(JsonField.ObjectField packet, InetAddress address) {
         if (this.node_id == this.master_id) {
             // if master, reply to query
-            this.multicastSocket.send((gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_INFO);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NET_ID, this.network_id);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_MASTER_ID, this.master_id);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.get());
-                gen.writeEndObject();
-            });
+            this.sendNetInfo();
         }
     }
 
     private void onNetJoin(JsonField.ObjectField packet, InetAddress address) {
         if (this.node_id == this.master_id) {
             // if master, reply with node configuration
-            this.multicastSocket.send((gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_CONFIG);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.id_generator.nextInt(Integer.MAX_VALUE));
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.incrementAndGet());
-                gen.writeEndObject();
-            });
+            this.sendNodeConfig();
         }
     }
 
@@ -239,21 +283,23 @@ public class MeshNode {
             // TODO: save configs
 
             // announce activity
-            this.multicastSocket.send((gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
-                gen.writeEndObject();
-            });
+            this.sendNodeActive();
         }
     }
 
     private void onNodeActive(JsonField.ObjectField packet, InetAddress address) {
         // add advertised node to list of known nodes
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
-        this.nodes.put(id, address);
+        int port = (int) packet.getLongProperty(PROPERTY_PORT_NUMBER);
+        boolean alreadyKnew = this.nodes.containsKey(id);
+        this.nodes.put(id, new InetSocketAddress(address, port));
         if (this.node_count.get() < id) this.node_count.set(id);
         if (id < this.master_id) this.master_id = id;
+
+        // inform new node of our presence
+        this.sendNodeAdvert(address);
+
+        if (!alreadyKnew) this.onNewNode(id);
     }
 
     private void onNodeGone(JsonField.ObjectField packet, InetAddress address) {
@@ -285,6 +331,24 @@ public class MeshNode {
         }
     }
 
+    private void onNodeAdvert(JsonField.ObjectField packet, InetAddress address) {
+        int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
+        int port = (int) packet.getLongProperty(PROPERTY_PORT_NUMBER);
+
+        InetSocketAddress serverAddress = new InetSocketAddress(address, port);
+        boolean alreadyKnew = this.nodes.containsKey(id);
+        this.nodes.put(id, serverAddress);
+        if (id < this.master_id) master_id = id;
+
+        if (!alreadyKnew) this.onNewNode(id);
+    }
+
+    private void onNewNode(int node_id) {
+        for (NodeConnectListener listener : this.nodeConnectListeners) {
+            listener.onNodeConnected(node_id);
+        }
+    }
+
     /*
      * Sent by master to respond to net query
      * properties: network_id, master_id, node_count
@@ -300,4 +364,14 @@ public class MeshNode {
     public static final String PACKET_TYPE_NODE_ACTIVE = "PACKET_NODE_ACTIVE";
     // sent when a node is unable to connect to another node, so that all nodes know that that node is down
     public static final String PACKET_TYPE_NODE_GONE= "PACKET_NODE_GONE";
+    // sent in response to NODE_ACTIVE to inform new nodes of existing nodes
+    public static final String PACKET_TYPE_NODE_ADVERT = "PACKET_NODE_ADVERT";
+
+    // the port number of the node's RequestServer
+    public static final String PROPERTY_PORT_NUMBER = "PROP_PORT_NUM";
+
+    @FunctionalInterface
+    interface NodeConnectListener {
+        void onNodeConnected(int node_id);
+    }
 }
