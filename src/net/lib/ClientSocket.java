@@ -13,10 +13,18 @@ public class ClientSocket extends Socket {
 
     private DatagramSocket socket;
 
+    public ClientSocket(InetSocketAddress remote) {
+        this(remote.getAddress(), remote.getPort());
+    }
+
     public ClientSocket(InetAddress remote, int port) {
         super(remote, port);
 
         this.socketLock = new Object();
+    }
+
+    public ClientSocket(InetSocketAddress remote, int sendBuf, int recBuf) {
+        this(remote.getAddress(), remote.getPort(), sendBuf, recBuf);
     }
 
     public ClientSocket(InetAddress remote, int port, int sendBuffer, int receiveBuffer) {
