@@ -43,6 +43,7 @@ public class Constants {
     public static final long MAX_BLOCK_SIZE = 1024 * 1024;
 
     public static final String PROPERTY_RESPONSE_STATUS = "PROP_RESPONSE_STATUS";
-    public static final String RESPONSE_STATUS_OK = "RESPONSE_OK";
-    public static final String RESPONSE_STATUS_NOT_FOUND = "RESPONSE_NOT_FOUND";
+    public static final String RESPONSE_STATUS_OK = "STATUS_OK";
+    public static final String RESPONSE_STATUS_NOT_FOUND = "STATUS_NOT_FOUND";
+    public static final String RESPONSE_STATUS_SERVER_ERROR = "STATUS_SERVER_ERROR";
 }
