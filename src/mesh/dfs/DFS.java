@@ -1,5 +1,6 @@
 package mesh.dfs;
 
+import jdk.nashorn.internal.ir.Block;
 import mesh.impl.MeshNode;
 import mesh.impl.NodeUnavailableException;
 import net.Constants;
@@ -902,6 +903,65 @@ public class DFS {
 
     public Future<OutputStream> appendFile(String fileName) {
         return this.writeFile(fileName, 0, true);
+    }
+
+    public void appendFile(String fileName, byte[] data) {
+        this.executor.submit(() -> {
+            FileDescriptor descriptor;
+            JsonField.ObjectField lastBlock = null;
+            Future<FileDescriptor> file = getFileStats(fileName);
+            try {
+                descriptor = file.get(10, TimeUnit.SECONDS);
+
+            } catch (InterruptedException | TimeoutException | ExecutionException e) {
+                System.err.println("[DFS][writeFile][append] Exception while fetching file metadata");
+                e.printStackTrace();
+                return;
+            }
+
+            Future<JsonField.ObjectField> block = getBlockStats(new BlockDescriptor(fileName, descriptor.getBlockCount() - 1));
+            try {
+                lastBlock = block.get(10, TimeUnit.SECONDS);
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                System.err.println("[DFS][writeFile][append] Exception while fetching last block metadata");
+                e.printStackTrace();
+                return;
+            }
+
+            int blockNumber = (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER);
+            int replicas = descriptor.getReplicas();
+
+            Future<OutputStream>[] outputs = new Future[replicas];
+            if (lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) + data.length > Constants.MAX_BLOCK_SIZE) {
+                blockNumber++;
+            }
+
+            for (int i = 0; i < replicas; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), true);
+
+            for (int i = 0; i < replicas; i++) {
+                try {
+                    OutputStream out = outputs[i].get(1500, TimeUnit.MILLISECONDS);
+                    out.write(data);
+                    out.close();
+
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[DFS][appendFile][data] Exception while trying to get output stream to replica " + i);
+                    e.printStackTrace();
+
+                } catch (IOException e) {
+                    System.err.println("[DFS][appendFile][data] IOException while writing data to replica " + i);
+                    e.printStackTrace();
+                }
+            }
+
+            FileDescriptor metadata = new FileDescriptor(fileName, descriptor.getTotalSize() + data.length, blockNumber + 1, replicas);
+            for (int i = 0; i < replicas; i++) {
+                BlockDescriptor blockDescriptor= new BlockDescriptor(fileName, 0, i);
+                int id = this.getBestId(blockDescriptor.getBlockId());
+                this.putFileMetadata(metadata, id);
+            }
+        });
     }
 
     public void deleteFile(String fileName) {
