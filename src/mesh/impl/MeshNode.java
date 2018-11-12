@@ -21,9 +21,7 @@ public class MeshNode {
 
     private ExecutorService executor;
 
-    private int network_id;
-    private int master_id;
-    private int node_id;
+    private MeshConfiguration config;
 
     private AtomicInteger node_count;
 
@@ -58,9 +56,7 @@ public class MeshNode {
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_GONE, this::onNodeGone);
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_ADVERT, this::onNodeAdvert);
 
-        this.network_id = -1;
-        this.master_id = -2;
-        this.node_id = -3;
+        this.config = new MeshConfiguration(-1, -2, -3, 0);
         this.node_count = new AtomicInteger(0);
 
         this.nodeConnectListeners = new LinkedList<>();
@@ -82,7 +78,7 @@ public class MeshNode {
             e.printStackTrace();
         }
 
-        if (this.network_id < 0) {
+        if (this.config.getNetwork_id() < 0) {
             this.executor.submit(this::createNetwork);
         }
     }
@@ -126,7 +122,7 @@ public class MeshNode {
                 throw e;
             }
 
-        } else if (nodeId == this.node_id) {
+        } else if (nodeId == this.getNodeId()) {
             ServerSocket serverSocket = this.server.getServerSocket();
             ClientSocket socket = new ClientSocket(serverSocket.localAddress(), serverSocket.getPort());
             socket.connect();
@@ -138,32 +134,27 @@ public class MeshNode {
     }
 
     public int getNodeId() {
-        return this.node_id;
+        return this.config.getNodeId();
     }
 
     private void createNetwork() {
         System.out.println("[MeshNode][createNetwork] Creating mesh network");
-        MeshConfiguration config = null;
         for (MeshConfiguration config1 : this.configs.values()) {
             // if we have already created a network before:
-            if (config1.node_id == 0) {
-                config = config1;
+            if (config1.getNodeId() == 0) {
+                this.config = config1;
                 break;
             }
         }
 
-        if (config == null){
-            config = new MeshConfiguration((int) System.nanoTime(), 0, 0, 0);
-            this.configs.put(config.network_id, config);
-            // TODO: save configs
+        if (this.config.getNetwork_id() < 0){
+            this.config = new MeshConfiguration((int) System.nanoTime(), 0, 0, 1);
         }
 
-        this.network_id = config.network_id;
-        this.master_id = config.network_master;
-        this.node_id = config.node_id;
-        this.node_count.set(config.node_count);
+        this.configs.put(this.config.getNetwork_id(), this.config);
+        this.node_count.set(config.getNodeCount());
 
-        this.id_generator = new Random(this.network_id);
+        this.id_generator = new Random(this.config.getNetwork_id());
         for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
     }
 
@@ -171,8 +162,8 @@ public class MeshNode {
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_INFO);
-            gen.writeNumberField(MeshConfiguration.PROPERTY_NET_ID, this.network_id);
-            gen.writeNumberField(MeshConfiguration.PROPERTY_MASTER_ID, this.master_id);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NET_ID, this.config.getNetwork_id());
+            gen.writeNumberField(MeshConfiguration.PROPERTY_MASTER_ID, this.config.getMasterId());
             gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.get());
             gen.writeEndObject();
         });
@@ -208,7 +199,7 @@ public class MeshNode {
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
-            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
             gen.writeEndObject();
         });
     }
@@ -226,30 +217,29 @@ public class MeshNode {
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ADVERT);
-            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
+            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
             gen.writeNumberField(PROPERTY_PORT_NUMBER, this.server.getServerSocket().getPort());
             gen.writeEndObject();
         }, dest);
     }
 
     private void onNetInfo(JsonField.ObjectField packet, InetAddress address) {
-        if (this.network_id < 0) {
+        if (this.config.getNetwork_id() < 0) {
             // if not part of a network, process received information
             int netId = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NET_ID);
             if (this.configs.containsKey(netId)) {
                 // if have configuration for discovered network
-                MeshConfiguration config = this.configs.get(netId);
-                this.network_id = config.network_id;
-                this.node_id = config.node_id;
-                this.master_id = Math.min(this.node_id, (int) packet.getLongProperty(MeshConfiguration.PROPERTY_MASTER_ID));
-                this.node_count.set(Math.max(config.node_count, (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT)));
+                this.config = this.configs.get(netId);
+                this.config.setMasterId(Math.min(this.config.getMasterId(), (int) packet.getLongProperty(MeshConfiguration.PROPERTY_MASTER_ID)));
+                this.node_count.set(Math.max(config.getNodeCount(), (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT)));
+                this.config.setNodeCount(this.node_count.get());
                 System.out.println("[MeshNode][onNetInfo] Joining known mesh network");
                 this.sendNodeActive();
 
             } else {
                 // new network discovered
-                this.network_id = netId;
-                this.master_id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_MASTER_ID);
+                this.config.setNetwork_id(netId);
+                this.config.setMasterId((int) packet.getLongProperty(MeshConfiguration.PROPERTY_MASTER_ID));
 
                 System.out.println("[MeshNode][onNetInfo] Joining newly discovered mesh network");
 
@@ -260,27 +250,27 @@ public class MeshNode {
     }
 
     private void onNetQuery(JsonField.ObjectField packet, InetAddress address) {
-        if (this.node_id == this.master_id) {
+        if (this.config.isMaster()) {
             // if master, reply to query
             this.sendNetInfo();
         }
     }
 
     private void onNetJoin(JsonField.ObjectField packet, InetAddress address) {
-        if (this.node_id == this.master_id) {
+        if (this.config.isMaster()) {
             // if master, reply with node configuration
             this.sendNodeConfig();
         }
     }
 
     private void onNodeConfig(JsonField.ObjectField packet, InetAddress address) {
-        if (this.node_id < 0) {
+        if (this.config.getNodeId() < 0) {
             // if not part of a network, use configuration
-            this.node_id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
+            this.config.setNodeId((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID));
             this.node_count.set((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT));
-            MeshConfiguration config = new MeshConfiguration(this.network_id, this.master_id, this.node_id, this.node_count.get());
-            this.configs.put(config.network_id, config);
-            // TODO: save configs
+            this.config.setNodeCount(this.node_count.get());
+            // add config to known configs so that it gets saved
+            this.configs.put(this.config.getNetwork_id(), this.config);
 
             // announce activity
             this.sendNodeActive();
@@ -294,7 +284,7 @@ public class MeshNode {
         boolean alreadyKnew = this.nodes.containsKey(id);
         this.nodes.put(id, new InetSocketAddress(address, port));
         if (this.node_count.get() < id) this.node_count.set(id);
-        if (id < this.master_id) this.master_id = id;
+        if (id < this.config.getMasterId()) this.config.setMasterId(id);
 
         // inform new node of our presence
         this.sendNodeAdvert(address);
@@ -304,12 +294,12 @@ public class MeshNode {
 
     private void onNodeGone(JsonField.ObjectField packet, InetAddress address) {
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
-        if (id == this.node_id){
+        if (id == this.config.getNodeId()){
             // resend activity notification if someone said we didn't respond
             this.multicastSocket.send((gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.node_id);
+                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
                 gen.writeEndObject();
             });
 
@@ -318,14 +308,15 @@ public class MeshNode {
             this.nodes.remove(id);
 
             // change master_id if necessary
-            if (id == this.master_id) {
-                int min = this.node_id;
+            if (this.config.getMasterId() == id) {
+                int min = this.config.getNodeId();
                 for (int nid : this.getAvailableNodes()) min = Math.min(min, nid);
+                this.config.setMasterId(min);
             }
 
             // prepare to be master if necessary
-            if (this.master_id == this.node_id) {
-                this.id_generator = new Random(this.network_id);
+            if (this.config.isMaster()) {
+                this.id_generator = new Random(this.config.getNetwork_id());
                 for (int i = 0; i < node_count.get(); i++) this.id_generator.nextInt(Integer.MAX_VALUE);
             }
         }
@@ -338,7 +329,7 @@ public class MeshNode {
         InetSocketAddress serverAddress = new InetSocketAddress(address, port);
         boolean alreadyKnew = this.nodes.containsKey(id);
         this.nodes.put(id, serverAddress);
-        if (id < this.master_id) master_id = id;
+        if (id < this.config.getMasterId()) this.config.setMasterId(id);
 
         if (!alreadyKnew) this.onNewNode(id);
     }
