@@ -8,33 +8,44 @@ import net.common.JsonField;
 import net.common.JsonStreamParser;
 import net.lib.Socket;
 import net.reqres.Socketplexer;
+import persistence.ObservableMap;
+import persistence.ObservableMapSerializer;
 import utils.RingBuffer;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-
-// TODO: distributed file metadata file?
-//          owner of first block(s) maintains meta data of file?
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DFS {
 
     public static final File rootDirectory = new File("SpotyMusic/");
     public static final File blockDirectory = new File("SpotyMusic/dfs/");
+    public static final File fileIndex = new File("SpotyMusic/files.json");
 
-    protected ExecutorService executor;
+    protected ScheduledExecutorService executor;
 
     private MeshNode mesh;
 
     protected ConcurrentHashMap<String, BlockDescriptor> blocks;
 
-    public DFS(MeshNode mesh, ExecutorService executor) {
+    protected ObservableMap<String, FileDescriptor> files;
+
+    private AtomicBoolean blockOrganizerRunning;
+
+    public DFS(MeshNode mesh, ScheduledExecutorService executor) {
         this.mesh = mesh;
         this.executor = executor;
 
         this.blocks = new ConcurrentHashMap<>();
+        this.files = new ObservableMap<>();
+
+        this.blockOrganizerRunning = new AtomicBoolean(false);
 
         this.executor.submit(this::init);
     }
@@ -45,24 +56,123 @@ public class DFS {
 
         // enumerate existing blocks
         this.executor.submit(this::enumerateBlocks);
+        // enumerate existing files
+        this.executor.submit(this::enumerateFiles);
 
         // register request handlers
         this.mesh.registerRequestHandler(REQUEST_READ_BLOCK, this::readBlockHandler);
         this.mesh.registerRequestHandler(REQUEST_WRITE_BLOCK, this::writeBlockHandler);
         this.mesh.registerRequestHandler(REQUEST_BLOCK_STATS, this::blockStatsHandler);
+        this.mesh.registerRequestHandler(REQUEST_FILE_METADATA, this::fileQueryHandler);
+        this.mesh.registerRequestHandler(REQUEST_DELETE_BLOCK, this::deleteBlockHandler);
+        this.mesh.registerRequestHandler(REQUEST_PUT_FILE_METADATA, this::filePutHandler);
+
+        this.mesh.registerPacketHandler(COMMAND_DELETE_FILE, this::deleteFileHandler);
     }
 
     private void enumerateBlocks() {
-        for (File f : blockDirectory.listFiles()) {
+        File[] files = blockDirectory.listFiles();
+        if (files == null) {
+            System.out.println("[DFS][enumerateBlocks] No blocks to enumerate");
+            return;
+        }
+
+        int count = 0;
+
+        for (File f : files) {
             try {
                 BlockDescriptor descriptor = new BlockDescriptor(f);
                 this.blocks.put(descriptor.getBlockName(), descriptor);
+                count++;
 
             } catch (Exception e) {
                 System.err.println("[DFS][init] Exception while creating BlockDescriptor for block file: " + f.getName());
                 System.err.println(e.getMessage());
             }
         }
+
+        System.out.println("[DFS][enumerateBlocks] Enumerated " + count + " of " + files.length + " detected blocks");
+
+        this.organizeBlocks();
+    }
+
+    private void organizeBlocks() {
+        if (this.blockOrganizerRunning.compareAndSet(false, true)) {
+            this.executor.submit(() -> {
+                byte[] trx = new byte[1024 * 8];
+                for (BlockDescriptor block : this.blocks.values()) {
+                    int bestId = 0;
+                    if ((bestId = this.getBestId(block.getBlockId())) != this.mesh.getNodeId()) {
+                        System.out.println("[DFS][organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
+
+                        InputStream in = null;
+                        try {
+                            Future<OutputStream> fout = this.writeBlock(block);
+                            in = new FileInputStream(block.getFile());
+
+                            OutputStream out = fout.get(5, TimeUnit.SECONDS);
+
+                            int trxd = 0;
+                            while ((trxd = in.read(trx, 0, trx.length)) != -1) {
+                                out.write(trx, 0, trxd);
+                            }
+
+                            in.close();
+                            out.close();
+
+                            if (block.getBlockNumber() == 0) {
+                                FileDescriptor descriptor = this.files.get(block.getFileName());
+                                if (descriptor != null) {
+                                    this.putFileMetadata(descriptor, bestId);
+                                    this.files.remove(block.getFileName());
+                                }
+                            }
+
+                        } catch (TimeoutException e) {
+                            System.out.println("[DFS][enumerateBlocks] Timed out while trying to move block to another node");
+                            e.printStackTrace();
+
+                            if (in != null) {
+                                try { in.close(); } catch (IOException e1) {}
+                            }
+
+                        } catch (Exception e) {
+                            System.out.println("[DFS][enumerateBlocks] Exception while trying to transfer block");
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private void enumerateFiles() {
+        if (fileIndex.exists()) {
+            try {
+                InputStream in = new BufferedInputStream(new FileInputStream(fileIndex));
+                JsonStreamParser parser = new JsonStreamParser(in, true, (JsonField field) -> {
+                    if (!field.isObject()) return;
+                    JsonField.ObjectField object = (JsonField.ObjectField) field;
+                    for (Map.Entry<String, JsonField> entry : object.getProperties().entrySet()) {
+                        this.files.put(entry.getKey(), FileDescriptor.fromJson((JsonField.ObjectField) entry.getValue()));
+                    }
+                });
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            try {
+                fileIndex.createNewFile();
+
+            } catch (IOException e) {
+                System.err.println("[DFS][enumerateFiles] Unable to create file index file");
+                e.printStackTrace();
+            }
+        }
+
+        new ObservableMapSerializer<>(this.files, fileIndex, (file, gen) -> file.serialize(gen), this.executor, 2500, TimeUnit.MILLISECONDS);
     }
 
     private int getBestId(int block_id) {
@@ -95,7 +205,7 @@ public class DFS {
         BlockDescriptor block = null;
         if (this.blocks.containsKey(blockName)) block = this.blocks.get(blockName);
         else block = new BlockDescriptor(blockName);
-        this.executor.submit(new WriteBlockRequestHandler(socketplexer, block, this));
+        this.executor.submit(new WriteBlockRequestHandler(socketplexer, block,this));
 
     }
 
@@ -120,6 +230,112 @@ public class DFS {
                 gen.writeEndObject();
             }));
         }
+    }
+
+    private void fileQueryHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        try {
+            String fileName = request.getStringProperty(FileDescriptor.PROPERTY_FILE_NAME);
+            if (this.files.containsKey(fileName)) {
+                FileDescriptor file = this.files.get(fileName);
+                executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    file.serialize(gen, true);
+                    gen.writeEndObject();
+                }));
+
+            } else {
+                executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                    gen.writeEndObject();
+                }));
+            }
+
+        } catch (Exception e) {
+            executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
+                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                gen.writeEndObject();
+            }));
+        }
+
+    }
+
+    private void filePutHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        executor.submit(() -> {
+            try {
+                FileDescriptor descriptor = FileDescriptor.fromJson(request);
+                this.files.put(descriptor.getFileName(), descriptor);
+
+                executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_PUT_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeEndObject();
+                }));
+
+            } catch (Exception e) {
+                executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_PUT_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                    gen.writeEndObject();
+                }));
+            }
+        });
+    }
+
+    private void deleteBlockHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        String blockName = request.getStringProperty(PROPERTY_BLOCK_NAME);
+        if (this.blocks.containsKey(blockName)) {
+            executor.submit(() -> {
+                BlockDescriptor block = this.blocks.get(blockName);
+                File file = block.getFile();
+                if (!file.delete()) {
+                    System.err.println("[DFS][deleteBlockHandler] There was a problem deleting the file block: " + blockName);
+                }
+                this.blocks.remove(blockName);
+
+                // if first block in file, delete file metadata
+                if (block.getBlockNumber() == 0) {
+                    this.files.remove(block.getFileName());
+                }
+
+                executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeEndObject();
+                }));
+            });
+
+        } else {
+            executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
+                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                gen.writeEndObject();
+            }));
+        }
+    }
+
+    private void deleteFileHandler(JsonField.ObjectField packet, InetAddress source) {
+        this.executor.submit(() -> {
+            String fileName = packet.getStringProperty(FileDescriptor.PROPERTY_FILE_NAME);
+            this.files.remove(fileName);
+
+            for (BlockDescriptor block : this.blocks.values()) {
+                if (block.getFileName().equals(fileName)) {
+                    File file = block.getFile();
+                    if (!file.delete()) System.err.println("[DFS][deleteFileHandler] There was a problem deleting block " + block.getBlockName());
+                    this.blocks.remove(block.getBlockName());
+                }
+            }
+        });
     }
 
     public Future<InputStream> requestFileBlock(BlockDescriptor block) {
@@ -222,7 +438,7 @@ public class DFS {
 
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
-        if (this.blocks.containsKey(block.getBlockName())) {
+        if (node_id == this.mesh.getNodeId() && this.blocks.containsKey(block.getBlockName())) {
             BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
             try {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile()));
@@ -268,7 +484,9 @@ public class DFS {
             if (packet.containsKey(Constants.PROPERTY_RESPONSE_STATUS) &&
                     packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                 if (future.isCancelled()) plexer.terminate();
-                else future.complete(plexer.openOutputChannel(2));
+                else {
+                    future.complete(plexer.openOutputChannel(2));
+                }
 
             } else {
                 System.err.println("[DFS][writeBlock] Received response code: " +
@@ -344,6 +562,84 @@ public class DFS {
         return future;
     }
 
+    public Future<FileDescriptor> getFileStats(String fileName) {
+        if (this.files.containsKey(fileName)) {
+            return CompletableFuture.completedFuture(this.files.get(fileName));
+        }
+
+        CompletableFuture<FileDescriptor> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            BlockDescriptor firstBlock = new BlockDescriptor(fileName, 0, 0);
+
+            Exception exc = null;
+
+            for (int i = 0; i < this.mesh.getAvailableNodes().size(); i++) {
+                firstBlock.setReplicaNumber(i);
+
+                int node_id = this.getBestId(firstBlock.getBlockId());
+                Socket connection;
+
+                try {
+                    connection = this.mesh.tryConnect(node_id);
+                    exc = null;
+
+                } catch (SocketException | SocketTimeoutException | NodeUnavailableException e) {
+                    System.err.println("[DFS][getFileStats] Unable to connect to node");
+                    e.printStackTrace();
+                    exc = e;
+                    continue;
+                }
+
+                Socketplexer socketplexer = new Socketplexer(connection, this.executor);
+
+                this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_FILE_METADATA);
+                    gen.writeStringField(FileDescriptor.PROPERTY_FILE_NAME, fileName);
+                    gen.writeEndObject();
+                }));
+
+                AtomicReference<JsonField.ObjectField> aresponse = new AtomicReference<>();
+
+                try {
+                    JsonStreamParser parser = new JsonStreamParser(socketplexer.waitInputChannel(1).get(2500, TimeUnit.MILLISECONDS), true, (field) -> {
+                        if (field.isObject()) {
+                            aresponse.set((JsonField.ObjectField) field);
+                        }
+                    });
+                    parser.run();
+
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[DFS][getFileStats] Exception while processing response data");
+                    e.printStackTrace();
+                    exc = e;
+                    socketplexer.terminate();
+                    continue;
+                }
+
+                JsonField.ObjectField response = aresponse.get();
+                if (response.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_NOT_FOUND)) {
+                    exc = new FileNotFoundException("Remote reported no such file");
+                    continue;
+
+                } else if (response.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_SERVER_ERROR)) {
+                    exc = new Exception("Remote had a problem processing the request");
+                    continue;
+                }
+
+                future.complete(FileDescriptor.fromJson(response));
+                break;
+            }
+
+            if (exc != null && !future.isDone()) {
+                future.completeExceptionally(exc);
+            }
+        });
+
+        return future;
+    }
+
     public Future<InputStream> readFile(String fileName, int blockCount, int replication) {
         CompletableFuture<InputStream> future = new CompletableFuture<>();
 
@@ -396,6 +692,88 @@ public class DFS {
         return future;
     }
 
+    public Future<InputStream> readFile(String fileName) {
+        CompletableFuture<InputStream> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            Future<FileDescriptor> file = getFileStats(fileName);
+
+            FileDescriptor descriptor = null;
+
+            try {
+                descriptor = file.get(10, TimeUnit.SECONDS);
+
+            } catch (InterruptedException | TimeoutException | ExecutionException e) {
+                System.err.println("[DFS][readFile] Exception while fetching file metadata");
+                e.printStackTrace();
+                future.completeExceptionally(e);
+                return;
+            }
+
+            int blockCount = descriptor.getBlockCount();
+            int replicas = descriptor.getReplicas();
+
+            Future<InputStream> in = this.readFile(fileName, blockCount, replicas);
+            try {
+                future.complete(in.get(7500, TimeUnit.MILLISECONDS));
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                System.err.println("[DFS][readFile] There was a problem getting the requested file");
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+
+        return future;
+    }
+
+    public Future<?> putFileMetadata(FileDescriptor fileDescriptor, int node_id) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            Socket connection;
+
+            try {
+                connection = this.mesh.tryConnect(node_id);
+
+            } catch (SocketException | NodeUnavailableException | SocketTimeoutException e) {
+                System.err.println("[DFS][getBlockStats] Unable to connect to node " + node_id);
+                e.printStackTrace();
+                future.completeExceptionally(e);
+                return;
+            }
+
+            Socketplexer socketplexer = new Socketplexer(connection, this.executor);
+
+            this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_PUT_FILE_METADATA);
+                fileDescriptor.serialize(gen, true);
+                gen.writeEndObject();
+            }));
+
+            try {
+                this.executor.submit(new JsonStreamParser(socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS), true, (field) -> {
+                    if (!field.isObject()) return;
+                    JsonField.ObjectField packet = (JsonField.ObjectField) field;
+                    String status = packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS);
+                    if (status.equals(Constants.RESPONSE_STATUS_OK)) {
+                        future.complete(status);
+
+                    } else {
+                        future.completeExceptionally(new Exception("Server returned status code " + status));
+                    }
+                }));
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                System.err.println("[DFS][putFileMetadata] Exception while parsing response header");
+                e.printStackTrace();
+            }
+        });
+
+        return future;
+    }
+
     public Future<OutputStream> writeStream(String fileName, int replication) {
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
@@ -418,6 +796,7 @@ public class DFS {
             future.complete(buffer.getOutputStream());
 
             InputStream in = buffer.getInputStream();
+            long total_written = 0;
             long written_block = 0;
             int blockNumber = 0;
             int trx;
@@ -427,6 +806,7 @@ public class DFS {
                         outputs[i].get().write(trx_buffer, 0, trx);
                     }
                     written_block += trx;
+                    total_written += trx;
 
                     if (written_block >= Constants.MAX_BLOCK_SIZE) {
                         blockNumber++;
@@ -458,13 +838,32 @@ public class DFS {
                     in.close();
                 } catch (IOException e1) {}
             }
+
+            FileDescriptor metadata = new FileDescriptor(fileName, total_written, blockNumber + 1, replication);
+            for (int i = 0; i < replication; i++) {
+                BlockDescriptor block = new BlockDescriptor(fileName, 0, i);
+                int id = this.getBestId(block.getBlockId());
+                this.putFileMetadata(metadata, id);
+            }
+
         });
 
         return future;
     }
 
+    public void deleteFile(String fileName) {
+        this.executor.submit(() -> {
+            Future<FileDescriptor> descriptorFuture = this.getFileStats(fileName);
+            try {
+                descriptorFuture.get(10, TimeUnit.SECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                System.err.println("[DFS][deleteFile] Unable to get metadata of file to delete");
+                e.printStackTrace();
+            }
+        });
+    }
+
     public static final String PROPERTY_BLOCK_NAME = "PROP_BLOCK_NAME";
-    public static final String PROPERTY_VERSION_NUMBER = "PROP_VERSION_NUMBER";
 
     public static final String REQUEST_READ_BLOCK = "REQUEST_READ_BLOCK";
     public static final String RESPONSE_READ_BLOCK = "RESPONSE_READ_BLOCK";
@@ -474,4 +873,14 @@ public class DFS {
 
     public static final String REQUEST_BLOCK_STATS = "REQUEST_BLOCK_STATS";
     public static final String RESPONSE_BLOCK_STATS = "RESPONSE_BLOCK_STATS";
+
+    public static final String REQUEST_PUT_FILE_METADATA = "REQUEST_PUT_FILE_METADATA";
+    public static final String RESPONSE_PUT_FILE_METADATA = "RESPONSE_PUT_FILE_METADATA";
+    public static final String REQUEST_FILE_METADATA = "REQUEST_FILE_METADATA";
+    public static final String RESPONSE_FILE_METADATA = "RESPONSE_FILE_METADATA";
+
+    public static final String REQUEST_DELETE_BLOCK = "REQUEST_DELETE_BLOCK";
+    public static final String RESPONSE_DELETE_BLOCK = "RESPONSE_DELETE_BLOCK";
+
+    public static final String COMMAND_DELETE_FILE = "CMD_DELETE_FILE";
 }
