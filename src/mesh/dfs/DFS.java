@@ -47,10 +47,9 @@ public class DFS {
 
         this.blockOrganizerRunning = new AtomicBoolean(false);
 
-        this.executor.submit(this::init);
     }
 
-    private void init() {
+    public void init() {
         if (!rootDirectory.exists()) rootDirectory.mkdir();
         if (!blockDirectory.exists()) blockDirectory.mkdirs();
 
@@ -66,6 +65,7 @@ public class DFS {
         this.mesh.registerRequestHandler(REQUEST_FILE_METADATA, this::fileQueryHandler);
         this.mesh.registerRequestHandler(REQUEST_DELETE_BLOCK, this::deleteBlockHandler);
         this.mesh.registerRequestHandler(REQUEST_PUT_FILE_METADATA, this::filePutHandler);
+        this.mesh.registerRequestHandler(REQUEST_APPEND_BLOCK, this::appendBlockHandler);
 
         this.mesh.registerPacketHandler(COMMAND_DELETE_FILE, this::deleteFileHandler);
     }
@@ -207,7 +207,14 @@ public class DFS {
         if (this.blocks.containsKey(blockName)) block = this.blocks.get(blockName);
         else block = new BlockDescriptor(blockName);
         this.executor.submit(new WriteBlockRequestHandler(socketplexer, block,this));
+    }
 
+    private void appendBlockHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        String blockName = request.getStringProperty(PROPERTY_BLOCK_NAME);
+        BlockDescriptor block = null;
+        if (this.blocks.containsKey(blockName)) block = this.blocks.get(blockName);
+        else block = new BlockDescriptor(blockName);
+        this.executor.submit(new WriteBlockRequestHandler(socketplexer, block, this, true));
     }
 
     private void blockStatsHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
@@ -220,6 +227,8 @@ public class DFS {
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
                 gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_SIZE, block.blockSize());
                 gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_MODIFIED, block.lastModified());
+                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_NUMBER, block.getBlockNumber());
+                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_REPLICA, block.getReplicaNumber());
                 gen.writeEndObject();
             }));
 
@@ -435,6 +444,10 @@ public class DFS {
     }
 
     public Future<OutputStream> writeBlock(BlockDescriptor block) {
+        return this.writeBlock(block, false);
+    }
+
+    public Future<OutputStream> writeBlock(BlockDescriptor block, boolean append) {
         int node_id = getBestId(block.getBlockId());
 
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
@@ -442,7 +455,7 @@ public class DFS {
         if (node_id == this.mesh.getNodeId() && this.blocks.containsKey(block.getBlockName())) {
             BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
             try {
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile()));
+                OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile(), append));
                 future.complete(out);
 
             } catch (FileNotFoundException e) {
@@ -466,7 +479,7 @@ public class DFS {
 
         this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
             gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_WRITE_BLOCK);
+            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
             gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
             gen.writeEndObject();
         }));
@@ -477,7 +490,7 @@ public class DFS {
             JsonField.ObjectField packet = (JsonField.ObjectField) field;
 
             if (!packet.containsKey(Constants.REQUEST_TYPE_PROPERTY) ||
-                    !packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY).equals(RESPONSE_WRITE_BLOCK)) {
+                    !packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY).equals(append ? RESPONSE_APPEND_BLOCK : RESPONSE_WRITE_BLOCK)) {
                 System.err.println("[DFS][writeBlock] Received bad response type");
                 future.completeExceptionally(new Exception("Bad response type"));
             }
@@ -505,6 +518,8 @@ public class DFS {
             BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
             JsonField.ObjectField response = JsonField.emptyObject();
             response.setProperty(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+            response.setProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER, localBlock.getBlockNumber());
+            response.setProperty(BlockDescriptor.PROPERTY_BLOCK_REPLICA, localBlock.getReplicaNumber());
             response.setProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE, localBlock.blockSize());
             response.setProperty(BlockDescriptor.PROPERTY_BLOCK_MODIFIED, localBlock.lastModified());
             return CompletableFuture.completedFuture(response);
@@ -775,15 +790,48 @@ public class DFS {
         return future;
     }
 
-    public Future<OutputStream> writeStream(String fileName, int replication) {
+    public Future<OutputStream> writeFile(String fileName, int replicas) {
+        return this.writeFile(fileName, replicas, false);
+    }
+
+    public Future<OutputStream> writeFile(String fileName, int replicas, boolean append) {
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
         this.executor.submit(() -> {
+            int replication = replicas;
+
+            FileDescriptor descriptor = null;
+            JsonField.ObjectField lastBlock = null;
+            if (append) {
+                Future<FileDescriptor> file = getFileStats(fileName);
+                try {
+                    descriptor = file.get(10, TimeUnit.SECONDS);
+                    replication = descriptor.getReplicas();
+
+                } catch (InterruptedException | TimeoutException | ExecutionException e) {
+                    System.err.println("[DFS][writeFile][append] Exception while fetching file metadata");
+                    e.printStackTrace();
+                    future.completeExceptionally(e);
+                    return;
+                }
+
+                Future<JsonField.ObjectField> block = getBlockStats(new BlockDescriptor(fileName, descriptor.getBlockCount() - 1));
+                try {
+                    lastBlock = block.get(10, TimeUnit.SECONDS);
+
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[DFS][writeFile][append] Exception while fetching last block metadata");
+                    e.printStackTrace();
+                    future.completeExceptionally(e);
+                    return;
+                }
+            }
+
             RingBuffer buffer = new RingBuffer(1024 * 8);
             byte[] trx_buffer = new byte[1024 * 4];
 
             Future<OutputStream>[] outputs = new Future[replication];
-            for (int i = 0; i < replication; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, 0, i));
+            for (int i = 0; i < replication; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, 0, i), append);
 
             try {
                 for (int i = 0; i < replication; i++) outputs[i].get();
@@ -797,9 +845,9 @@ public class DFS {
             future.complete(buffer.getOutputStream());
 
             InputStream in = buffer.getInputStream();
-            long total_written = 0;
-            long written_block = 0;
-            int blockNumber = 0;
+            long total_written = append ? descriptor.getTotalSize() : 0;
+            long written_block = append ? lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) : 0;
+            int blockNumber = append ? (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER) : 0;
             int trx;
             try {
                 while ((trx = in.read(trx_buffer, 0, (int) Math.min(trx_buffer.length, Constants.MAX_BLOCK_SIZE - written_block))) != -1) {
@@ -815,7 +863,7 @@ public class DFS {
                         for (int i = 0; i < replication; i++) {
                             outputs[i].get().close();
                             block.setReplicaNumber(i);
-                            outputs[i] = writeBlock(block);
+                            outputs[i] = writeBlock(block, append);
                         }
                         written_block = 0;
                     }
@@ -852,6 +900,10 @@ public class DFS {
         return future;
     }
 
+    public Future<OutputStream> appendFile(String fileName) {
+        return this.writeFile(fileName, 0, true);
+    }
+
     public void deleteFile(String fileName) {
         this.executor.submit(() -> {
             Future<FileDescriptor> descriptorFuture = this.getFileStats(fileName);
@@ -871,6 +923,8 @@ public class DFS {
 
     public static final String REQUEST_WRITE_BLOCK = "REQUEST_WRITE_BLOCK";
     public static final String RESPONSE_WRITE_BLOCK = "RESPONSE_WRITE_BLOCK";
+    public static final String REQUEST_APPEND_BLOCK = "REQUEST_APPEND_BLOCK";
+    public static final String RESPONSE_APPEND_BLOCK = "RESPONSE_APPEND_BLOCK";
 
     public static final String REQUEST_BLOCK_STATS = "REQUEST_BLOCK_STATS";
     public static final String RESPONSE_BLOCK_STATS = "RESPONSE_BLOCK_STATS";

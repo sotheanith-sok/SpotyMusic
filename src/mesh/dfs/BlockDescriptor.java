@@ -1,6 +1,10 @@
 package mesh.dfs;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import net.common.JsonField;
+
 import java.io.File;
+import java.io.IOException;
 
 public class BlockDescriptor {
 
@@ -81,6 +85,8 @@ public class BlockDescriptor {
         return this.file.lastModified();
     }
 
+    public static final String PROPERTY_BLOCK_NUMBER = "PROP_BLOCK_NUMBER";
+    public static final String PROPERTY_BLOCK_REPLICA = "PROP_BLOCK_REPLICA";
     public static final String PROPERTY_BLOCK_SIZE = "PROP_BLOCK_SIZE";
     public static final String PROPERTY_BLOCK_MODIFIED = "PROP_BLOCK_MODIFIED";
 }

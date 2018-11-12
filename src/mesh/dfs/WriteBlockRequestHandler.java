@@ -15,10 +15,17 @@ public class WriteBlockRequestHandler implements Runnable {
 
     private DFS dfs;
 
+    private boolean append;
+
     public WriteBlockRequestHandler(Socketplexer socketplexer, BlockDescriptor block, DFS dfs) {
+        this(socketplexer, block, dfs, false);
+    }
+
+    public WriteBlockRequestHandler(Socketplexer socketplexer, BlockDescriptor block, DFS dfs, boolean append) {
         this.socketplexer = socketplexer;
         this.block = block;
         this.dfs = dfs;
+        this.append = append;
     }
 
     @Override
@@ -33,7 +40,7 @@ public class WriteBlockRequestHandler implements Runnable {
 
             this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
                 gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_WRITE_BLOCK);
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
                 gen.writeEndObject();
             }));
@@ -43,11 +50,11 @@ public class WriteBlockRequestHandler implements Runnable {
 
         OutputStream out = null;
         try {
-            out = new BufferedOutputStream(new FileOutputStream(block.getFile()));
+            out = new BufferedOutputStream(new FileOutputStream(block.getFile(), this.append));
 
             this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
                 gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_WRITE_BLOCK);
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
                 gen.writeEndObject();
             }));
@@ -58,7 +65,7 @@ public class WriteBlockRequestHandler implements Runnable {
 
             this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
                 gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_WRITE_BLOCK);
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
                 gen.writeEndObject();
             }));
