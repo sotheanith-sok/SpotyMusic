@@ -94,6 +94,7 @@ public class DFS {
         System.out.println("[DFS][enumerateBlocks] Enumerated " + count + " of " + files.length + " detected blocks");
 
         this.organizeBlocks();
+        this.mesh.addNodeConnectListener(id -> this.organizeBlocks());
     }
 
     private void organizeBlocks() {

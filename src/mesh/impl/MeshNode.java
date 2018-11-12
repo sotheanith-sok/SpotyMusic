@@ -362,7 +362,7 @@ public class MeshNode {
     public static final String PROPERTY_PORT_NUMBER = "PROP_PORT_NUM";
 
     @FunctionalInterface
-    interface NodeConnectListener {
+    public interface NodeConnectListener {
         void onNodeConnected(int node_id);
     }
 }
