@@ -308,6 +308,10 @@ public class Socketplexer {
         this.socket.close();
     }
 
+    public boolean isOpened() {
+        return !this.socket.isClosed() && this.outputChannels.size() + this.inputChannels.size() > 2;
+    }
+
     /**
      * Called when an OpenChannel packet is received.
      * Used internally.
