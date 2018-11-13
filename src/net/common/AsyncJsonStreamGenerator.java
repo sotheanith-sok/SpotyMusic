@@ -72,7 +72,7 @@ public class AsyncJsonStreamGenerator implements Runnable {
             return;
         }
 
-        while (this.running.get()) {
+        while (this.running.get() || !this.queue.isEmpty()) {
             synchronized (this.queueLock) {
                 try {
                     while (!this.queue.isEmpty()) {
