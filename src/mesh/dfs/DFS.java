@@ -1,6 +1,5 @@
 package mesh.dfs;
 
-import jdk.nashorn.internal.ir.Block;
 import mesh.impl.MeshNode;
 import mesh.impl.NodeUnavailableException;
 import net.Constants;
@@ -17,6 +16,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -104,7 +105,7 @@ public class DFS {
                 byte[] trx = new byte[1024 * 8];
                 for (BlockDescriptor block : this.blocks.values()) {
                     int bestId = 0;
-                    if ((bestId = this.getBestId(block.getBlockId())) != this.mesh.getNodeId()) {
+                    if ((bestId = this.getBestId(block.getBlockId())) != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 3) {
                         System.out.println("[DFS][organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
 
                         InputStream in = null;
@@ -795,11 +796,12 @@ public class DFS {
         return this.writeFile(fileName, replicas, false);
     }
 
-    public Future<OutputStream> writeFile(String fileName, int replicas, boolean append) {
+    public Future<OutputStream> writeFile(String fileName, int replicas, boolean tryAppend) {
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
         this.executor.submit(() -> {
             int replication = replicas;
+            boolean append = tryAppend;
 
             FileDescriptor descriptor = null;
             JsonField.ObjectField lastBlock = null;
@@ -809,13 +811,27 @@ public class DFS {
                     descriptor = file.get(10, TimeUnit.SECONDS);
                     replication = descriptor.getReplicas();
 
-                } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                    System.err.println("[DFS][writeFile][append] Exception while fetching file metadata");
+                } catch (InterruptedException | TimeoutException e) {
+                    System.err.println("[DFS][writeFile][append] Future related exception while fetching file metadata");
                     e.printStackTrace();
                     future.completeExceptionally(e);
                     return;
-                }
 
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof FileNotFoundException) {
+                        // cannot append, must create new file
+                        append = false;
+
+                    } else {
+                        System.err.println("[DFS][writeFile][append] ExecutionException while fetching metadata");
+                        e.printStackTrace();
+                        future.completeExceptionally(e);
+                        return;
+                    }
+                }
+            }
+
+            if (append) {
                 Future<JsonField.ObjectField> block = getBlockStats(new BlockDescriptor(fileName, descriptor.getBlockCount() - 1));
                 try {
                     lastBlock = block.get(10, TimeUnit.SECONDS);
@@ -974,6 +990,39 @@ public class DFS {
                 e.printStackTrace();
             }
         });
+    }
+
+    public List<BlockDescriptor> getLocalBlocks(String fileName) {
+        ArrayList<BlockDescriptor> blocks = new ArrayList<>();
+
+        for (BlockDescriptor block : this.blocks.values()) {
+            if (block.getFileName().equals(fileName)) blocks.add(block);
+        }
+
+        return blocks;
+    }
+
+    public Future<Boolean> fileExists(String fileName) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            Future<FileDescriptor> desc = this.getFileStats(fileName);
+
+            try {
+                desc.get(10, TimeUnit.SECONDS);
+                future.complete(true);
+
+            } catch (InterruptedException | TimeoutException e) {
+                System.err.println("[DFS][fileExists] Unable to get file stats");
+                e.printStackTrace();
+                future.completeExceptionally(e);
+
+            } catch (ExecutionException e) {
+                future.complete(false);
+            }
+        });
+
+        return future;
     }
 
     public static final String PROPERTY_BLOCK_NAME = "PROP_BLOCK_NAME";
