@@ -15,8 +15,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: save mesh network configurations
-
 public class MeshNode {
 
     private ExecutorService executor;
