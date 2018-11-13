@@ -921,35 +921,43 @@ public class DFS {
         return this.writeFile(fileName, 0, true);
     }
 
-    public void appendFile(String fileName, byte[] data) {
+    public void appendFile(String fileName, byte[] data, int replication) {
         this.executor.submit(() -> {
-            FileDescriptor descriptor;
+            boolean create = false;
+            FileDescriptor descriptor = null;
             JsonField.ObjectField lastBlock = null;
             Future<FileDescriptor> file = getFileStats(fileName);
             try {
                 descriptor = file.get(10, TimeUnit.SECONDS);
 
             } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                System.err.println("[DFS][writeFile][append] Exception while fetching file metadata");
-                e.printStackTrace();
-                return;
+                if (e.getCause() instanceof FileNotFoundException) {
+                    create = true;
+
+                } else {
+                    System.err.println("[DFS][writeFile][append] Exception while fetching file metadata");
+                    e.printStackTrace();
+                    return;
+                }
             }
 
-            Future<JsonField.ObjectField> block = getBlockStats(new BlockDescriptor(fileName, descriptor.getBlockCount() - 1));
-            try {
-                lastBlock = block.get(10, TimeUnit.SECONDS);
+            if (!create) {
+                Future<JsonField.ObjectField> block = getBlockStats(new BlockDescriptor(fileName, descriptor.getBlockCount() - 1));
+                try {
+                    lastBlock = block.get(10, TimeUnit.SECONDS);
 
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                System.err.println("[DFS][writeFile][append] Exception while fetching last block metadata");
-                e.printStackTrace();
-                return;
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[DFS][writeFile][append] Exception while fetching last block metadata");
+                    e.printStackTrace();
+                    return;
+                }
             }
 
-            int blockNumber = (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER);
-            int replicas = descriptor.getReplicas();
+            int blockNumber = create ? 0 : (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER);
+            int replicas = create ? replication : descriptor.getReplicas();
 
             Future<OutputStream>[] outputs = new Future[replicas];
-            if (lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) + data.length > Constants.MAX_BLOCK_SIZE) {
+            if (!create && lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) + data.length > Constants.MAX_BLOCK_SIZE) {
                 blockNumber++;
             }
 
@@ -971,7 +979,7 @@ public class DFS {
                 }
             }
 
-            FileDescriptor metadata = new FileDescriptor(fileName, descriptor.getTotalSize() + data.length, blockNumber + 1, replicas);
+            FileDescriptor metadata = new FileDescriptor(fileName, (create ? 0 : descriptor.getTotalSize()) + data.length, blockNumber + 1, replicas);
             for (int i = 0; i < replicas; i++) {
                 BlockDescriptor blockDescriptor= new BlockDescriptor(fileName, 0, i);
                 int id = this.getBestId(blockDescriptor.getBlockId());
