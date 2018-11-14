@@ -149,6 +149,10 @@ public class MeshLibrary implements Library {
         if (this.user != null) this.user.onSongPlayed(song);
     }
 
+    public MeshClientUser getCurrentUser() {
+        return this.user;
+    }
+
     public static final String REQUEST_IMPORT_SONG = "REQUEST_IMPORT_SONG";
     public static final String RESPONSE_IMPORT_SONG = "RESPONSE_IMPORT_SONG";
 

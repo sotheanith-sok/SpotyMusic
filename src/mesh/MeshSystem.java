@@ -139,7 +139,7 @@ public class MeshSystem {
         }
     }
 
-    public Library getLibrary() {
+    public MeshLibrary getLibrary() {
         return this.library;
     }
 }

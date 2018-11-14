@@ -18,10 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class MeshClientUser implements MeshLibraryActivityListener {
@@ -31,6 +28,8 @@ public class MeshClientUser implements MeshLibraryActivityListener {
     private final String username;
 
     private final String password;
+
+    private HashMap<String, String> attributes;
 
     private Set<String> favorites;
 
@@ -42,10 +41,11 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
     private DebouncedRunnable save_task;
 
-    private MeshClientUser(String username, String password, List<String> favs, MeshLibrary library) {
+    private MeshClientUser(String username, String password, List<String> favs, Map<String, String> attrs, MeshLibrary library) {
         this.username = username;
         this.password = password;
         this.favorites = new HashSet<>(favs);
+        this.attributes = new HashMap<>(attrs);
         this.library = library;
 
         this.save_task = new DebouncedRunnable(this::do_save, 5, TimeUnit.SECONDS, true, library.executor);
@@ -110,6 +110,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             CipherInputStream cin = new CipherInputStream(in, cipher);
 
             List<String> favs = new LinkedList<>();
+            Map<String, String> attrs = new HashMap<>();
 
             JsonStreamParser parser = new JsonStreamParser(cin, true, (field) -> {
                 if (field.isObject()) {
@@ -124,11 +125,20 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                             }
                         }
                     }
+
+                    if (root.containsKey("attrs")) {
+                        JsonField attr_field = root.getProperty("attrs");
+                        if (attr_field.isObject()) {
+                            for (Map.Entry<String, JsonField> entry : attr_field.getProperties().entrySet()) {
+                                attrs.put(entry.getKey(), entry.getValue().getStringValue());
+                            }
+                        }
+                    }
                 }
             });
             parser.run();
 
-            future.complete(new MeshClientUser(user, password, favs, library));
+            future.complete(new MeshClientUser(user, password, favs, attrs, library));
         });
 
         return future;
@@ -147,7 +157,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                     future.completeExceptionally(new IllegalArgumentException("Username taken"));
 
                 } else {
-                    future.complete(new MeshClientUser(user, password, new LinkedList<>(), library));
+                    future.complete(new MeshClientUser(user, password, new LinkedList<>(), new HashMap<>(), library));
                 }
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -212,6 +222,14 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             gen.writeEndArray();
 
             gen.writeEndObject();
+
+            gen.writeFieldName("attrs");
+            gen.writeStartObject();
+            for (Map.Entry<String, String> attribute : this.attributes.entrySet()) {
+                gen.writeStringField(attribute.getKey(), attribute.getValue());
+            }
+            gen.writeEndObject();
+
             gen.close();
             cout.close();
 
@@ -222,6 +240,22 @@ public class MeshClientUser implements MeshLibraryActivityListener {
         } finally {
             try { cout.close(); } catch (IOException e1) {}
         }
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public String getAttribute(String key) {
+        return this.attributes.get(key);
+    }
+
+    public String getAttributeOrDefault(String key, String defaultValue) {
+        return this.attributes.getOrDefault(key, defaultValue);
+    }
+
+    public void setAttribute(String key, String value) {
+        this.attributes.put(key, value);
     }
 
     @Override
