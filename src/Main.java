@@ -2,7 +2,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import persistence.DataManager;
+import mesh.MeshSystem;
 import ui.component.Router;
 
 public class Main extends Application {
@@ -16,7 +16,8 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        DataManager.getDataManager().init();
+        MeshSystem mesh = MeshSystem.getInstance();
+        mesh.init();
 
         Router mainRouter = new Router();
         mainRouter.loadView(mainID, mainFile);

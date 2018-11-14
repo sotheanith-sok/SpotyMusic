@@ -12,6 +12,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import mesh.MeshSystem;
 import persistence.DataManager;
 
 import java.io.File;
@@ -107,6 +108,7 @@ public class FileImportViewController implements Initializable {
       }
       if(!filePath.getText().isEmpty() && !title.getText().isEmpty() &&!album.getText().isEmpty()&&!artist.getText().isEmpty()){
           DataManager.getDataManager().importFile(file,title.getText(),artist.getText(),album.getText());
+          MeshSystem.getInstance().getLibrary().importSong(file, title.getText(), artist.getText(), album.getText());
           songObservableList.add(title.getText());
           stage.close();
       }

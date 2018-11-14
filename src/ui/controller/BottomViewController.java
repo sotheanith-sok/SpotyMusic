@@ -126,23 +126,15 @@ public class BottomViewController implements Initializable {
          this.song = song;
          Future<AudioInputStream> task = song.getStream();
          Runnable runnable= () -> {
-            try {
-               if(task.isDone()){
-                   this.streamer.play(task.get());
-               }else{
-                  progressBar.setVisible(true);
-                  progressBar.setVisible(true);
-                   this.streamer.play(task.get(5, TimeUnit.SECONDS));
-               }
-               progressBar.setVisible(false);
-               progressBar.setVisible(false);
-            } catch (InterruptedException e) {
-               e.printStackTrace();
-            } catch (ExecutionException e) {
-               e.printStackTrace();
-            } catch (java.util.concurrent.TimeoutException e){
-               e.printStackTrace();
+            if(task.isDone()){
+               this.streamer.play(task);
+            }else{
+               progressBar.setVisible(true);
+               progressBar.setVisible(true);
+               this.streamer.play(task);
             }
+            progressBar.setVisible(false);
+            progressBar.setVisible(false);
          };
          new Thread(runnable).start();
       }

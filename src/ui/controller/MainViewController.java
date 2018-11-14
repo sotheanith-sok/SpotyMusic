@@ -6,19 +6,18 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.Pane;
+import mesh.MeshSystem;
 import net.client.RemoteLibrary;
 import net.server.LibraryServer;
 import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -82,12 +81,12 @@ public class MainViewController implements Initializable, ControlledView {
      */
     public void loadCurrentLibrary() {
         System.out.println("[MainViewController][loadCurrentLibrary] Getting username");
-        leftViewController.setUserName(DataManager.getDataManager().getCurrentUser().getUsername());
+        leftViewController.setUserName(MeshSystem.getInstance().getLibrary().getCurrentUser().getUsername());
 
         rightViewController.setCurrentLibrary(this.library);
 
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
-        this.setTheme(DataManager.getDataManager().getCurrentUser().getTheme());
+        this.setTheme(MeshSystem.getInstance().getLibrary().getCurrentUser().getAttributeOrDefault("theme", "default"));
     }
 
     /**
@@ -104,7 +103,7 @@ public class MainViewController implements Initializable, ControlledView {
             stylesheets.clear();
             stylesheets.add(THEMES.get(name));
             this.currentTheme = name;
-            DataManager.getDataManager().getCurrentUser().setTheme(name);
+            MeshSystem.getInstance().getLibrary().getCurrentUser().setAttribute("theme", name);
 
         } else {
             System.err.print("[MainViewController][setTheme] Unknown theme: ");
