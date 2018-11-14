@@ -138,7 +138,7 @@ public class MeshLibrary implements Library {
     @Override
     public ObservableList<? extends Song> search(String searchParam) {
         String param = searchParam.toLowerCase().trim();
-        // TODO: send search query to mesh
+        this.doSearch(searchParam);
         if (this.user != null) this.user.onSearch(searchParam);
         return this.songs.filtered((song) -> song.getTitle().toLowerCase().contains(param) ||
                                                 song.getAlbumTitle().toLowerCase().contains(param) ||
