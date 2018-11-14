@@ -1,5 +1,6 @@
 package mesh;
 
+import connect.Library;
 import mesh.dfs.DFS;
 import mesh.impl.MeshConfiguration;
 import mesh.impl.MeshNode;
@@ -20,6 +21,8 @@ public class MeshSystem {
     public static final File root = new File("SpotyMusic/");
     public static final File meshConfigs = new File("SpotyMusic/nets.json");
 
+    private static MeshSystem instance = null;
+
     private ObservableMap<Integer, MeshConfiguration> configs;
 
     private MeshNode node;
@@ -30,9 +33,17 @@ public class MeshSystem {
 
     private ScheduledThreadPoolExecutor executor;
 
-    public MeshSystem() {
+    private MeshSystem() {
         this.configs = new ObservableMap<>();
         this.executor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
+    }
+
+    public static MeshSystem getInstance() {
+        if (instance == null) {
+            instance = new MeshSystem();
+        }
+
+        return instance;
     }
 
     public void init() {
@@ -126,5 +137,9 @@ public class MeshSystem {
             e.printStackTrace();
             return;
         }
+    }
+
+    public Library getLibrary() {
+        return this.library;
     }
 }

@@ -1,14 +1,22 @@
 package mesh.library;
 
+import connect.Album;
+import connect.Library;
+import connect.Playlist;
+import connect.Song;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import mesh.dfs.DFS;
 import mesh.impl.MeshNode;
 import net.common.JsonField;
 import net.reqres.Socketplexer;
 import utils.Utils;
 
+import java.io.File;
+import java.util.LinkedList;
 import java.util.concurrent.*;
 
-public class MeshLibrary {
+public class MeshLibrary implements Library {
 
     protected MeshNode mesh;
 
@@ -16,33 +24,129 @@ public class MeshLibrary {
 
     protected ScheduledExecutorService executor;
 
+    protected MeshClientUser user;
+
+    protected ObservableList<MeshClientSong> songs;
+
+    protected ObservableList<String> artists;
+
+    protected ObservableList<MeshClientAlbum> albums;
+
     public MeshLibrary(MeshNode mesh, DFS dfs, ScheduledExecutorService executor) {
         this.mesh = mesh;
         this.dfs = dfs;
         this.executor = executor;
+
+        this.songs = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
+        this.artists = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
+        this.albums = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
     }
 
     public void init() {
-        this.mesh.registerRequestHandler(REQUEST_IMPORT_SONG, this::handleImportSong);
-        this.mesh.registerRequestHandler(REQUEST_STREAM_SONG, this::handleStreamSong);
         this.mesh.registerRequestHandler(REQUEST_SEARCH_MESH, this::handleSearchMesh);
-        this.mesh.registerRequestHandler(REQUEST_SEARCH_SONG, this::handleSearchSong);
-    }
-
-    private void handleImportSong(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
-        executor.submit(new ImportSongRequestHandler(socketplexer, request, this));
-    }
-
-    private void handleStreamSong(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
-        executor.submit(new StreamSongRequestHandler(socketplexer, request, this));
     }
 
     private void handleSearchMesh(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
         executor.submit(new MeshSearchRequestHandler(socketplexer, request, this));
     }
 
-    private void handleSearchSong(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
-        executor.submit(new SearchSongRequestHandler(socketplexer, request, this));
+    public Future<Boolean> tryAuth(String user, String password) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            Future<MeshClientUser> fuser = MeshClientUser.tryAuth(user, password, this);
+            try {
+                this.user = fuser.get(10, TimeUnit.SECONDS);
+                future.complete(true);
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                future.complete(false);
+            }
+        });
+
+        return future;
+    }
+
+    public Future<Boolean> register(String user, String password) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        this.executor.submit(() -> {
+            Future<MeshClientUser> fuser = MeshClientUser.register(user, password, this);
+
+            try {
+                this.user = fuser.get(6, TimeUnit.SECONDS);
+                future.complete(true);
+
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                future.complete(false);
+            }
+        });
+
+        return future;
+    }
+
+    public void doSearch(String searchParam) {
+        this.executor.submit(new SearchHandler(searchParam, this));
+    }
+
+    public void importSong(File file, String title, String artist, String album) {
+        this.executor.submit(new ImportSongHandler(file, title, artist, album, this));
+    }
+
+    @Override
+    public ObservableList<? extends Album> getAlbums() {
+        return this.albums;
+    }
+
+    @Override
+    public ObservableList<String> getArtists() {
+        return this.artists;
+    }
+
+    @Override
+    public ObservableList<? extends Album> getAlbumsByArtist(String artist) {
+        if (this.user != null) this.user.onArtistAccessed(artist);
+        return this.albums.filtered((album) -> album.getArtist().equals(artist));
+    }
+
+    @Override
+    public ObservableList<? extends Song> getSongsByArtist(String artist) {
+        if (this.user != null) this.user.onArtistAccessed(artist);
+        return this.songs.filtered((song) -> song.getArtist().equals(artist));
+    }
+
+    public ObservableList<? extends Song> getSongsByAlbum(MeshClientAlbum album) {
+        if (this.user != null) this.user.onAlbumAccessed(album);
+        return this.songs.filtered((song) -> song.getAlbumTitle().equals(album.getTitle()));
+    }
+
+    @Override
+    public ObservableList<? extends Song> getSongs() {
+        return this.songs;
+    }
+
+    @Override
+    public ObservableList<? extends Playlist> getPlaylists() {
+        return FXCollections.emptyObservableList();
+    }
+
+    @Override
+    public Future<Boolean> createPlaylist(String name) throws SecurityException {
+        return CompletableFuture.completedFuture(false);
+    }
+
+    @Override
+    public ObservableList<? extends Song> search(String searchParam) {
+        String param = searchParam.toLowerCase().trim();
+        // TODO: send search query to mesh
+        if (this.user != null) this.user.onSearch(searchParam);
+        return this.songs.filtered((song) -> song.getTitle().toLowerCase().contains(param) ||
+                                                song.getAlbumTitle().toLowerCase().contains(param) ||
+                                                song.getArtist().toLowerCase().contains(param));
+    }
+
+    protected void onSongPlayed(MeshClientSong song) {
+        if (this.user != null) this.user.onSongPlayed(song);
     }
 
     public static final String REQUEST_IMPORT_SONG = "REQUEST_IMPORT_SONG";
@@ -66,4 +170,5 @@ public class MeshLibrary {
     public static final String INDEX_FILE_NAME = Utils.hash("MusicIndexFile", "MD5");
     public static final int INDEX_FILE_REPLICAS = 3;
     public static final int SONG_FILE_REPLICAS = 1;
+
 }

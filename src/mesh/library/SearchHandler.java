@@ -12,24 +12,19 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class SearchSongRequestHandler implements Runnable {
+public class SearchHandler implements Runnable {
 
-    private Socketplexer socketplexer;
-
-    private JsonField.ObjectField request;
+    private final String searchParam;
 
     private MeshLibrary library;
 
-    public SearchSongRequestHandler(Socketplexer socketplexer, JsonField.ObjectField request, MeshLibrary library) {
-        this.socketplexer = socketplexer;
-        this.request = request;
+    public SearchHandler(String param, MeshLibrary library) {
+        this.searchParam = param;
         this.library = library;
     }
 
     @Override
     public void run() {
-        String searchParam = this.request.getStringProperty(MeshLibrary.PROPERTY_SEARCH_PARAMETER);
-
         Set<Integer> nodes = this.library.mesh.getAvailableNodes();
 
         LinkedList<Socketplexer> connections = new LinkedList<>();
@@ -47,21 +42,10 @@ public class SearchSongRequestHandler implements Runnable {
                 }));
 
             } catch (NodeUnavailableException | SocketException | SocketTimeoutException e) {
-                System.err.println("[SearchSongRequestHandler][run] Unable to connect to node " + node);
+                System.err.println("[SearchHandler][run] Unable to connect to node " + node);
                 e.printStackTrace();
             }
         }
-
-        this.library.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_SEARCH_SONG);
-            gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-            gen.writeEndObject();
-        }));
-
-        AsyncJsonStreamGenerator generator = new AsyncJsonStreamGenerator(socketplexer.openOutputChannel(2));
-        this.library.executor.submit(generator);
-        generator.enqueue((gen) -> gen.writeStartArray());
 
         for (Socketplexer socketplexer : connections) {
             try {
@@ -70,7 +54,16 @@ public class SearchSongRequestHandler implements Runnable {
                     JsonField.ObjectField header = (JsonField.ObjectField) field;
                     if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                         this.library.executor.submit(new JsonStreamParser(socketplexer.getInputChannel(2), true, (field1) -> {
-                            generator.enqueue((gen) -> field.write(gen));
+                            if (!field1.isObject()) return;
+                            JsonField.ObjectField song = (JsonField.ObjectField) field1;
+                            this.library.songs.add(new MeshClientSong(
+                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE),
+                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_ARTIST),
+                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_ALBUM),
+                                    song.getLongProperty(MeshLibrary.PROPERTY_SONG_DURATION),
+                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME),
+                                    this.library
+                            ));
 
                         }, true));
 
@@ -95,7 +88,6 @@ public class SearchSongRequestHandler implements Runnable {
             }
         }
 
-        generator.enqueue((gen) -> gen.writeEndObject());
-        generator.close();
+        System.out.println("[SearchHandler][run] Search for \"" + searchParam + "\" completed");
     }
 }
