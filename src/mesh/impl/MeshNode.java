@@ -69,7 +69,7 @@ public class MeshNode {
         // send a query for existing networks
         this.sendNetQuery();
 
-        //System.out.println("[MeshNode][search][FINER] NetQuery sent");
+        System.out.println("[MeshNode][search][FINER] NetQuery sent");
 
         try {
             Thread.sleep(Constants.TIMEOUT_DELAY);
@@ -78,7 +78,7 @@ public class MeshNode {
             e.printStackTrace();
         }
 
-        //System.out.println("[MeshNode][search][FINER] Search duration expired. NetworkId=" + this.config.getNetwork_id());
+        System.out.println("[MeshNode][search][FINER] Search duration expired. NetworkId=" + this.config.getNetwork_id());
 
         if (this.config.getNetwork_id() < 0) {
             this.executor.submit(this::createNetwork);
@@ -140,7 +140,6 @@ public class MeshNode {
     }
 
     private void createNetwork() {
-        System.out.println("[MeshNode][createNetwork] Creating mesh network");
         for (MeshConfiguration config1 : this.configs.values()) {
             // if we have already created a network before:
             if (config1.getNodeId() == 0) {
@@ -151,6 +150,10 @@ public class MeshNode {
 
         if (this.config.getNetwork_id() < 0){
             this.config = new MeshConfiguration((int) System.nanoTime(), 0, 0, 1);
+            System.out.println("[MeshNode][createNetwork] Created new network with NetworkId=" + this.config.getNetwork_id());
+
+        } else {
+            System.out.println("[MeshNode][createNetwork] Loading network with NetworkId=" + this.config.getNetwork_id());
         }
 
         this.configs.put(this.config.getNetwork_id(), this.config);
@@ -158,8 +161,6 @@ public class MeshNode {
 
         this.id_generator = new Random(this.config.getNetwork_id());
         for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
-
-        System.out.println("[MeshNode][createNetwork] Created new network with NetworkId=" + this.config.getNetwork_id());
     }
 
     private void sendNetInfo() {

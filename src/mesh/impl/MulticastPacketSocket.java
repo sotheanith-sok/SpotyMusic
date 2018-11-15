@@ -36,10 +36,10 @@ public class MulticastPacketSocket {
     public MulticastPacketSocket(InetSocketAddress address, ExecutorService executor) throws IOException {
         this.executor = executor;
         this.multicastGroup = address;
-        this.multicastSocket = new MulticastSocket(Utils.getSocketAddress(0));
+        this.multicastSocket = new MulticastSocket(Utils.getSocketAddress(address.getPort()));
         this.multicastSocket.setSoTimeout((int) Constants.RESEND_DELAY / 2);
         this.multicastSocket.joinGroup(address.getAddress());
-        this.multicastSocket.setLoopbackMode(true);
+        //this.multicastSocket.setLoopbackMode(true);
         System.out.println("[MulticastPacketSocket] MulticastSocket localAddress: " + this.multicastSocket.getLocalAddress() + ":" + this.multicastSocket.getLocalPort() + " loopbackMode=" + this.multicastSocket.getLoopbackMode());
         this.lock = new Object();
         this.handlers = new ConcurrentHashMap<>();
@@ -55,7 +55,7 @@ public class MulticastPacketSocket {
                 //System.out.println("[MulticastPacketSocket][receiver][FINEST] Listening for packet on multicast socket");
                 this.multicastSocket.receive(temp);
                 //if (temp.getSocketAddress().equals(this.multicastSocket.getLocalSocketAddress())) continue;
-                System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + temp.getAddress() + ":" + temp.getPort());
+                //System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + temp.getAddress() + ":" + temp.getPort());
 
                 ByteArrayInputStream instrm = new ByteArrayInputStream(temp.getData(), temp.getOffset(), temp.getLength());
                 JsonStreamParser parser = new JsonStreamParser(instrm, true, (field) -> {
@@ -155,7 +155,7 @@ public class MulticastPacketSocket {
         DatagramPacket packet = new DatagramPacket(data, offset, length, this.multicastGroup);
         synchronized (this.lock) {
             //System.out.println("[MulticastPacketSocket][send][FINEST] Sending " + length + " byte message");
-            this.multicastSocket.setBroadcast(true);
+            //this.multicastSocket.setBroadcast(true);
             this.multicastSocket.send(packet);
             //System.out.println("[MulticastPacketSocket][send][FINEST] Message sent");
         }
@@ -164,9 +164,9 @@ public class MulticastPacketSocket {
     private void send(byte[] data, int offset, int length, InetAddress dest) throws IOException {
         DatagramPacket packet = new DatagramPacket(data, offset, length, dest, multicastGroup.getPort());
         synchronized (this.lock) {
-            this.multicastSocket.setBroadcast(false);
+            //this.multicastSocket.setBroadcast(false);
             this.multicastSocket.send(packet);
-            this.multicastSocket.setBroadcast(true);
+            //this.multicastSocket.setBroadcast(true);
         }
     }
 
