@@ -153,7 +153,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             Future<Boolean> exists = library.dfs.fileExists(fileName);
 
             try {
-                if (exists.get(5, TimeUnit.SECONDS)) {
+                if (exists.get(10, TimeUnit.SECONDS)) {
                     future.completeExceptionally(new IllegalArgumentException("Username taken"));
 
                 } else {

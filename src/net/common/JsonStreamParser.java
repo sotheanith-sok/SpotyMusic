@@ -20,7 +20,9 @@ public class JsonStreamParser implements Runnable {
 
     private Deque<ParserContext> contextStack;
 
-    private boolean autoCloseSocket = false;
+    private boolean autoCloseSocket;
+
+    private boolean finished = false;
 
     private boolean globalArrayAsStream = false;
 
@@ -43,7 +45,7 @@ public class JsonStreamParser implements Runnable {
         try {
             this.initialize();
 
-            while (this.parser.nextToken() != null) {
+            while (!finished && this.parser.nextToken() != null) {
                 this.processToken(this.parser.getCurrentToken(), this.parser);
             }
 
@@ -60,6 +62,7 @@ public class JsonStreamParser implements Runnable {
 
     protected void finished() {
         //System.out.println("[JsonStreamParser][finished] SocketJsonParser finished");
+        finished = true;
 
         if (this.autoCloseSocket) {
             if (this.debug) System.out.println("[JsonStreamParser][finished] JsonStream finished, closing source");
@@ -72,6 +75,7 @@ public class JsonStreamParser implements Runnable {
     }
 
     public void abort() {
+        this.finished = true;
         try {
             this.source.close();
         } catch (IOException e) {

@@ -4,11 +4,15 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SongStreamer {
 
-    private AudioInputStream source;
+    private Future<AudioInputStream> source;
     private AtomicBoolean newSource;
 
     private SourceDataLine dest;
@@ -45,13 +49,24 @@ public class SongStreamer {
                     }
 
                 } else {
+                    if (this.source == null) continue;
                     System.out.println("[SongStreamer][streamer] SongStreamer Streamer thread streaming");
+                    AudioInputStream inputStream = null;
+                    try {
+                        inputStream = this.source.get(10, TimeUnit.SECONDS);
+
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        System.err.println("[SongStreamer][streamer] Exception while resolving AudioInputStream");
+                        this.playing.set(false);
+                        continue;
+                    }
+
                     while (this.playing.get()) {
                         try {
                             if (this.newSource.get()) {
                                 this.dest.close();
                                 try {
-                                    this.dest.open(this.source.getFormat(), 8196);
+                                    this.dest.open(inputStream.getFormat(), 8196);
                                     this.dest.start();
                                 } catch (LineUnavailableException e) {
                                     e.printStackTrace();
@@ -60,7 +75,7 @@ public class SongStreamer {
                             }
 
                             //System.out.println("[SongStreamer][streamer] Reading from socket");
-                            int amnt = this.source.read(trx, 0, trx.length);
+                            int amnt = inputStream.read(trx, 0, trx.length);
                             //System.out.println("[SongStreamer][streamer] Writing to SourceDataLine");
                             this.dest.write(trx, 0, amnt);
                             //System.out.println("[SongStreamer][streamer] Wrote " + amnt + " bytes to SourceDataLine");
@@ -80,12 +95,16 @@ public class SongStreamer {
         return this.playing.get();
     }
 
-    public void play(AudioInputStream stream) {
+    public void play(Future<AudioInputStream> stream) {
         synchronized (this.lock) {
             try {
-                if (this.source != null) this.source.close();
+                if (this.source != null && this.source.isDone()) this.source.get().close();
 
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
 

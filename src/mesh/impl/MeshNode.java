@@ -64,10 +64,12 @@ public class MeshNode {
 
     private void search() {
         // look for an existing mesh
-        System.out.println("[MeshNode][init] Looking for existing mesh networks");
+        System.out.println("[MeshNode][search] Looking for existing mesh networks");
 
         // send a query for existing networks
         this.sendNetQuery();
+
+        //System.out.println("[MeshNode][search][FINER] NetQuery sent");
 
         try {
             Thread.sleep(Constants.TIMEOUT_DELAY);
@@ -75,6 +77,8 @@ public class MeshNode {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        //System.out.println("[MeshNode][search][FINER] Search duration expired. NetworkId=" + this.config.getNetwork_id());
 
         if (this.config.getNetwork_id() < 0) {
             this.executor.submit(this::createNetwork);
@@ -154,6 +158,8 @@ public class MeshNode {
 
         this.id_generator = new Random(this.config.getNetwork_id());
         for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
+
+        System.out.println("[MeshNode][createNetwork] Created new network with NetworkId=" + this.config.getNetwork_id());
     }
 
     private void sendNetInfo() {
@@ -223,6 +229,7 @@ public class MeshNode {
 
     private void onNetInfo(JsonField.ObjectField packet, InetAddress address) {
         if (this.config.getNetwork_id() < 0) {
+            System.out.println("[MeshNode][onNetInfo] Received network info");
             // if not part of a network, process received information
             int netId = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NET_ID);
             if (this.configs.containsKey(netId)) {
@@ -249,6 +256,7 @@ public class MeshNode {
 
     private void onNetQuery(JsonField.ObjectField packet, InetAddress address) {
         if (this.config.isMaster()) {
+            System.out.println("[MeshNode][onNetInfo] Master received network query");
             // if master, reply to query
             this.sendNetInfo();
         }
@@ -256,6 +264,7 @@ public class MeshNode {
 
     private void onNetJoin(JsonField.ObjectField packet, InetAddress address) {
         if (this.config.isMaster()) {
+            System.out.println("[MeshNode][onNetInfo] Master received net join request");
             // if master, reply with node configuration
             this.sendNodeConfig();
         }
@@ -263,6 +272,7 @@ public class MeshNode {
 
     private void onNodeConfig(JsonField.ObjectField packet, InetAddress address) {
         if (this.config.getNodeId() < 0) {
+            System.out.println("[MeshNode][onNetInfo] Received node configuration");
             // if not part of a network, use configuration
             this.config.setNodeId((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID));
             this.node_count.set((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT));

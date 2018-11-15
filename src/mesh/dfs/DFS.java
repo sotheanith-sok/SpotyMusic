@@ -596,6 +596,17 @@ public class DFS {
                 firstBlock.setReplicaNumber(i);
 
                 int node_id = this.getBestId(firstBlock.getBlockId());
+
+                if (node_id == this.mesh.getNodeId()) {
+                    if (this.files.containsKey(fileName)) {
+                        future.complete(this.files.get(fileName));
+                        return;
+
+                    } else {
+                        continue;
+                    }
+                }
+
                 Socket connection;
 
                 try {
@@ -652,6 +663,9 @@ public class DFS {
 
             if (exc != null && !future.isDone()) {
                 future.completeExceptionally(exc);
+
+            } else {
+                future.completeExceptionally(new FileNotFoundException("The requested file was not found"));
             }
         });
 
@@ -1017,7 +1031,7 @@ public class DFS {
             Future<FileDescriptor> desc = this.getFileStats(fileName);
 
             try {
-                desc.get(10, TimeUnit.SECONDS);
+                desc.get(9, TimeUnit.SECONDS);
                 future.complete(true);
 
             } catch (InterruptedException | TimeoutException e) {

@@ -153,6 +153,10 @@ public class SplashUIController implements Initializable, ControlledView {
                     if (success) this.registerSuccess();
                     else this.registerFail();
                 });
+                Thread t = new Thread(this.registerTask);
+                t.setDaemon(true);
+                t.setName("[SplashUIController][RegistrationThread]");
+                t.start();
 
             } else {
                 this.registerRunning();

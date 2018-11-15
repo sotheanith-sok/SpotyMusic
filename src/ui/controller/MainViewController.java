@@ -7,14 +7,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.Pane;
 import mesh.MeshSystem;
-import net.client.RemoteLibrary;
-import net.server.LibraryServer;
-import persistence.DataManager;
 import ui.component.ControlledView;
 import ui.component.Router;
 
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -36,7 +31,7 @@ public class MainViewController implements Initializable, ControlledView {
 
     private String currentTheme = "Default";
 
-    private RemoteLibrary library;
+    private Library library;
 
     public void setViewParent(Router viewParent) {
         router = viewParent;
@@ -62,14 +57,7 @@ public class MainViewController implements Initializable, ControlledView {
         leftViewController.setParentViewController(this);
         rightViewController.setParentViewController(this);
         bottomViewController.setParentViewController(this);
-        this.library = new RemoteLibrary(LibraryServer.getInstance().getAddress(), LibraryServer.getInstance().getPort());
-       try {
-          this.library.connect();
-       } catch (SocketException e) {
-          e.printStackTrace();
-       } catch (SocketTimeoutException e) {
-          e.printStackTrace();
-       }
+        this.library = MeshSystem.getInstance().getLibrary();
     }
 
     public Library getCurrentLibrary() {

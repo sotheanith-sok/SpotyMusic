@@ -40,7 +40,9 @@ public class Utils {
     public static SocketAddress getSocketAddress(NetworkInterface iface, int port) {
         Enumeration<InetAddress> addresses = iface.getInetAddresses();
         while (addresses.hasMoreElements()) {
-            return new InetSocketAddress(addresses.nextElement(), port);
+            InetAddress address = addresses.nextElement();
+            if (address instanceof Inet6Address) continue;
+            return new InetSocketAddress(address, port);
         }
 
         return null;

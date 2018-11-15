@@ -24,20 +24,23 @@ public class ObservableMap<K, V extends IObservable> extends HashMap<K, V> imple
 
     @Override
     public V put(K key, V value) {
-        value.addObserver(this);
         V prev = super.put(key, value);
         if (prev != null) {
             prev.removeObserver(this);
-            this.onObservableChange();
         }
+        value.addObserver(this);
+        this.onObservableChange();
         return prev;
     }
 
     @Override
     public V replace(K key, V value) {
-        V ret = this.put(key, value);
-        if (ret != null) this.onObservableChange();
-        return ret;
+        if (this.containsKey(key)) {
+            V ret = this.put(key, value);
+            if (ret != null) this.onObservableChange();
+            return ret;
+        }
+        return null;
     }
 
     @Override
