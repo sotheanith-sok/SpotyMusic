@@ -54,8 +54,10 @@ public class MulticastPacketSocket {
             try {
                 //System.out.println("[MulticastPacketSocket][receiver][FINEST] Listening for packet on multicast socket");
                 this.multicastSocket.receive(temp);
-                //if (temp.getSocketAddress().equals(this.multicastSocket.getLocalSocketAddress())) continue;
-                //System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + temp.getAddress() + ":" + temp.getPort());
+                if (temp.getSocketAddress().equals(this.multicastSocket.getLocalSocketAddress())) continue;
+                InetAddress address = temp.getAddress();
+                System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + address + ":" + temp.getPort());
+
 
                 ByteArrayInputStream instrm = new ByteArrayInputStream(temp.getData(), temp.getOffset(), temp.getLength());
                 JsonStreamParser parser = new JsonStreamParser(instrm, true, (field) -> {
@@ -69,7 +71,7 @@ public class MulticastPacketSocket {
                             String type = packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY);
 
                             if (this.handlers.containsKey(type)) {
-                                this.handlers.get(type).onPacket(packet, temp.getAddress());
+                                this.handlers.get(type).onPacket(packet, address);
 
                             } else {
                                 System.err.println("[MulticastPacketSocket][receiver][handler] No handler for packet type: " + type);

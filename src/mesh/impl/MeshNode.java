@@ -66,17 +66,21 @@ public class MeshNode {
         // look for an existing mesh
         System.out.println("[MeshNode][search] Looking for existing mesh networks");
 
-        // send a query for existing networks
-        this.sendNetQuery();
+        long startTime = System.currentTimeMillis();
 
-        System.out.println("[MeshNode][search][FINER] NetQuery sent");
+        do {
+            // send a query for existing networks
+            this.sendNetQuery();
+            System.out.println("[MeshNode][search][FINER] NetQuery sent");
 
-        try {
-            Thread.sleep(Constants.TIMEOUT_DELAY);
+            try {
+                Thread.sleep(Constants.TIMEOUT_DELAY / 3);
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        } while (startTime - System.currentTimeMillis() > Constants.TIMEOUT_DELAY);
 
         System.out.println("[MeshNode][search][FINER] Search duration expired. NetworkId=" + this.config.getNetwork_id());
 
@@ -164,6 +168,7 @@ public class MeshNode {
     }
 
     private void sendNetInfo() {
+        System.out.println("[MeshNode][sendNetInfo] Sending NetInfo packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_INFO);
@@ -175,6 +180,7 @@ public class MeshNode {
     }
 
     private void sendNetQuery() {
+        System.out.println("[MeshNode][sendNetQuery] Sending NetQuery packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NETWORK_QUERY);
@@ -183,6 +189,7 @@ public class MeshNode {
     }
 
     private void sendNetJoin() {
+        System.out.println("[MeshNode][sendNetJoin] Sending NetJoin packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NET_JOIN);
@@ -190,17 +197,19 @@ public class MeshNode {
         });
     }
 
-    private void sendNodeConfig() {
+    private void sendNodeConfig(InetAddress address) {
+        System.out.println("[MeshNode][sendNodeConfig] Sending NodeConfig packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_CONFIG);
             gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.id_generator.nextInt());
             gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.incrementAndGet());
             gen.writeEndObject();
-        });
+        }, address);
     }
 
     private void sendNodeActive() {
+        System.out.println("[MeshNode][sendNodeActive] Sending NodeActive packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
@@ -210,6 +219,7 @@ public class MeshNode {
     }
 
     private void sendNodeGone(int node_id) {
+        System.out.println("[MeshNode][sendNodeGone] Sending NodeGone packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_GONE);
@@ -219,6 +229,7 @@ public class MeshNode {
     }
 
     private void sendNodeAdvert(InetAddress dest) {
+        System.out.println("[MeshNode][sendNodeAdvert] Sending NodeAdvert packet");
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ADVERT);
@@ -229,8 +240,8 @@ public class MeshNode {
     }
 
     private void onNetInfo(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNetInfo] Received network info");
         if (this.config.getNetwork_id() < 0) {
-            System.out.println("[MeshNode][onNetInfo] Received network info");
             // if not part of a network, process received information
             int netId = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NET_ID);
             if (this.configs.containsKey(netId)) {
@@ -256,24 +267,24 @@ public class MeshNode {
     }
 
     private void onNetQuery(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNetQuery] Received NetQuery packet");
         if (this.config.isMaster()) {
-            System.out.println("[MeshNode][onNetInfo] Master received network query");
             // if master, reply to query
             this.sendNetInfo();
         }
     }
 
     private void onNetJoin(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNetJoin] Received net join request");
         if (this.config.isMaster()) {
-            System.out.println("[MeshNode][onNetInfo] Master received net join request");
             // if master, reply with node configuration
-            this.sendNodeConfig();
+            this.sendNodeConfig(address);
         }
     }
 
     private void onNodeConfig(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNetConfig] Received node configuration");
         if (this.config.getNodeId() < 0) {
-            System.out.println("[MeshNode][onNetInfo] Received node configuration");
             // if not part of a network, use configuration
             this.config.setNodeId((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID));
             this.node_count.set((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT));
@@ -287,6 +298,7 @@ public class MeshNode {
     }
 
     private void onNodeActive(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNodeActive] Received NodeActive packet");
         // add advertised node to list of known nodes
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
         int port = (int) packet.getLongProperty(PROPERTY_PORT_NUMBER);
@@ -302,6 +314,7 @@ public class MeshNode {
     }
 
     private void onNodeGone(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNodeGone] Received NodeGone packet");
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
         if (id == this.config.getNodeId()){
             // resend activity notification if someone said we didn't respond
@@ -332,6 +345,7 @@ public class MeshNode {
     }
 
     private void onNodeAdvert(JsonField.ObjectField packet, InetAddress address) {
+        System.out.println("[MeshNode][onNodeAdvert] Received NodeAdvert packet");
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
         int port = (int) packet.getLongProperty(PROPERTY_PORT_NUMBER);
 
