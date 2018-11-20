@@ -3,7 +3,6 @@ package ui.controller;
 import connect.Playlist;
 import connect.Song;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
@@ -13,23 +12,20 @@ public class SongsContextMenu extends ContextMenu {
 
    private ObservableList<Playlist> playlists;
    private Menu adder;
-   private MenuItem remover;
+   private Menu remover;
 
    private Song song;
    public SongsContextMenu(Song song, ObservableList<Playlist> playlists){
       super();
       this.playlists=FXCollections.observableArrayList();
-      adder=new Menu();
-      adder.setText("Add to...");
-      remover=new MenuItem("Delete");
+      adder=new Menu("Add to...");
+      remover=new Menu("Delete from...");
       this.getItems().addAll(adder,remover);
-      remover.setOnAction(event -> {
-         removeFromPlaylist((Playlist) ((MenuItem) event.getSource()).getUserData());
-      });
       this.song = song;
       this.playlists=playlists;
-      updateAdder();
-      playlists.addListener((ListChangeListener<Playlist>) c -> updateAdder());
+      this.setOnShowing(event -> {
+       update();
+      });
    }
 
 
@@ -41,16 +37,27 @@ public class SongsContextMenu extends ContextMenu {
       playlist.removeSong(song);
    }
 
-   private void updateAdder(){
+   private void update(){
       adder.getItems().clear();
+      remover.getItems().clear();
       for(Playlist playlist : playlists){
-         MenuItem item = new MenuItem();
-         item.setText(playlist.getName());
-         item.setUserData(playlist);
-         adder.getItems().add(item);
-         item.setOnAction(event -> {
+         //Create menu for adder
+         MenuItem item0 = new MenuItem(playlist.getName());
+         item0.setUserData(playlist);
+         adder.getItems().add(item0);
+         item0.setOnAction(event -> {
             addToPlaylist((Playlist) ((MenuItem) event.getSource()).getUserData());
          });
+
+         //Create menu for remover
+         if (playlist.getSongs().contains(song)){
+            MenuItem item1 = new MenuItem(playlist.getName());
+            item1.setUserData(playlist);
+            remover.getItems().add(item1);
+            item1.setOnAction(event -> {
+               removeFromPlaylist((Playlist) ((MenuItem) event.getSource()).getUserData());
+            });
+         }
       }
    }
 }
