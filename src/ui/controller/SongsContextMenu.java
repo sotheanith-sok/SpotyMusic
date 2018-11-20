@@ -59,5 +59,15 @@ public class SongsContextMenu extends ContextMenu {
             });
          }
       }
+      if(adder.getItems().size()==0){
+         adder.setDisable(true);
+      }else{
+         adder.setDisable(false);
+      }
+      if(remover.getItems().size()==0){
+         remover.setDisable(true);
+      }else{
+         remover.setDisable(false);
+      }
    }
 }
