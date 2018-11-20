@@ -93,6 +93,24 @@ public class MeshLibrary implements Library {
         this.executor.submit(new ImportSongHandler(file, title, artist, album, this));
     }
 
+    public void addSong(MeshClientSong song) {
+        // check if song is already in library
+        for (MeshClientSong song1 : this.songs) if (song1.getGUID().equals(song.getGUID())) return;
+        // if song not already known, add to library
+        this.songs.add(song);
+        System.out.println("[MeshLibrary][addSong] Song \"" + song.getTitle() + "\" added to library");
+
+        // check if album is already in library
+        for (MeshClientAlbum album : this.albums) if (album.getTitle().equals(song.getAlbumTitle())) return;
+        // if new album, add to library
+        this.albums.add(new MeshClientAlbum(song.getAlbumTitle(), song.getArtist(), this));
+
+        // check if new artist
+        for (String artist : this.artists) if (artist.equals(song.getArtist())) return;
+        // if new artist, add to library
+        this.artists.add(song.getArtist());
+    }
+
     @Override
     public ObservableList<? extends Album> getAlbums() {
         return this.albums;

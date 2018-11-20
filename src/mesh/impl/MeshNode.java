@@ -71,7 +71,6 @@ public class MeshNode {
         do {
             // send a query for existing networks
             this.sendNetQuery();
-            System.out.println("[MeshNode][search][FINER] NetQuery sent");
 
             try {
                 Thread.sleep(Constants.TIMEOUT_DELAY / 3);
@@ -80,9 +79,9 @@ public class MeshNode {
                 e.printStackTrace();
             }
 
-        } while (startTime - System.currentTimeMillis() > Constants.TIMEOUT_DELAY);
+        } while (System.currentTimeMillis() - startTime < Constants.TIMEOUT_DELAY && this.config.getNetwork_id() < 0);
 
-        System.out.println("[MeshNode][search][FINER] Search duration expired. NetworkId=" + this.config.getNetwork_id());
+        System.out.println("[MeshNode][search] Search duration expired. NetworkId=" + this.config.getNetwork_id());
 
         if (this.config.getNetwork_id() < 0) {
             this.executor.submit(this::createNetwork);

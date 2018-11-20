@@ -96,7 +96,7 @@ public class MeshSystem {
 
         SocketAddress serverAddress;
         try {
-            serverAddress = Utils.getSocketAddress(12324);
+            serverAddress = Utils.getSocketAddress(0);
 
         } catch (SocketException e) {
             System.err.println("[MeshSystem][init] Unable to bind server socket address");

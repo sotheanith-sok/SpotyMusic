@@ -89,7 +89,7 @@ public class DFS {
 
             } catch (Exception e) {
                 System.err.println("[DFS][init] Exception while creating BlockDescriptor for block file: " + f.getName());
-                System.err.println(e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -160,6 +160,8 @@ public class DFS {
                         this.files.put(entry.getKey(), FileDescriptor.fromJson((JsonField.ObjectField) entry.getValue()));
                     }
                 });
+                parser.run();
+                System.out.println("[DFS][enumerateFiles] Enumerated " + this.files.size() + " files");
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -454,8 +456,8 @@ public class DFS {
 
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
-        if (node_id == this.mesh.getNodeId() && this.blocks.containsKey(block.getBlockName())) {
-            BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
+        if (node_id == this.mesh.getNodeId()) {
+            BlockDescriptor localBlock = this.blocks.getOrDefault(block.getBlockName(), block);
             try {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile(), append));
                 future.complete(out);
@@ -676,21 +678,34 @@ public class DFS {
         CompletableFuture<InputStream> future = new CompletableFuture<>();
 
         this.executor.submit(() -> {
-            RingBuffer buffer = new RingBuffer(Constants.MIN_BUFFERED_DATA);
+            RingBuffer buffer = new RingBuffer(1024 * 24);
             byte[] trx = new byte[1024 * 8];
 
             OutputStream buffer_out = buffer.getOutputStream();
-            for (int i = 0; i < blockCount; i++) {
+            Future<InputStream> blockStream = getFileBlock(new BlockDescriptor(fileName, 0), replication);
+
+            for (int i = 0; i < blockCount && buffer.isWriteOpened(); i++) {
                 if (future.isCancelled() || !buffer.isWriteOpened()) return;
 
-                Future<InputStream> blockStream = getFileBlock(new BlockDescriptor(fileName, i), replication);
-
                 try {
-                    InputStream block = blockStream.get();
+                    System.out.println("[DFS][readFile] Retrieving block " + i);
+
+                    InputStream block = blockStream.get(2, TimeUnit.SECONDS);
                     if (!future.isDone() && !future.isCancelled()) future.complete(buffer.getInputStream());
+                    if (i + 1 < blockCount) blockStream = getFileBlock(new BlockDescriptor(fileName, i + 1), replication);
+
+                    //System.out.println("[DFS][readFile] Retrieved block " + i);
 
                     int read;
-                    while ((read = block.read(trx, 0, trx.length)) != -1) buffer_out.write(trx, 0, read);
+                    while ((read = block.read(trx, 0, trx.length)) != -1) {
+                        if (buffer.isWriteOpened()) buffer_out.write(trx, 0, read);
+                        else {
+                            block.close();
+                            blockStream.cancel(false);
+                            break;
+                        }
+                        //System.out.println("[DFS][readFile] Read " + read + " bytes from DFS");
+                    }
 
                     block.close();
 
@@ -713,6 +728,10 @@ public class DFS {
                     try {
                         buffer.getOutputStream().close();
                     } catch (IOException e1) {}
+
+                } catch (TimeoutException e) {
+                    System.err.println("[DFS][readFile] Timed out while trying to retrieve block " + i);
+                    e.printStackTrace();
                 }
             }
 
@@ -765,6 +784,12 @@ public class DFS {
         this.executor.submit(() -> {
             Socket connection;
 
+            if (node_id == this.mesh.getNodeId()) {
+                this.files.put(fileDescriptor.getFileName(), fileDescriptor);
+                future.complete("Success");
+                return;
+            }
+
             try {
                 connection = this.mesh.tryConnect(node_id);
 
@@ -812,6 +837,8 @@ public class DFS {
 
     public Future<OutputStream> writeFile(String fileName, int replicas, boolean tryAppend) {
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
+
+        System.out.println("[DFS][writeFile][FINER] Request to write file " + fileName);
 
         this.executor.submit(() -> {
             int replication = replicas;
@@ -861,8 +888,10 @@ public class DFS {
             RingBuffer buffer = new RingBuffer(1024 * 8);
             byte[] trx_buffer = new byte[1024 * 4];
 
+            int blockNumber = append ? (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER) : 0;
+
             Future<OutputStream>[] outputs = new Future[replication];
-            for (int i = 0; i < replication; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, 0, i), append);
+            for (int i = 0; i < replication; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), append);
 
             try {
                 for (int i = 0; i < replication; i++) outputs[i].get();
@@ -878,7 +907,6 @@ public class DFS {
             InputStream in = buffer.getInputStream();
             long total_written = append ? descriptor.getTotalSize() : 0;
             long written_block = append ? lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) : 0;
-            int blockNumber = append ? (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER) : 0;
             int trx;
             try {
                 while ((trx = in.read(trx_buffer, 0, (int) Math.min(trx_buffer.length, Constants.MAX_BLOCK_SIZE - written_block))) != -1) {
@@ -917,6 +945,7 @@ public class DFS {
                 try {
                     in.close();
                 } catch (IOException e1) {}
+                e.printStackTrace();
             }
 
             FileDescriptor metadata = new FileDescriptor(fileName, total_written, blockNumber + 1, replication);
@@ -1017,8 +1046,12 @@ public class DFS {
     public List<BlockDescriptor> getLocalBlocks(String fileName) {
         ArrayList<BlockDescriptor> blocks = new ArrayList<>();
 
+        blocks:
         for (BlockDescriptor block : this.blocks.values()) {
-            if (block.getFileName().equals(fileName)) blocks.add(block);
+            if (block.getFileName().equals(fileName)) {
+                for (BlockDescriptor block1 : blocks) if (block1.getBlockNumber() == block.getBlockNumber()) continue blocks;
+                blocks.add(block);
+            }
         }
 
         return blocks;

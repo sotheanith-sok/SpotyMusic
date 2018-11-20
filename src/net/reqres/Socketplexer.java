@@ -44,6 +44,8 @@ public class Socketplexer {
     private HashMap<Integer, RingBuffer> pendingChannels;
     private HashMap<Integer, CompletableFuture<InputStream>> waitingChannels;
 
+    private final Object multiplexerLock;
+
     /**
      * Creates a new SocketPlexer, wrapped around the given Socket.
      *
@@ -60,6 +62,8 @@ public class Socketplexer {
 
         this.outputsLock = new Object();
         this.inputsLock = new Object();
+
+        this.multiplexerLock = new Object();
 
         RingBuffer controlRecBuf = new RingBuffer(DEFAULT_SUB_BUFFER_SIZE);
         synchronized (this.inputsLock) {
@@ -120,11 +124,13 @@ public class Socketplexer {
             }
 
             if (!dataWritten) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    System.err.println("[Socketplexer][multiplexer] Multiplexer thread interrupted while sleeping");
-                    //e.printStackTrace();
+                synchronized (this.multiplexerLock) {
+                    try {
+                        this.multiplexerLock.wait(100);
+                    } catch (InterruptedException e) {
+                        System.err.println("[Socketplexer][multiplexer] Multiplexer thread interrupted while sleeping");
+                        //e.printStackTrace();
+                    }
                 }
             }
         }

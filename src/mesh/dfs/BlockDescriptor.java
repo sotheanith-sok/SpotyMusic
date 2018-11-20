@@ -20,7 +20,7 @@ public class BlockDescriptor {
         if (f.isDirectory()) throw new IllegalArgumentException("File block cannot be a directory");
         this.file = f;
         String name = f.getName();
-        String[] parts = name.split(".");
+        String[] parts = name.split("\\.");
         this.fileName = parts[0];
         this.block_number = Integer.parseInt(parts[1]);
         this.replica_number = Integer.parseInt(parts[2]);
@@ -35,7 +35,7 @@ public class BlockDescriptor {
     }
 
     public BlockDescriptor(String fileName, int block_number, int replica_number) {
-        this.file = new File(DFS.blockDirectory.getPath().concat(fileName + "." + block_number + "." + replica_number));
+        this.file = new File(DFS.blockDirectory.getPath().concat(File.separatorChar + fileName + "." + block_number + "." + replica_number));
         this.fileName = fileName;
         this.block_number = block_number;
         this.replica_number = replica_number;

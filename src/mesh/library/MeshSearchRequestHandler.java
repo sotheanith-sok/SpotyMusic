@@ -65,7 +65,7 @@ public class MeshSearchRequestHandler implements Runnable {
                 while ((line = reader.readLine()) != null) {
                     String[] fields = line.split(";");
                     for (String field : fields) {
-                        if (field.trim().toLowerCase().startsWith(searchParam)) {
+                        if (field.trim().toLowerCase().contains(searchParam)) {
                             generator.enqueue((gen) -> {
                                 gen.writeStartObject();
                                 gen.writeStringField(MeshLibrary.PROPERTY_SONG_ARTIST, fields[0]);
@@ -75,6 +75,7 @@ public class MeshSearchRequestHandler implements Runnable {
                                 gen.writeStringField(MeshLibrary.PROPERTY_SONG_FILE_NAME, fields[4]);
                                 gen.writeEndObject();
                             });
+                            break;
                         }
                     }
                 }

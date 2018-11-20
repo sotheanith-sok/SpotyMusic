@@ -4,6 +4,7 @@ import connect.Song;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -124,19 +125,22 @@ public class BottomViewController implements Initializable {
    public void playASong(Song song) {
       if (song != null) {
          this.song = song;
-         Future<AudioInputStream> task = song.getStream();
-         Runnable runnable= () -> {
-            if(task.isDone()){
-               this.streamer.play(task);
-            }else{
-               progressBar.setVisible(true);
-               progressBar.setVisible(true);
-               this.streamer.play(task);
-            }
-            progressBar.setVisible(false);
-            progressBar.setVisible(false);
-         };
-         new Thread(runnable).start();
+         GetSongTask task = new GetSongTask(this.song);
+         task.setOnSucceeded((event) -> {
+             if (this.streamer.isPlaying()) {
+                 this.streamer.stop();
+             }
+
+             this.streamer.play((AudioInputStream) event.getSource().getValue());
+         });
+         task.setOnFailed((event) -> {
+             System.err.println("[BottomViewController][playASong] Exception while trying to get AudioInputStream");
+             event.getSource().getException().printStackTrace();
+         });
+         Thread t = new Thread(task);
+         t.setDaemon(true);
+         t.setName("[BottomViewController][AudioInputStreamGetter]");
+         t.start();
       }
    }
 
@@ -273,5 +277,18 @@ public class BottomViewController implements Initializable {
            e.printStackTrace();
        }
    }
+}
+class GetSongTask extends Task<AudioInputStream> {
 
+    private Song song;
+
+    public GetSongTask(Song song) {
+        this.song = song;
+    }
+
+    @Override
+    protected AudioInputStream call() throws Exception {
+        AudioInputStream stream = this.song.getStream().get(5, TimeUnit.SECONDS);
+        return stream;
+    }
 }

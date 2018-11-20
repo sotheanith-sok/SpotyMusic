@@ -11,7 +11,7 @@ public class Constants {
     public static final int BUFFER_SIZE = 1024 * 200;
 
     // client package
-    public static final int MIN_BUFFERED_DATA = 1024 * 8;
+    public static final int MIN_BUFFERED_DATA = 1024 * 16;
 
     // client and server packages
     public static final String REQUEST_TYPE_PROPERTY = "REQUEST_TYPE";
@@ -40,7 +40,7 @@ public class Constants {
     public static final int FINEST  = 30;
     public static final int DEBUG = 20;
 
-    public static final long MAX_BLOCK_SIZE = 1024 * 1024;
+    public static final long MAX_BLOCK_SIZE = 1024 * 1024 * 4;
 
     public static final String PROPERTY_RESPONSE_STATUS = "PROP_RESPONSE_STATUS";
     public static final String RESPONSE_STATUS_OK = "STATUS_OK";

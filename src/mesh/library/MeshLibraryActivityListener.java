@@ -14,4 +14,6 @@ public interface MeshLibraryActivityListener {
     void onArtistAccessed(String artist);
 
     void onSongPlayed(MeshClientSong song);
+
+    void onSongImported(MeshClientSong song);
 }

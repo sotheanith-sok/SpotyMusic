@@ -34,10 +34,15 @@ public class ImportSongHandler implements Runnable {
     @Override
     public void run() {
         long duration = 0;
+
+        System.out.println("[ImportSongHandler][run] Importing \"" + this.title + "\" from file: " + this.file.getPath());
+
         try {
+            System.out.println("[ImportSongHandler][run] Getting song metadata...");
             AudioInputStream ain = AudioSystem.getAudioInputStream(this.file);
             duration = Math.round(ain.getFrameLength() / ain.getFormat().getFrameRate());
             ain.close();
+            System.out.println("[ImportSongHandler][run] Song duration=" + duration);
 
         } catch (UnsupportedAudioFileException | IOException e) {
             System.err.println("[ImportSongHandler][run] Unable to get duration of audio file");
@@ -46,18 +51,25 @@ public class ImportSongHandler implements Runnable {
 
         String songFileName = Utils.hash(String.join(".", new String[]{this.artist, this.album, this.title}), "MD5");
 
+        System.out.println("[ImportSongHandler][run] songFileName=\"" + songFileName + "\"");
+
         OutputStream out = null;
         InputStream in = null;
         try {
+            System.out.println("[ImportSongHandler][run] Opening DFS output stream");
             Future<OutputStream> fout = library.dfs.writeFile(songFileName, MeshLibrary.SONG_FILE_REPLICAS);
             out = fout.get(10, TimeUnit.SECONDS);
 
+            System.out.println("[ImportSongHandler][run] Opening source file");
             in = new BufferedInputStream(new FileInputStream(this.file));
+
+            System.out.println("[ImportSongHandler][run] Copying file to DFS...");
 
             byte[] trx = new byte[1024 * 8];
             int trxd = 0;
             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
                 out.write(trx, 0, trxd);
+                //System.out.println("[ImportSongHandler][run] " + trxd + " bytes written to DFS");
             }
 
             in.close();
@@ -89,5 +101,6 @@ public class ImportSongHandler implements Runnable {
 
         this.library.dfs.appendFile(MeshLibrary.INDEX_FILE_NAME, builder.toString().getBytes(), MeshLibrary.INDEX_FILE_REPLICAS);
         System.out.println("[ImportSongHandler][run] Imported song \"" + this.title + "\" successfully!");
+        this.library.addSong(new MeshClientSong(this.title, this.artist, this.album, duration, songFileName, this.library));
     }
 }

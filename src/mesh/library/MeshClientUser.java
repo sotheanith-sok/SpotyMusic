@@ -92,7 +92,9 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             Cipher cipher;
             try {
                 cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-                cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(password.getBytes(), "AES"));
+                byte[] key = new byte[16];
+                (new Random(password.hashCode())).nextBytes(key);
+                cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"));
 
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
                 System.err.println("[MeshClientUser][tryAuth] Unable to create cipher!");
@@ -121,7 +123,10 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                         if (fav_field.isArray()) {
                             JsonField.ArrayField fav_array = (JsonField.ArrayField) fav_field;
                             for (JsonField fav : fav_array.getElements()) {
-                                if (fav.isString()) favs.add(fav.getStringValue());
+                                if (fav.isString()) {
+                                    favs.add(fav.getStringValue());
+                                    System.out.println("[MeshClientUser][tryAuth] Loaded fav: \"" + fav.getStringValue() + "\"");
+                                }
                             }
                         }
                     }
@@ -131,6 +136,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                         if (attr_field.isObject()) {
                             for (Map.Entry<String, JsonField> entry : attr_field.getProperties().entrySet()) {
                                 attrs.put(entry.getKey(), entry.getValue().getStringValue());
+                                System.out.println("[MeshClientUser][tryAuth] Loaded user attribute: \"" + entry.getKey() + "\"=\"" + entry.getValue().getStringValue() + "\"");
                             }
                         }
                     }
@@ -193,7 +199,9 @@ public class MeshClientUser implements MeshLibraryActivityListener {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(password.getBytes(), "AES"));
+            byte[] key = new byte[16];
+            (new Random(password.hashCode())).nextBytes(key);
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             System.err.println("[MeshClientUser][tryAuth] Unable to create cipher!");
@@ -221,13 +229,13 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             }
             gen.writeEndArray();
 
-            gen.writeEndObject();
-
             gen.writeFieldName("attrs");
             gen.writeStartObject();
             for (Map.Entry<String, String> attribute : this.attributes.entrySet()) {
                 gen.writeStringField(attribute.getKey(), attribute.getValue());
             }
+            gen.writeEndObject();
+
             gen.writeEndObject();
 
             gen.close();
@@ -256,6 +264,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
     public void setAttribute(String key, String value) {
         this.attributes.put(key, value);
+        this.save();
     }
 
     @Override
@@ -300,6 +309,11 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
         this.lastAction = ACTION_SONG;
         this.actionTarget = song.getGUID();
+    }
+
+    @Override
+    public void onSongImported(MeshClientSong song) {
+        if (this.favorites.add(song.getTitle())) this.save();
     }
 
     private static final int ACTION_SEARCH = 1;

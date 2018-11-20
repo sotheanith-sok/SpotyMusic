@@ -107,7 +107,6 @@ public class FileImportViewController implements Initializable {
          artist.setPromptText("[Information Needed]");
       }
       if(!filePath.getText().isEmpty() && !title.getText().isEmpty() &&!album.getText().isEmpty()&&!artist.getText().isEmpty()){
-          DataManager.getDataManager().importFile(file,title.getText(),artist.getText(),album.getText());
           MeshSystem.getInstance().getLibrary().importSong(file, title.getText(), artist.getText(), album.getText());
           songObservableList.add(title.getText());
           stage.close();

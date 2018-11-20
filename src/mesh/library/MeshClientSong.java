@@ -76,7 +76,17 @@ public class MeshClientSong implements Song {
         this.library.executor.submit(() -> {
             try {
                 Future<InputStream> file = this.library.dfs.readFile(this.fileName);
-                future.complete(AudioSystem.getAudioInputStream(file.get(10, TimeUnit.SECONDS)));
+                InputStream in = file.get(5, TimeUnit.SECONDS);
+                if (future.isCancelled()) {
+                    in.close();
+                    return;
+                }
+                System.out.println("[MeshClientSong][getStream] Got InputStream, creating AudioInputStream");
+
+                AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(in);
+                System.out.println("[MeshClientSong][getStream] Got AudioInputStream");
+
+                future.complete(audioInputStream);
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 System.err.println("[MeshClientSong][getStream] Exception while trying to read from DFS");

@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SongStreamer {
 
-    private Future<AudioInputStream> source;
+    private AudioInputStream source;
     private AtomicBoolean newSource;
 
     private SourceDataLine dest;
@@ -35,7 +35,7 @@ public class SongStreamer {
     }
 
     private void streamer() {
-        byte[] trx = new byte[8192];
+        byte[] trx = null;
         while (this.running) {
             synchronized (this.lock) {
                 if (!this.playing.get()) {
@@ -51,34 +51,32 @@ public class SongStreamer {
                 } else {
                     if (this.source == null) continue;
                     System.out.println("[SongStreamer][streamer] SongStreamer Streamer thread streaming");
-                    AudioInputStream inputStream = null;
-                    try {
-                        inputStream = this.source.get(10, TimeUnit.SECONDS);
-
-                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                        System.err.println("[SongStreamer][streamer] Exception while resolving AudioInputStream");
-                        this.playing.set(false);
-                        continue;
-                    }
 
                     while (this.playing.get()) {
                         try {
                             if (this.newSource.get()) {
                                 this.dest.close();
                                 try {
-                                    this.dest.open(inputStream.getFormat(), 8196);
-                                    this.dest.start();
+                                    this.dest.open(this.source.getFormat(), 1024 * 16);
+                                    if (trx == null || trx.length % dest.getFormat().getFrameSize() != 0)
+                                    trx = new byte[1024 * 4 * dest.getFormat().getFrameSize()];
                                 } catch (LineUnavailableException e) {
                                     e.printStackTrace();
                                 }
                                 this.newSource.set(false);
                             }
 
+                            this.dest.start();
+
                             //System.out.println("[SongStreamer][streamer] Reading from socket");
-                            int amnt = inputStream.read(trx, 0, trx.length);
-                            //System.out.println("[SongStreamer][streamer] Writing to SourceDataLine");
-                            this.dest.write(trx, 0, amnt);
-                            //System.out.println("[SongStreamer][streamer] Wrote " + amnt + " bytes to SourceDataLine");
+                            int trxd = 0;
+                            while ((trxd = this.source.read(trx, 0, trx.length)) != -1 && this.playing.get()) {
+                                //System.out.println("[SongStreamer][streamer] Writing to SourceDataLine");
+                                this.dest.write(trx, 0, trxd);
+                                //System.out.println("[SongStreamer][streamer] Wrote " + trxd + " bytes to SourceDataLine");
+                            }
+
+                            this.dest.stop();
 
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -95,16 +93,12 @@ public class SongStreamer {
         return this.playing.get();
     }
 
-    public void play(Future<AudioInputStream> stream) {
+    public void play(AudioInputStream stream) {
         synchronized (this.lock) {
             try {
-                if (this.source != null && this.source.isDone()) this.source.get().close();
+                if (this.source != null) this.source.close();
 
             } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
 
@@ -116,17 +110,14 @@ public class SongStreamer {
     }
 
     public void stop() {
-        synchronized (this.lock) {
-            this.playing.set(false);
-            this.dest.stop();
-        }
+        this.playing.set(false);
     }
 
     public void resume() {
-        synchronized (this.lock) {
-            this.playing.set(true);
-            this.dest.start();
-            this.lock.notifyAll();
+        if (this.playing.compareAndSet(false, true)) {
+            synchronized (this.lock) {
+                this.lock.notifyAll();
+            }
         }
     }
 
@@ -141,4 +132,5 @@ public class SongStreamer {
     public long getMicrosecondPosition() {
         return this.dest.getMicrosecondPosition();
     }
+
 }
