@@ -3,6 +3,7 @@ package ui.controller;
 import connect.Playlist;
 import connect.Song;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
@@ -28,6 +29,7 @@ public class SongsContextMenu extends ContextMenu {
       this.song = song;
       this.playlists=playlists;
       updateAdder();
+      playlists.addListener((ListChangeListener<Playlist>) c -> updateAdder());
    }
 
 
