@@ -74,7 +74,7 @@ public class MainViewController implements Initializable, ControlledView {
         rightViewController.setCurrentLibrary(this.library);
 
         System.out.println("[MainViewController][loadCurrentLibrary] Applying user theme");
-        this.setTheme(MeshSystem.getInstance().getLibrary().getCurrentUser().getAttributeOrDefault("theme", "default"));
+        this.setTheme(MeshSystem.getInstance().getLibrary().getCurrentUser().getAttributeOrDefault("theme", "Default"));
     }
 
     /**
@@ -147,8 +147,9 @@ public class MainViewController implements Initializable, ControlledView {
 
     @FXML
     public void trySignOut() {
-        this.setTheme("Default");
+        this.setTheme("Neon");
         router.setView("splash");
+        MeshSystem.getInstance().getLibrary().signOut();
     }
 
     public static final HashMap<String, String> THEMES;
@@ -158,6 +159,6 @@ public class MainViewController implements Initializable, ControlledView {
         THEMES.put("Default", MainViewController.class.getResource("/ui/view/styleSheets/Default.css").toExternalForm());
         THEMES.put("Neon", MainViewController.class.getResource("/ui/view/styleSheets/NeonTheme.css").toExternalForm());
         THEMES.put("Pastel", MainViewController.class.getResource("/ui/view/styleSheets/PastelTheme.css").toExternalForm());
-       THEMES.put("PurpleFlurp", MainViewController.class.getResource("/ui/view/styleSheets/PurpleFlurp.css").toExternalForm());
+        THEMES.put("PurpleFlurp", MainViewController.class.getResource("/ui/view/styleSheets/PurpleFlurp.css").toExternalForm());
     }
 }

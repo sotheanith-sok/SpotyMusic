@@ -1,6 +1,9 @@
 package utils;
 
+import connect.Song;
+
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.IOException;
@@ -11,6 +14,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SongStreamer {
+
+    private Song song;
 
     private AudioInputStream source;
     private AtomicBoolean newSource;
@@ -49,13 +54,13 @@ public class SongStreamer {
                     }
 
                 } else {
-                    if (this.source == null) continue;
                     System.out.println("[SongStreamer][streamer] SongStreamer Streamer thread streaming");
 
                     while (this.playing.get()) {
                         try {
                             if (this.newSource.get()) {
                                 this.dest.close();
+                                this.source = this.song.getStream().get(5, TimeUnit.SECONDS);
                                 try {
                                     this.dest.open(this.source.getFormat(), 1024 * 16);
                                     if (trx == null || trx.length % dest.getFormat().getFrameSize() != 0)
@@ -78,8 +83,13 @@ public class SongStreamer {
 
                             this.dest.stop();
 
-                        } catch (IOException e) {
+                        } catch (IOException e ) {
                             e.printStackTrace();
+
+                        } catch (TimeoutException | ExecutionException | InterruptedException e) {
+                            System.err.println("[SongStreamer][streamer] Unable to obtain stream for new song");
+                            e.printStackTrace();
+                            this.playing.set(false);
                         }
                     }
                 }
@@ -93,7 +103,8 @@ public class SongStreamer {
         return this.playing.get();
     }
 
-    public void play(AudioInputStream stream) {
+    public void play(Song song) {
+        if (this.isPlaying()) this.stop();
         synchronized (this.lock) {
             try {
                 if (this.source != null) this.source.close();
@@ -102,7 +113,8 @@ public class SongStreamer {
                 e.printStackTrace();
             }
 
-            this.source = stream;
+            this.song = song;
+            this.source = null;
             this.playing.set(true);
             this.newSource.set(true);
             this.lock.notifyAll();
@@ -121,6 +133,15 @@ public class SongStreamer {
         }
     }
 
+    public void setVolume(double value) {
+        if (this.dest != null && this.dest.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            FloatControl gainControl = (FloatControl) this.dest.getControl(FloatControl.Type.MASTER_GAIN);
+            double gain = value / 100;
+            float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
+            gainControl.setValue(dB);
+        }
+    }
+
     public int getFramePosisiton() {
         return this.dest.getFramePosition();
     }
@@ -133,4 +154,8 @@ public class SongStreamer {
         return this.dest.getMicrosecondPosition();
     }
 
+    public long getMicrosecondLength() {
+        if (this.song != null) return TimeUnit.SECONDS.toMicros(this.song.getDuration());
+        else return 0;
+    }
 }

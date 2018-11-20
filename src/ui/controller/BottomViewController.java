@@ -50,7 +50,7 @@ public class BottomViewController implements Initializable {
    private ProgressBar progressBar;
 
    private SongStreamer streamer;
-   private long clipTime = 0;
+   private Task<Song> songImportTask;
    private Song song;
    private MainViewController parentViewController;
    private boolean scrubbingSliderControl = false;
@@ -125,22 +125,7 @@ public class BottomViewController implements Initializable {
    public void playASong(Song song) {
       if (song != null) {
          this.song = song;
-         GetSongTask task = new GetSongTask(this.song);
-         task.setOnSucceeded((event) -> {
-             if (this.streamer.isPlaying()) {
-                 this.streamer.stop();
-             }
-
-             this.streamer.play((AudioInputStream) event.getSource().getValue());
-         });
-         task.setOnFailed((event) -> {
-             System.err.println("[BottomViewController][playASong] Exception while trying to get AudioInputStream");
-             event.getSource().getException().printStackTrace();
-         });
-         Thread t = new Thread(task);
-         t.setDaemon(true);
-         t.setName("[BottomViewController][AudioInputStreamGetter]");
-         t.start();
+         this.streamer.play(song);
       }
    }
 
@@ -177,23 +162,22 @@ public class BottomViewController implements Initializable {
          //Update timestamp
 
          long currentTimestamp = TimeUnit.MICROSECONDS.toSeconds(streamer.getMicrosecondPosition());
-         //long length = TimeUnit.MICROSECONDS.toSeconds(streamer.getMicrosecondLength());
-         //timestamp.setText(Long.toString(currentTimestamp) + "/" + Long.toString(length));
-         timestamp.setText(Long.toString(currentTimestamp));
+         long length = TimeUnit.MICROSECONDS.toSeconds(streamer.getMicrosecondLength());
+         timestamp.setText(Long.toString(currentTimestamp) + "/" + Long.toString(length));
 
          //Update slider
          if (!scrubbingSliderControl) {
             songScrubbingSlider.setMin(0);
-            //songScrubbingSlider.setMax(clip.getMicrosecondLength());
-            songScrubbingSlider.setMax(10000);
+            songScrubbingSlider.setMax(streamer.getMicrosecondLength());
             songScrubbingSlider.setValue(streamer.getMicrosecondPosition());
          }
       }
+
       if(progressBar.isVisible() && progressLabel.isVisible()){
          if (progressBar.getProgress() < 1d) {
-            double progress=progressBar.getProgress()+100d/5000d;
+            double progress = progressBar.getProgress()+100d/5000d;
             progressBar.setProgress(progress);
-            progressLabel.setText(String.format("Importing: %.2f%%",progress));
+            progressLabel.setText(String.format("Importing: %.2f%%", progress));
          }
 
          if(progressBar.getProgress()>=1){
@@ -232,14 +216,10 @@ public class BottomViewController implements Initializable {
     *
     * @param value new volume
     */
-   public void adjustVolume(double value) {/*
-      if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-         FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-         double gain = value / 100;
-         float dB = (float) (Math.log(gain) / Math.log(10.0) * 20.0);
-         gainControl.setValue(dB);
-      }*/
+   public void adjustVolume(double value) {
+      this.streamer.setVolume(value);
    }
+
    private void showImportSongSelector(){
       try {
          FXMLLoader fxmlLoader = new FXMLLoader();
@@ -278,17 +258,4 @@ public class BottomViewController implements Initializable {
        }
    }
 }
-class GetSongTask extends Task<AudioInputStream> {
 
-    private Song song;
-
-    public GetSongTask(Song song) {
-        this.song = song;
-    }
-
-    @Override
-    protected AudioInputStream call() throws Exception {
-        AudioInputStream stream = this.song.getStream().get(5, TimeUnit.SECONDS);
-        return stream;
-    }
-}

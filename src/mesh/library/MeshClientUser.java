@@ -3,6 +3,9 @@ package mesh.library;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import connect.Song;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import net.common.JsonField;
 import net.common.JsonStreamParser;
 import utils.DebouncedRunnable;
@@ -21,7 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class MeshClientUser implements MeshLibraryActivityListener {
+public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPlaylist.PlaylistChangeListener {
 
     private static final JsonFactory _factory = new JsonFactory();
 
@@ -29,24 +32,36 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
     private final String password;
 
+    private ObservableList<MeshClientPlaylist> playlists;
+
     private HashMap<String, String> attributes;
 
     private Set<String> favorites;
+    private Set<MeshClientSong> songs;
+    private Set<MeshClientAlbum> albums;
+    private Set<String> artists;
 
     private MeshLibrary library;
 
-    private int lastAction;
-
-    private String actionTarget;
-
     private DebouncedRunnable save_task;
 
-    private MeshClientUser(String username, String password, List<String> favs, Map<String, String> attrs, MeshLibrary library) {
+    private MeshClientUser(String username, String password, List<String> favs, Map<String, String> attrs, Map<String, List<Long>> playlists, MeshLibrary library) {
         this.username = username;
         this.password = password;
         this.favorites = new HashSet<>(favs);
         this.attributes = new HashMap<>(attrs);
         this.library = library;
+
+        this.songs = new HashSet<>();
+        this.albums = new HashSet<>();
+        this.artists = new HashSet<>();
+
+        this.playlists = FXCollections.observableArrayList();
+        for (Map.Entry<String, List<Long>> entry : playlists.entrySet()) {
+            MeshClientPlaylist playList = new MeshClientPlaylist(entry.getKey(), entry.getValue(), library);
+            playList.setChangeListener(this);
+            this.playlists.add(playList);
+        }
 
         this.save_task = new DebouncedRunnable(this::do_save, 5, TimeUnit.SECONDS, true, library.executor);
 
@@ -113,6 +128,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
             List<String> favs = new LinkedList<>();
             Map<String, String> attrs = new HashMap<>();
+            Map<String, List<Long>> playlists = new HashMap<>();
 
             JsonStreamParser parser = new JsonStreamParser(cin, true, (field) -> {
                 if (field.isObject()) {
@@ -140,11 +156,29 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                             }
                         }
                     }
+
+                    if (root.containsKey("playlsits")) {
+                        JsonField playlist_field = root.getProperty("playlists");
+                        if (playlist_field.isObject()) {
+                            for (Map.Entry<String, JsonField> entry : playlist_field.getProperties().entrySet()) {
+                                if (entry.getValue().isArray()) {
+                                    String name = entry.getKey();
+                                    List<Long> songs = new LinkedList<>();
+
+                                    for (JsonField item : entry.getValue().getElements()) {
+                                        songs.add(item.getLongValue());
+                                    }
+
+                                    playlists.put(name, songs);
+                                }
+                            }
+                        }
+                    }
                 }
             });
             parser.run();
 
-            future.complete(new MeshClientUser(user, password, favs, attrs, library));
+            future.complete(new MeshClientUser(user, password, favs, attrs, playlists, library));
         });
 
         return future;
@@ -163,7 +197,7 @@ public class MeshClientUser implements MeshLibraryActivityListener {
                     future.completeExceptionally(new IllegalArgumentException("Username taken"));
 
                 } else {
-                    future.complete(new MeshClientUser(user, password, new LinkedList<>(), new HashMap<>(), library));
+                    future.complete(new MeshClientUser(user, password, new LinkedList<>(), new HashMap<>(), new HashMap<>(), library));
                 }
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -222,22 +256,48 @@ public class MeshClientUser implements MeshLibraryActivityListener {
             JsonGenerator gen = _factory.createGenerator(cout, JsonEncoding.UTF8);
             gen.writeStartObject();
 
-            gen.writeFieldName("favs");
-            gen.writeStartArray();
-            for (String f : this.favorites) {
-                gen.writeString(f);
+            {   // favorites array
+                gen.writeFieldName("favs");
+                gen.writeStartArray();
+                for (MeshClientSong song : this.songs) {
+                    gen.writeString(song.getTitle());
+                }
+                for (MeshClientAlbum album : this.albums) {
+                    gen.writeString(album.getTitle());
+                }
+                for (String artist : this.artists) {
+                    gen.writeString(artist);
+                }
+                gen.writeEndArray();
             }
-            gen.writeEndArray();
 
-            gen.writeFieldName("attrs");
-            gen.writeStartObject();
-            for (Map.Entry<String, String> attribute : this.attributes.entrySet()) {
-                gen.writeStringField(attribute.getKey(), attribute.getValue());
+            {   // attributes object
+                gen.writeFieldName("attrs");
+                gen.writeStartObject();
+                for (Map.Entry<String, String> attribute : this.attributes.entrySet()) {
+                    gen.writeStringField(attribute.getKey(), attribute.getValue());
+                }
+                gen.writeEndObject();
             }
-            gen.writeEndObject();
+
+            {   // playlists object
+                gen.writeFieldName("playlists");
+                gen.writeStartObject();
+
+                for (MeshClientPlaylist playlist : this.playlists) {
+                    gen.writeArrayFieldStart(playlist.getName());
+
+                    for (Song song : playlist.getSongs()) {
+                        gen.writeNumber(song.getId());
+                    }
+
+                    gen.writeEndArray();
+                }
+
+                gen.writeEndObject();
+            }
 
             gen.writeEndObject();
-
             gen.close();
             cout.close();
 
@@ -267,6 +327,61 @@ public class MeshClientUser implements MeshLibraryActivityListener {
         this.save();
     }
 
+    private void addArtistFavorite(String artist) {
+        this.artists.add(artist);
+
+        this.save();
+    }
+
+    private void addAlbumFavorite(MeshClientAlbum album) {
+        int sameArtist = 0;
+        for (MeshClientAlbum album1 : this.albums) {
+            if (album1.getArtist().equals(album.getArtist())) sameArtist++;
+        }
+
+        if (sameArtist >= 1) {
+            this.albums.removeIf((album2) -> album2.getArtist().equals(album.getArtist()));
+            this.addArtistFavorite(album.getArtist());
+
+        } else {
+            this.albums.add(album);
+        }
+
+        this.save();
+    }
+
+    private void addSongFavorite(MeshClientSong song) {
+        if (this.artists.contains(song.getArtist())) return;
+        if (this.albums.contains(this.library.getAlbumByTitle(song.getAlbumTitle()))) return;
+        if (this.songs.contains(song)) return;
+
+        int sameAlbum = 0;
+        for (MeshClientSong song1 : this.songs) {
+            if (song1.getAlbumTitle().equals(song.getAlbumTitle())) sameAlbum++;
+        }
+
+        if (sameAlbum > 3) {
+            this.songs.removeIf((song2) -> song2.getAlbumTitle().equals(song.getAlbumTitle()));
+            this.addAlbumFavorite(this.library.getAlbumByTitle(song.getAlbumTitle()));
+
+        } else {
+            this.songs.add(song);
+        }
+
+        this.save();
+    }
+
+    public ObservableList<MeshClientPlaylist> getPlaylists() {
+        return FXCollections.unmodifiableObservableList(this.playlists);
+    }
+
+    public MeshClientPlaylist createPlaylist(String title) {
+        MeshClientPlaylist newList = new MeshClientPlaylist(title, this.library);
+        newList.setChangeListener(this);
+        this.playlists.add(newList);
+        return newList;
+    }
+
     @Override
     public void onSearch(String param) {
 
@@ -274,52 +389,59 @@ public class MeshClientUser implements MeshLibraryActivityListener {
 
     @Override
     public void onSongAdded(MeshClientSong song) {
-
+        if (this.favorites.contains(song.getTitle())) {
+            this.songs.add(song);
+        }
     }
 
     @Override
     public void onAlbumAdded(MeshClientAlbum album) {
-
+        if (this.favorites.contains(album.getTitle())) {
+            this.albums.add(album);
+        }
     }
 
     @Override
     public void onArtistAdded(String artist) {
-
+        if (this.favorites.contains(artist)) {
+            this.artists.add(artist);
+        }
     }
 
     @Override
     public void onAlbumAccessed(MeshClientAlbum album) {
-        this.lastAction = ACTION_ALBUM;
-        this.actionTarget = album.getTitle();
+
     }
 
     @Override
     public void onArtistAccessed(String artist) {
-        this.lastAction = ACTION_ARTIST;
-        this.actionTarget = artist;
+
     }
 
     @Override
     public void onSongPlayed(MeshClientSong song) {
-        switch (this.lastAction) {
-            case ACTION_SEARCH : if (this.favorites.add(song.getAlbumTitle())) this.save(); break;
-            case ACTION_ALBUM :
-            case ACTION_ARTIST : if (this.favorites.add(this.actionTarget)) this.save(); break;
-        }
-
-        this.lastAction = ACTION_SONG;
-        this.actionTarget = song.getGUID();
+        this.addSongFavorite(song);
     }
 
     @Override
     public void onSongImported(MeshClientSong song) {
-        if (this.favorites.add(song.getTitle())) this.save();
+        this.addSongFavorite(song);
     }
 
-    private static final int ACTION_SEARCH = 1;
-    private static final int ACTION_ARTIST = 2;
-    private static final int ACTION_ALBUM = 3;
-    private static final int ACTION_SONG = 4;
-
     public static final int USER_FILE_REPLICATION = 3;
+
+    @Override
+    public void onSongAdded(Song added) {
+        try {
+            this.addSongFavorite((MeshClientSong) added);
+
+        } catch (ClassCastException e) {
+            System.err.println("[MeshClientUser][onSongAdded] Non-mesh song added to mesh playlist?");
+        }
+    }
+
+    @Override
+    public void onSongRemoved(Song removed) {
+
+    }
 }

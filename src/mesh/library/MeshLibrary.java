@@ -6,6 +6,7 @@ import connect.Playlist;
 import connect.Song;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import mesh.dfs.DFS;
 import mesh.impl.MeshNode;
 import net.common.JsonField;
@@ -26,6 +27,8 @@ public class MeshLibrary implements Library {
 
     protected MeshClientUser user;
 
+    private final Object libraryLock;
+
     protected ObservableList<MeshClientSong> songs;
 
     protected ObservableList<String> artists;
@@ -36,6 +39,7 @@ public class MeshLibrary implements Library {
         this.mesh = mesh;
         this.dfs = dfs;
         this.executor = executor;
+        this.libraryLock = new Object();
 
         this.songs = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
         this.artists = FXCollections.synchronizedObservableList(FXCollections.observableList(new LinkedList<>()));
@@ -89,26 +93,36 @@ public class MeshLibrary implements Library {
         this.executor.submit(new SearchHandler(searchParam, this));
     }
 
-    public void importSong(File file, String title, String artist, String album) {
-        this.executor.submit(new ImportSongHandler(file, title, artist, album, this));
+    public Task<Song> importSong(File file, String title, String artist, String album) {
+        ImportSongHandler task = new ImportSongHandler(file, title, artist, album, this);
+        this.executor.submit(task);
+        return task;
     }
 
     public void addSong(MeshClientSong song) {
-        // check if song is already in library
-        for (MeshClientSong song1 : this.songs) if (song1.getGUID().equals(song.getGUID())) return;
-        // if song not already known, add to library
-        this.songs.add(song);
-        System.out.println("[MeshLibrary][addSong] Song \"" + song.getTitle() + "\" added to library");
+        synchronized (this.libraryLock) {
+            // check if song is already in library
+            for (MeshClientSong song1 : this.songs) if (song1.getGUID().equals(song.getGUID())) return;
+            // if song not already known, add to library
+            this.songs.add(song);
+            System.out.println("[MeshLibrary][addSong] Song \"" + song.getTitle() + "\" added to library");
+            if (this.user != null) this.user.onSongAdded(song);
 
-        // check if album is already in library
-        for (MeshClientAlbum album : this.albums) if (album.getTitle().equals(song.getAlbumTitle())) return;
-        // if new album, add to library
-        this.albums.add(new MeshClientAlbum(song.getAlbumTitle(), song.getArtist(), this));
+            // check if album is already in library
+            for (MeshClientAlbum album : this.albums) if (album.getTitle().equals(song.getAlbumTitle())) return;
+            // if new album, add to library
+            MeshClientAlbum album = new MeshClientAlbum(song.getAlbumTitle(), song.getArtist(), this);
+            this.albums.add(album);
+            System.out.println("[MeshLibrary][addSong] Album \"" + album.getTitle() + "\" added to library");
+            if (this.user != null) this.user.onAlbumAdded(album);
 
-        // check if new artist
-        for (String artist : this.artists) if (artist.equals(song.getArtist())) return;
-        // if new artist, add to library
-        this.artists.add(song.getArtist());
+            // check if new artist
+            for (String artist : this.artists) if (artist.equals(song.getArtist())) return;
+            // if new artist, add to library
+            this.artists.add(song.getArtist());
+            System.out.println("[MeshLibrary][addSong] Artist \"" + song.getArtist() + "\" added to library");
+            if (this.user != null) this.user.onArtistAdded(song.getArtist());
+        }
     }
 
     @Override
@@ -125,6 +139,14 @@ public class MeshLibrary implements Library {
     public ObservableList<? extends Album> getAlbumsByArtist(String artist) {
         if (this.user != null) this.user.onArtistAccessed(artist);
         return this.albums.filtered((album) -> album.getArtist().equals(artist));
+    }
+
+    public MeshClientAlbum getAlbumByTitle(String title) {
+        for (MeshClientAlbum album : this.albums) {
+            if (album.getTitle().equals(title)) return album;
+        }
+
+        return null;
     }
 
     @Override
@@ -145,11 +167,19 @@ public class MeshLibrary implements Library {
 
     @Override
     public ObservableList<? extends Playlist> getPlaylists() {
+        if (this.user != null) {
+            return this.user.getPlaylists();
+        }
+
         return FXCollections.emptyObservableList();
     }
 
     @Override
     public Future<Boolean> createPlaylist(String name) throws SecurityException {
+        if (this.user != null) {
+            this.user.createPlaylist(name);
+            return CompletableFuture.completedFuture(true);
+        }
         return CompletableFuture.completedFuture(false);
     }
 
@@ -169,6 +199,13 @@ public class MeshLibrary implements Library {
 
     public MeshClientUser getCurrentUser() {
         return this.user;
+    }
+
+    public void signOut() {
+        this.user = null;
+        this.songs.clear();
+        this.albums.clear();
+        this.artists.clear();
     }
 
     public static final String REQUEST_IMPORT_SONG = "REQUEST_IMPORT_SONG";

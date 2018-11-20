@@ -458,6 +458,7 @@ public class DFS {
 
         if (node_id == this.mesh.getNodeId()) {
             BlockDescriptor localBlock = this.blocks.getOrDefault(block.getBlockName(), block);
+            this.blocks.putIfAbsent(localBlock.getBlockName(), localBlock);
             try {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile(), append));
                 future.complete(out);
@@ -732,6 +733,9 @@ public class DFS {
                 } catch (TimeoutException e) {
                     System.err.println("[DFS][readFile] Timed out while trying to retrieve block " + i);
                     e.printStackTrace();
+                    try { buffer_out.close(); } catch (IOException e1) {}
+                    future.completeExceptionally(e);
+                    break;
                 }
             }
 

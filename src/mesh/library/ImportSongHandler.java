@@ -1,5 +1,7 @@
 package mesh.library;
 
+import connect.Song;
+import javafx.concurrent.Task;
 import utils.Utils;
 
 import javax.sound.sampled.AudioInputStream;
@@ -11,7 +13,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ImportSongHandler implements Runnable {
+public class ImportSongHandler extends Task<Song> {
 
     private File file;
 
@@ -32,10 +34,16 @@ public class ImportSongHandler implements Runnable {
     }
 
     @Override
-    public void run() {
+    protected Song call() throws Exception {
         long duration = 0;
 
         System.out.println("[ImportSongHandler][run] Importing \"" + this.title + "\" from file: " + this.file.getPath());
+
+        long totalWork = this.file.length();
+        long nonMeasurableTaskValue = totalWork / 10;
+        totalWork += (nonMeasurableTaskValue * 2);
+        long workDone = 0;
+        this.updateProgress(workDone, totalWork);
 
         try {
             System.out.println("[ImportSongHandler][run] Getting song metadata...");
@@ -43,6 +51,8 @@ public class ImportSongHandler implements Runnable {
             duration = Math.round(ain.getFrameLength() / ain.getFormat().getFrameRate());
             ain.close();
             System.out.println("[ImportSongHandler][run] Song duration=" + duration);
+            workDone += nonMeasurableTaskValue;
+            this.updateProgress(workDone, totalWork);
 
         } catch (UnsupportedAudioFileException | IOException e) {
             System.err.println("[ImportSongHandler][run] Unable to get duration of audio file");
@@ -66,11 +76,15 @@ public class ImportSongHandler implements Runnable {
             System.out.println("[ImportSongHandler][run] Copying file to DFS...");
 
             byte[] trx = new byte[1024 * 8];
+            long acc = 0;
             int trxd = 0;
             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
                 out.write(trx, 0, trxd);
+                this.updateProgress(workDone + acc, totalWork);
                 //System.out.println("[ImportSongHandler][run] " + trxd + " bytes written to DFS");
             }
+
+            workDone += acc;
 
             in.close();
             out.close();
@@ -78,7 +92,7 @@ public class ImportSongHandler implements Runnable {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             System.err.println("[ImportSongHandler][run] Exception while trying to import song");
             e.printStackTrace();
-            return;
+            throw e;
 
         } catch (IOException e) {
             System.err.println("[ImportSongHandler][run] IOException while uploading song to DFS");
@@ -87,7 +101,7 @@ public class ImportSongHandler implements Runnable {
             try { if (out != null) out.close(); } catch (IOException e1) {}
             try { if (in != null) out.close(); } catch (IOException e1) {}
 
-            return;
+            throw e;
         }
 
         // append song metadata to inverted index file
@@ -100,7 +114,16 @@ public class ImportSongHandler implements Runnable {
         builder.trimToSize();
 
         this.library.dfs.appendFile(MeshLibrary.INDEX_FILE_NAME, builder.toString().getBytes(), MeshLibrary.INDEX_FILE_REPLICAS);
+
+        workDone += nonMeasurableTaskValue;
+        this.updateProgress(workDone, totalWork);
+
         System.out.println("[ImportSongHandler][run] Imported song \"" + this.title + "\" successfully!");
-        this.library.addSong(new MeshClientSong(this.title, this.artist, this.album, duration, songFileName, this.library));
+        MeshClientSong song = new MeshClientSong(this.title, this.artist, this.album, duration, songFileName, this.library);
+        this.library.addSong(song);
+
+        this.updateProgress(totalWork, totalWork);
+
+        return song;
     }
 }
