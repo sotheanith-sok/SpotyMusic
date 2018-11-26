@@ -5,6 +5,7 @@ import net.common.JsonField;
 import net.common.JsonStreamParser;
 import net.lib.ServerSocket;
 import net.lib.Socket;
+import utils.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +35,8 @@ public class RequestServer {
 
     private ConcurrentHashMap<String, RequestHandler> requestHandlers;
 
+    private Logger logger;
+
     /**
      * Creates a new RequestServer with its own ExecutorService and listening on the given port number.
      *
@@ -54,6 +57,7 @@ public class RequestServer {
     public RequestServer(ExecutorService executor, int port) throws SocketException {
         this.socket = new ServerSocket(port, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
+        this.logger = new Logger("RequestServer", Constants.TRACE);
     }
 
     /**
@@ -66,6 +70,7 @@ public class RequestServer {
     public RequestServer(ExecutorService executor, SocketAddress address) throws SocketException {
         this.socket = new ServerSocket(address, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
+        this.logger = new Logger("RequestServer", Constants.DEBUG);
     }
 
     /**
@@ -75,6 +80,7 @@ public class RequestServer {
      * @param sock the newly opened socket
      */
     private void onSocket(Socket sock) {
+        this.logger.log("[onSocket] New socket connection");
         executor.submit(this.new ConnectionHandler(sock));
     }
 
@@ -87,28 +93,37 @@ public class RequestServer {
      */
     protected void onRequest(Socketplexer plexer, JsonField request) {
         if (!request.isObject()) {
-            System.err.println("[RequestServer][onRequest] Request header parsed as non-object value");
+            this.logger.error("[onRequest] Request header parsed as non-object value");
             plexer.terminate();
         }
 
         JsonField.ObjectField packet = (JsonField.ObjectField) request;
 
         if (!packet.containsKey(Constants.REQUEST_TYPE_PROPERTY)) {
-            System.err.println("[RequestServer][onRequest] Request header does not include request type");
+            this.logger.error("[onRequest] Request header does not include request type");
             plexer.terminate();
         }
 
         String requestType = packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY);
         if (this.requestHandlers.containsKey(requestType)) {
-            this.requestHandlers.get(requestType).handle(plexer, packet, this.executor);
+            this.logger.log("[onRequest] Found handler for request type");
+            try {
+                this.requestHandlers.get(requestType).handle(plexer, packet, this.executor);
+
+            } catch (Exception e) {
+                this.logger.warn("[onRequest] Exception thrown by request handler");
+                e.printStackTrace();
+                plexer.terminate();
+            }
 
         } else {
-            System.err.println("[RequestServer][onRequest] No registered handler for request type: " + requestType);
+            this.logger.warn("[onRequest] No registered handler for request type: " + requestType);
             plexer.terminate();
         }
     }
 
     public ServerSocket getServerSocket() {
+        this.logger.trace("[getServerSocket] ServerSocket retrieved");
         return this.socket;
     }
 
@@ -120,6 +135,7 @@ public class RequestServer {
      */
     public void registerHandler(String requestType, RequestHandler handler) {
         this.requestHandlers.put(requestType, handler);
+        this.logger.finer("[registerHandler] Handler for request type " + requestType + " registered");
     }
 
     /**
@@ -142,22 +158,30 @@ public class RequestServer {
 
         @Override
         public void run() {
+            logger.finer("[ConnectionHandler] Handling connection");
+
+            logger.trace("[ConnectionHandler] Creating socketplexer");
             Socketplexer plexer = new Socketplexer(this.sock, executor);
+
+            logger.trace("[ConnectionHandler] Getting header channel");
             Future<InputStream> requestChannel = plexer.waitInputChannel(1);
             try (InputStream requestStream = requestChannel.get()) {
+                logger.debug("[ConnectionHandler] Parsing request header");
                 JsonStreamParser requestParser = new JsonStreamParser(requestStream, true, (header) -> {
                     onRequest(plexer, header);
                 });
                 executor.submit(requestParser);
 
             } catch (InterruptedException e) {
-                System.err.println("[RequestServer.ConnectionHandler][run] Interrupted while waiting for request input channel");
+                logger.warn("[ConnectionHandler] Interrupted while waiting for request input channel");
                 e.printStackTrace();
+
             } catch (ExecutionException e) {
-                System.err.println("[RequestServer.ConnectionHandler][run] Input channel resolution encountered an exception");
+                logger.error("[ConnectionHandler] Input channel resolution encountered an exception");
                 e.printStackTrace();
+
             } catch (IOException e) {
-                System.err.println("[RequestServer.ConnectionHandler][run] IOException while trying to get request channel");
+                logger.error("[ConnectionHandler] IOException while trying to get request channel");
                 e.printStackTrace();
             }
         }
