@@ -49,7 +49,7 @@ public class DFS {
         this.mesh = mesh;
         this.executor = executor;
 
-        this.serverLog = new Logger("DFS][server", Constants.DEBUG);
+        this.serverLog = new Logger("DFS][server", Constants.TRACE);
         this.clientLog = new Logger("DFS][client", Constants.DEBUG);
 
         this.blocks = new ConcurrentHashMap<>();
@@ -121,10 +121,19 @@ public class DFS {
             this.serverLog.debug("[organizeBlocks] Submitting block organizer task");
             this.executor.submit(() -> {
                 this.serverLog.log("[organiseBlocks] Block Organizer starting");
+                if (this.mesh.getAvailableNodes().size() < 2) {
+                    this.serverLog.log("[organizeBlocks[] There are not enough connected nodes to reorganize blocks");
+                    this.blockOrganizerRunning.set(false);
+                    return;
+                }
+
                 byte[] trx = new byte[1024 * 8];
                 for (BlockDescriptor block : this.blocks.values()) {
-                    int bestId = 0;
-                    if ((bestId = this.getBestId(block.getBlockId())) != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 2) {
+                    int blockId = block.getBlockId();
+                    int bestId = this.getBestId(blockId);
+                    this.serverLog.trace("[organizeBlocks] Block " + blockId + " best matches node " + bestId);
+
+                    if (bestId != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 2) {
                         this.serverLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
 
                         InputStream in = null;
