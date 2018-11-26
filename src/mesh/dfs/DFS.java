@@ -49,8 +49,8 @@ public class DFS {
         this.mesh = mesh;
         this.executor = executor;
 
-        this.serverLog = new Logger("DFS][server");
-        this.clientLog = new Logger("DFS][client");
+        this.serverLog = new Logger("DFS][server", Constants.DEBUG);
+        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -120,7 +120,7 @@ public class DFS {
         if (this.blockOrganizerRunning.compareAndSet(false, true)) {
             this.serverLog.debug("[organizeBlocks] Submitting block organizer task");
             this.executor.submit(() -> {
-                this.serverLog.finest("[organiseBlocks] Block Organizer starting");
+                this.serverLog.log("[organiseBlocks] Block Organizer starting");
                 byte[] trx = new byte[1024 * 8];
                 for (BlockDescriptor block : this.blocks.values()) {
                     int bestId = 0;
@@ -167,6 +167,9 @@ public class DFS {
                         }
                     }
                 }
+
+                this.serverLog.log("[organizeBlocks] All local blocks belong on this node");
+                this.blockOrganizerRunning.set(false);
             });
 
         } else {
