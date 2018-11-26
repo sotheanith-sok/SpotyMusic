@@ -72,7 +72,13 @@ public class MulticastPacketSocket {
                             String type = packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY);
 
                             if (this.handlers.containsKey(type)) {
-                                this.handlers.get(type).onPacket(packet, address);
+                                try {
+                                    this.handlers.get(type).onPacket(packet, address);
+
+                                } catch (Exception e) {
+                                    System.err.println("[MulticastPacketSocket] Exception in handler for request type " + type);
+                                    e.printStackTrace();
+                                }
 
                             } else {
                                 System.err.println("[MulticastPacketSocket][receiver][handler] No handler for packet type: " + type);
