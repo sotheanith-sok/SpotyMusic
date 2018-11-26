@@ -182,6 +182,8 @@ public class MeshNode {
         this.configs.put(this.config.getNetwork_id(), this.config);
         this.node_count.set(config.getNodeCount());
 
+        this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
+
         this.id_generator = new Random(this.config.getNetwork_id());
         for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
     }
@@ -337,6 +339,8 @@ public class MeshNode {
             // add config to known configs so that it gets saved
             this.configs.put(this.config.getNetwork_id(), this.config);
 
+            this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
+
             // announce activity
             this.sendNodeActive();
         }
@@ -436,6 +440,7 @@ public class MeshNode {
 
     private void onNewNode(int node_id) {
         this.logger.finer("[onNewNode] New node connected: " + node_id);
+        this.logger.finest("[onNewNode] There are now " + this.nodes.size() + " active nodes");
         for (NodeConnectListener listener : this.nodeConnectListeners) {
             listener.onNodeConnected(node_id);
         }
