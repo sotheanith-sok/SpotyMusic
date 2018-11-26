@@ -346,18 +346,43 @@ public class MeshNode {
     private void onNodeActive(JsonField.ObjectField packet, InetAddress address) {
         this.logger.fine("[onNodeActive] Received NodeActive packet");
         // add advertised node to list of known nodes
+
+        this.logger.trace("[onNodeActive] Getting sender node id");
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
+
+        this.logger.trace("[onNodeActive] Getting sender server port");
         int port = (int) packet.getLongProperty(PROPERTY_PORT_NUMBER);
+
+        this.logger.trace("[onNodeActive] Getting sender node count");
         int count = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT);
+
+        this.logger.trace("[onNodeActive] Checking if node is already known");
         boolean alreadyKnew = this.nodes.containsKey(id);
+
+        this.logger.trace("[onNodeActive] Adding node to known nodes");
         this.nodes.put(id, new InetSocketAddress(address, port));
-        if (this.node_count.get() < count) this.node_count.set(count);
-        if (id < this.config.getMasterId()) this.config.setMasterId(id);
+
+        if (this.node_count.get() < count) {
+            this.logger.trace("[onNodeActive] Updating node count");
+            this.node_count.set(count);
+        }
+
+        if (id < this.config.getMasterId()) {
+            this.config.setMasterId(id);
+            this.logger.trace("[onNodeActive] Updating master id");
+
+        } else {
+            this.logger.trace("[onNodeActive] New node id is not less than current master");
+        }
 
         // inform new node of our presence
+        this.logger.trace("[onNodeActive] Sending targeted NodeAdvert");
         this.sendNodeAdvert(address);
 
-        if (!alreadyKnew) this.onNewNode(id);
+        if (!alreadyKnew) {
+            this.logger.trace("[onNodeActive] Notifying NodeConnectListeners");
+            this.onNewNode(id);
+        }
         this.logger.debug("[onNodeActive] NodeActive packet handled");
     }
 
