@@ -39,7 +39,7 @@ public class MulticastPacketSocket {
         this.multicastSocket = new MulticastSocket(Utils.getSocketAddress(address.getPort()));
         this.multicastSocket.setSoTimeout((int) Constants.RESEND_DELAY / 2);
         this.multicastSocket.joinGroup(address.getAddress());
-        //this.multicastSocket.setLoopbackMode(true);
+        this.multicastSocket.setLoopbackMode(true);
         System.out.println("[MulticastPacketSocket] MulticastSocket localAddress: " + this.multicastSocket.getLocalAddress() + ":" + this.multicastSocket.getLocalPort() + " loopbackMode=" + this.multicastSocket.getLoopbackMode());
         this.lock = new Object();
         this.handlers = new ConcurrentHashMap<>();
@@ -57,7 +57,7 @@ public class MulticastPacketSocket {
                 //System.out.println("[MulticastPacketSocket][receiver][FINEST] Listening for packet on multicast socket");
                 this.multicastSocket.receive(temp);
                 InetAddress address = temp.getAddress();
-                System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + address + ":" + temp.getPort());
+                //System.out.println("[MulticastPacketSocket][receiver][FINER] Received packet from: " + address + ":" + temp.getPort());
                 if (address.equals(this.multicastSocket.getLocalSocketAddress())) continue;
 
                 ByteArrayInputStream instrm = new ByteArrayInputStream(temp.getData(), temp.getOffset(), temp.getLength());
