@@ -51,7 +51,7 @@ public class MeshNode {
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
         this.server = new RequestServer(this.executor, serverAddress);
 
-        this.logger = new Logger("MeshNode", Constants.DEBUG);
+        this.logger = new Logger("MeshNode", Constants.TRACE);
         this.searchLock = new Object();
 
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_QUERY, this::onNetQuery);
@@ -241,6 +241,7 @@ public class MeshNode {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
             gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
+            gen.writeNumberField(PROPERTY_PORT_NUMBER, this.server.getServerSocket().getPort());
             gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.config.getNodeCount());
             gen.writeEndObject();
         });
