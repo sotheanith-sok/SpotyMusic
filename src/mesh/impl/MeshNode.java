@@ -288,6 +288,7 @@ public class MeshNode {
                 this.node_count.set(Math.max(config.getNodeCount(), (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT)));
                 this.config.setNodeCount(this.node_count.get());
                 this.logger.info("[onNetInfo] Joining known mesh network");
+                this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
                 this.sendNodeActive();
 
             } else {
