@@ -21,6 +21,8 @@ public class MeshNode {
 
     private MeshConfiguration config;
 
+    private final Object searchLock;
+
     private AtomicInteger node_count;
 
     private Random id_generator;
@@ -45,6 +47,8 @@ public class MeshNode {
         this.configs = configs == null ? new HashMap<>() : configs;
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
         this.server = new RequestServer(this.executor, serverAddress);
+
+        this.searchLock = new Object();
 
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_QUERY, this::onNetQuery);
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_INFO, this::onNetInfo);
@@ -73,10 +77,12 @@ public class MeshNode {
             this.sendNetQuery();
 
             try {
-                Thread.sleep(Constants.TIMEOUT_DELAY / 3);
+                synchronized (this.searchLock) {
+                    this.searchLock.wait(Constants.TIMEOUT_DELAY / 3);
+                }
 
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                break;
             }
 
         } while (System.currentTimeMillis() - startTime < Constants.TIMEOUT_DELAY && this.config.getNetwork_id() < 0);
@@ -208,7 +214,7 @@ public class MeshNode {
     }
 
     private void sendNodeActive() {
-        System.out.println("[MeshNode][sendNodeActive] Sending NodeActive packet");
+        System.out.println("[MeshNode][sendNodeActive] Sending NodeActive packet. NetworkId=" + this.config.getNetwork_id() + " node_id=" + this.config.getNodeId());
         this.multicastSocket.send((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
@@ -261,6 +267,10 @@ public class MeshNode {
 
                 // send request to join
                 this.sendNetJoin();
+            }
+
+            synchronized (this.searchLock) {
+                this.searchLock.notifyAll();
             }
         }
     }
