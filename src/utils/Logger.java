@@ -41,21 +41,21 @@ public class Logger {
         String levelLabel = Integer.toString(level);
         switch (level) {
             case Constants.SEVERE : levelLabel =    "SEVERE"; break;
-            case Constants.ERROR : levelLabel =     " ERROR"; break;
-            case Constants.WARN : levelLabel =      " WARN "; break;
-            case Constants.INFO : levelLabel =      " INFO "; break;
-            case Constants.LOG : levelLabel =       " LOG  "; break;
-            case Constants.FINE : levelLabel =      " FINE "; break;
+            case Constants.ERROR : levelLabel =     "ERROR "; break;
+            case Constants.WARN : levelLabel =      "WARN  "; break;
+            case Constants.INFO : levelLabel =      "INFO  "; break;
+            case Constants.LOG : levelLabel =       "LOG   "; break;
+            case Constants.FINE : levelLabel =      "FINE  "; break;
             case Constants.FINER : levelLabel =     "FINER "; break;
             case Constants.FINEST : levelLabel =    "FINEST"; break;
-            case Constants.DEBUG : levelLabel =     " DEBUG"; break;
+            case Constants.DEBUG : levelLabel =     "DEBUG "; break;
         }
 
         if (level >= threshold) {
-            err.format("[%s][%s]%s", levelLabel, this.name, message);
+            err.format("[%s][%s]%s\n", levelLabel, this.name, message);
 
         } else {
-            out.format("[%s][%s]%s", levelLabel, this.name, message);
+            out.format("[%s][%s]%s\n", levelLabel, this.name, message);
         }
     }
 
