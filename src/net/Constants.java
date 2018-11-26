@@ -39,6 +39,7 @@ public class Constants {
     public static final int FINER = 40;
     public static final int FINEST  = 30;
     public static final int DEBUG = 20;
+    public static final int TRACE = 10;
 
     public static final long MAX_BLOCK_SIZE = 1024 * 1024 * 4;
 

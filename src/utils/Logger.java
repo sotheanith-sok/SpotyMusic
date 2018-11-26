@@ -49,6 +49,7 @@ public class Logger {
             case Constants.FINER : levelLabel =     "FINER "; break;
             case Constants.FINEST : levelLabel =    "FINEST"; break;
             case Constants.DEBUG : levelLabel =     "DEBUG "; break;
+            case Constants.TRACE : levelLabel =     "TRACE "; break;
         }
 
         if (level >= threshold) {
@@ -97,5 +98,9 @@ public class Logger {
 
     public void debug(String message) {
         this.println(Constants.DEBUG, message);
+    }
+
+    public void trace(String message) {
+        this.println(Constants.TRACE, message);
     }
 }
