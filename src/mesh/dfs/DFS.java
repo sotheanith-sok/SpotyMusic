@@ -122,7 +122,7 @@ public class DFS {
             this.executor.submit(() -> {
                 this.serverLog.log("[organiseBlocks] Block Organizer starting");
                 if (this.mesh.getAvailableNodes().size() < 2) {
-                    this.serverLog.log("[organizeBlocks[] There are not enough connected nodes to reorganize blocks");
+                    this.serverLog.log("[organizeBlocks] There are not enough connected nodes to reorganize blocks");
                     this.blockOrganizerRunning.set(false);
                     return;
                 }
@@ -173,6 +173,7 @@ public class DFS {
                         } catch (Exception e) {
                             this.serverLog.warn("[enumerateBlocks] Exception while trying to transfer block");
                             e.printStackTrace();
+                            break;
                         }
                     }
                 }
@@ -515,68 +516,89 @@ public class DFS {
 
     // add logging
     public Future<OutputStream> writeBlock(BlockDescriptor block, boolean append) {
+        this.clientLog.log("[writeBlock] Request to write block " + block.getBlockName() + " append=" + append);
         int node_id = getBestId(block.getBlockId());
+        this.clientLog.debug("[writeBlock] Best node_id for block: " + node_id);
 
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
-        if (node_id == this.mesh.getNodeId()) {
-            BlockDescriptor localBlock = this.blocks.getOrDefault(block.getBlockName(), block);
-            this.blocks.putIfAbsent(localBlock.getBlockName(), localBlock);
-            try {
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile(), append));
-                future.complete(out);
+        this.executor.submit(() -> {
+            if (node_id == this.mesh.getNodeId()) {
+                this.clientLog.finer("[writeBlock] Block is located on local node");
 
-            } catch (FileNotFoundException e) {
-                future.completeExceptionally(e);
-            }
+                BlockDescriptor localBlock = this.blocks.getOrDefault(block.getBlockName(), block);
+                this.blocks.putIfAbsent(localBlock.getBlockName(), localBlock);
+                try {
+                    OutputStream out = new BufferedOutputStream(new FileOutputStream(localBlock.getFile(), append));
+                    future.complete(out);
+                    this.clientLog.finer("[writeBlock] Request handled locally");
 
-            return future;
-        }
-
-        Socketplexer plexer0;
-        try {
-            plexer0 = new Socketplexer(mesh.tryConnect(node_id), this.executor);
-
-        } catch (SocketTimeoutException | SocketException | NodeUnavailableException e) {
-            future.completeExceptionally(e);
-            e.printStackTrace();
-            return future;
-        }
-
-        final Socketplexer plexer = plexer0;
-
-        this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
-            gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
-            gen.writeEndObject();
-        }));
-
-        this.executor.submit(new JsonStreamParser(plexer.getInputChannel(1), true, (field) -> {
-            if (!field.isObject()) return;
-
-            JsonField.ObjectField packet = (JsonField.ObjectField) field;
-
-            if (!packet.containsKey(Constants.REQUEST_TYPE_PROPERTY) ||
-                    !packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY).equals(append ? RESPONSE_APPEND_BLOCK : RESPONSE_WRITE_BLOCK)) {
-                System.err.println("[DFS][writeBlock] Received bad response type");
-                future.completeExceptionally(new Exception("Bad response type"));
-            }
-
-            if (packet.containsKey(Constants.PROPERTY_RESPONSE_STATUS) &&
-                    packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
-                if (future.isCancelled()) plexer.terminate();
-                else {
-                    future.complete(plexer.openOutputChannel(2));
+                } catch (FileNotFoundException e) {
+                    this.clientLog.warn("[writeBlock] There was a problem opening a local FileOutputStream");
+                    e.printStackTrace();
+                    future.completeExceptionally(e);
                 }
 
-            } else {
-                System.err.println("[DFS][writeBlock] Received response code: " +
-                        packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS));
-                future.completeExceptionally(new Exception("Received response code: " +
-                        packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
+                return;
             }
-        }));
+
+            Socket connection;
+
+            this.clientLog.finer("[writeBlock] Attempting to connect to node " + node_id);
+            try {
+                connection = mesh.tryConnect(node_id);
+                this.clientLog.finer("[writeBlock] Connected to remote node successfully");
+
+            } catch (SocketTimeoutException | SocketException | NodeUnavailableException e) {
+                future.completeExceptionally(e);
+                this.clientLog.warn("[writeBlock] Unable to connect to remote node");
+                e.printStackTrace();
+                return;
+            }
+
+            this.clientLog.trace("[writeBlock] Creating Socketplexer");
+            final Socketplexer plexer = new Socketplexer(connection, this.executor);
+
+            this.clientLog.finest("[writeBlock] Sending request headers");
+            this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
+                gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
+                gen.writeEndObject();
+            }));
+
+            this.clientLog.finest("[writeBlock] Parsing response headers");
+            this.executor.submit(new JsonStreamParser(plexer.getInputChannel(1), true, (field) -> {
+                if (!field.isObject()) return;
+
+                JsonField.ObjectField packet = (JsonField.ObjectField) field;
+
+                if (!packet.containsKey(Constants.REQUEST_TYPE_PROPERTY) ||
+                        !packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY).equals(append ? RESPONSE_APPEND_BLOCK : RESPONSE_WRITE_BLOCK)) {
+                    this.clientLog.warn("[writeBlock] Received bad response type");
+                    future.completeExceptionally(new Exception("Bad response type"));
+                }
+
+                if (packet.containsKey(Constants.PROPERTY_RESPONSE_STATUS) &&
+                        packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
+                    if (future.isCancelled()) {
+                        plexer.terminate();
+                        this.clientLog.fine("[writeBlock] Ready to write block, but request was canceled.");
+
+                    } else {
+                        future.complete(plexer.openOutputChannel(2));
+                        this.clientLog.fine("[writeBlock] Ready to write block to remote node");
+                    }
+
+                } else {
+                    this.clientLog.warn("[writeBlock] Received response code: " +
+                            packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS));
+                    future.completeExceptionally(new Exception("Received response code: " +
+                            packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
+                }
+            }));
+
+        });
 
         return future;
     }
