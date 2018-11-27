@@ -258,7 +258,10 @@ public class Socketplexer {
                     gen.writeNumberField(CHANNEL_ID_FIELD_NAME, id);
                     gen.writeNumberField(BUFFER_SIZE_FIELD_NAME, bufferCapacity);
                     gen.writeEndObject();
+                    this.logger.trace("[openOutputChannel] OpenChannel command written");
                 });
+
+                this.logger.debug("[openOutputChannel] OpenChannel command enqueued");
 
                 RingBuffer buffer = new RingBuffer(bufferCapacity);
                 this.pendingChannels.put(id, buffer);
