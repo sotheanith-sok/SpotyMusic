@@ -103,7 +103,6 @@ public class Socketplexer {
         this.logger.trace("[multiplexer] Creating DataOutputStream");
         DataOutputStream out = new DataOutputStream(this.socket.outputStream());
 
-
         this.logger.trace("[multiplexer] Initializing transfer buffer");
         byte[] trx = new byte[Constants.PACKET_SIZE - 8];
         boolean dataWritten = false;
@@ -112,7 +111,7 @@ public class Socketplexer {
         while (!this.socket.isReceiveClosed()) {
             dataWritten = false;
 
-            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
                 int channel = entry.getKey();
                 RingBuffer buffer = entry.getValue();
 
@@ -128,7 +127,9 @@ public class Socketplexer {
                         this.inputChannels.remove(channel);
 
                     } else if (buffer.available() > 0) {
+                        this.logger.trace("[multiplexer] Reading data from output channel buffer " + channel);
                         int length = buffer.getInputStream().read(trx, 0, trx.length);
+                        this.logger.trace("[multiplexer] Read " + length + " bytes from buffer, writing to socket");
                         out.writeInt(channel);
                         out.writeInt(length);
                         out.write(trx, 0, length);
@@ -258,7 +259,7 @@ public class Socketplexer {
                     gen.writeNumberField(CHANNEL_ID_FIELD_NAME, id);
                     gen.writeNumberField(BUFFER_SIZE_FIELD_NAME, bufferCapacity);
                     gen.writeEndObject();
-                    this.logger.trace("[openOutputChannel] OpenChannel command written");
+                    this.logger.trace("[openOutputChannel] OpenChannel command written " + this.outputChannels.get(0).available() + " bytes in control buffer");
                 });
 
                 this.logger.debug("[openOutputChannel] OpenChannel command enqueued");
