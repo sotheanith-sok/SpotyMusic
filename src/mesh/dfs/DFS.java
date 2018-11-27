@@ -50,7 +50,7 @@ public class DFS {
         this.executor = executor;
 
         this.serverLog = new Logger("DFS][server", Constants.TRACE);
-        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
+        this.clientLog = new Logger("DFS][client", Constants.TRACE);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -118,11 +118,11 @@ public class DFS {
 
     private void organizeBlocks() {
         if (this.blockOrganizerRunning.compareAndSet(false, true)) {
-            this.serverLog.debug("[organizeBlocks] Submitting block organizer task");
+            this.clientLog.debug("[organizeBlocks] Submitting block organizer task");
             this.executor.submit(() -> {
-                this.serverLog.log("[organiseBlocks] Block Organizer starting");
+                this.clientLog.log("[organiseBlocks] Block Organizer starting");
                 if (this.mesh.getAvailableNodes().size() < 2) {
-                    this.serverLog.log("[organizeBlocks] There are not enough connected nodes to reorganize blocks");
+                    this.clientLog.log("[organizeBlocks] There are not enough connected nodes to reorganize blocks");
                     this.blockOrganizerRunning.set(false);
                     return;
                 }
@@ -131,10 +131,10 @@ public class DFS {
                 for (BlockDescriptor block : this.blocks.values()) {
                     int blockId = block.getBlockId();
                     int bestId = this.getBestId(blockId);
-                    this.serverLog.trace("[organizeBlocks] Block " + blockId + " best matches node " + bestId);
+                    this.clientLog.trace("[organizeBlocks] Block " + blockId + " best matches node " + bestId);
 
                     if (bestId != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 2) {
-                        this.serverLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
+                        this.clientLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
 
                         InputStream in = null;
                         Future<OutputStream> fout = this.writeBlock(block);
@@ -151,10 +151,10 @@ public class DFS {
                             in.close();
                             out.close();
 
-                            this.serverLog.finer("[organizeBlocks] Moved block " + block.getBlockName() + " to node " + bestId);
+                            this.clientLog.finer("[organizeBlocks] Moved block " + block.getBlockName() + " to node " + bestId);
 
                             if (block.getBlockNumber() == 0) {
-                                this.serverLog.finest("[organiseBlocks] Moved first block in file, copying file descriptor to destination node");
+                                this.clientLog.finest("[organiseBlocks] Moved first block in file, copying file descriptor to destination node");
                                 FileDescriptor descriptor = this.files.get(block.getFileName());
                                 if (descriptor != null) {
                                     this.putFileMetadata(descriptor, bestId);
@@ -164,7 +164,7 @@ public class DFS {
 
                         } catch (TimeoutException e) {
                             fout.cancel(false);
-                            this.serverLog.warn("[enumerateBlocks] Timed out while trying to move block to another node");
+                            this.clientLog.warn("[enumerateBlocks] Timed out while trying to move block to another node");
                             e.printStackTrace();
 
                             if (in != null) {
@@ -173,19 +173,19 @@ public class DFS {
                             break;
 
                         } catch (Exception e) {
-                            this.serverLog.warn("[enumerateBlocks] Exception while trying to transfer block");
+                            this.clientLog.warn("[enumerateBlocks] Exception while trying to transfer block");
                             e.printStackTrace();
                             break;
                         }
                     }
                 }
 
-                this.serverLog.log("[organizeBlocks] All local blocks belong on this node");
+                this.clientLog.log("[organizeBlocks] All local blocks belong on this node");
                 this.blockOrganizerRunning.set(false);
             });
 
         } else {
-            this.serverLog.debug("[organizeBlocks] Block Organizer is already running");
+            this.clientLog.debug("[organizeBlocks] Block Organizer is already running");
         }
     }
 
@@ -567,6 +567,7 @@ public class DFS {
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
                 gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
                 gen.writeEndObject();
+                this.clientLog.finest("[writeBlock] Request headers sent");
             }));
 
             this.clientLog.finest("[writeBlock] Parsing response headers");
@@ -574,10 +575,12 @@ public class DFS {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField packet = (JsonField.ObjectField) field;
+                this.clientLog.finest("[writeBlock] Received response headers");
 
                 if (!packet.containsKey(Constants.REQUEST_TYPE_PROPERTY) ||
                         !packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY).equals(append ? RESPONSE_APPEND_BLOCK : RESPONSE_WRITE_BLOCK)) {
                     this.clientLog.warn("[writeBlock] Received bad response type");
+                    plexer.terminate();
                     future.completeExceptionally(new Exception("Bad response type"));
                 }
 
@@ -595,11 +598,11 @@ public class DFS {
                 } else {
                     this.clientLog.warn("[writeBlock] Received response code: " +
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS));
+                    plexer.terminate();
                     future.completeExceptionally(new Exception("Received response code: " +
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
             }));
-
         });
 
         return future;
