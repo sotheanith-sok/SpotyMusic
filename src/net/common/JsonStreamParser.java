@@ -49,6 +49,8 @@ public class JsonStreamParser implements Runnable {
                 this.processToken(this.parser.getCurrentToken(), this.parser);
             }
 
+            if (this.debug) System.out.println("[JsonStreamParser] Parser reports input source ended");
+
         } catch (IOException e) {
             this.finished();
             System.err.println("[JsonStreamParser][update] IOException while parsing JSON input stream");
