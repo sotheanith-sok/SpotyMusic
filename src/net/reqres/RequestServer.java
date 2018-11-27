@@ -55,6 +55,7 @@ public class RequestServer {
      * @throws SocketException if there is aa problem opening the server socket
      */
     public RequestServer(ExecutorService executor, int port) throws SocketException {
+        this.executor = executor;
         this.socket = new ServerSocket(port, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
         this.logger = new Logger("RequestServer", Constants.TRACE);
@@ -69,6 +70,7 @@ public class RequestServer {
      * @throws SocketException if there is a problem opening the server socket
      */
     public RequestServer(ExecutorService executor, SocketAddress address) throws SocketException {
+        this.executor = executor;
         this.socket = new ServerSocket(address, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
         this.logger = new Logger("RequestServer", Constants.DEBUG);
