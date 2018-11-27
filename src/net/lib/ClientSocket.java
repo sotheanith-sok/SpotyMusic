@@ -74,23 +74,23 @@ public class ClientSocket extends Socket {
     protected void onSyn(InetAddress remote, int port, int id) {
         if (this.state.compareAndSet(SYN_SENT, ESTABLISHED)) {
             this.sendAck(id);
-            System.out.println("[ClientSocket][onSyn] Connection established");
+            this.logger.log("[ClientSocket][onSyn] Connection established");
 
         } else {
-            System.err.println("[ClientSocket][onSyn] Received unexpected SYN packet");
+            this.logger.fine("[ClientSocket][onSyn] Received unexpected SYN packet");
         }
     }
 
     @Override
     public void onClose(int id) {
-        //if (this.state.get() == ESTABLISHED) System.out.println("[ClientSocket][onClose] Server sent CLOSE packet");
+        this.logger.fine("[ClientSocket][onClose] Server sent CLOSE packet");
         super.onClose(id);
     }
 
     @Override
     protected void onClosed() {
         this.socket.close();
-        if (this.debug <= Constants.FINE) System.out.println("[ClientSocket][onClosed] ClientSocket closed successfully");
+        this.logger.log("[ClientSocket][onClosed] ClientSocket closed successfully");
         //System.out.println("[ClientSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
     }
 
