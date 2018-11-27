@@ -1,5 +1,6 @@
 package net.common;
 
+import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -64,7 +65,7 @@ public class AsyncJsonStreamGenerator implements Runnable {
         JsonGenerator gen = null;
 
         try {
-            gen = factory.createGenerator(this.out);
+            gen = factory.createGenerator(this.out, JsonEncoding.UTF8);
 
         } catch (IOException e) {
             System.err.println("[AsyncJsonStreamGenerator][run] IOException while creating JsonGenerator");
@@ -77,6 +78,7 @@ public class AsyncJsonStreamGenerator implements Runnable {
                 try {
                     while (!this.queue.isEmpty()) {
                         this.queue.removeFirst().generate(gen);
+                        gen.flush();
                     }
 
                 } catch (IOException e) {
