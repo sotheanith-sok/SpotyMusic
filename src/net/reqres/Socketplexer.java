@@ -77,7 +77,7 @@ public class Socketplexer {
         synchronized (this.inputsLock) {
             this.inputChannels.put(0, controlRecBuf);
         }
-        executor.submit(new JsonStreamParser(controlRecBuf.getInputStream(), false, this::onControlPacket), true);
+        executor.submit(new JsonStreamParser(controlRecBuf.getInputStream(), false, this::onControlPacket, true));
 
         RingBuffer controlSendBuf = new RingBuffer(DEFAULT_SUB_BUFFER_SIZE);
         synchronized (this.outputsLock) {
@@ -85,6 +85,7 @@ public class Socketplexer {
         }
         this.controlWriter = new AsyncJsonStreamGenerator(controlSendBuf.getOutputStream());
         executor.submit(this.controlWriter);
+        this.controlWriter.enqueue((gen) -> gen.writeStartArray());
 
         this.logger.trace(" Starting mux/demux threads");
         executor.submit(this::demultiplexer);
