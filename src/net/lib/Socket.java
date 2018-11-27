@@ -92,7 +92,7 @@ public abstract class Socket {
         this.receiver.setName("[Socket][receiver]");
 
         this.logger = new Logger("Socket", Constants.TRACE);
-        this.logger.info(" New socket connected to: " + remote + ":" + port);
+        this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 
     // public API and convenience methods
