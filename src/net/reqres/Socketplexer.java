@@ -69,7 +69,7 @@ public class Socketplexer {
         synchronized (this.inputsLock) {
             this.inputChannels.put(0, controlRecBuf);
         }
-        executor.submit(new JsonStreamParser(controlRecBuf.getInputStream(), false, this::onControlPacket));
+        executor.submit(new JsonStreamParser(controlRecBuf.getInputStream(), false, this::onControlPacket), true);
 
         RingBuffer controlSendBuf = new RingBuffer(DEFAULT_SUB_BUFFER_SIZE);
         synchronized (this.outputsLock) {

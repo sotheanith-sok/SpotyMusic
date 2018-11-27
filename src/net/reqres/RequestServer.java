@@ -73,7 +73,7 @@ public class RequestServer {
         this.executor = executor;
         this.socket = new ServerSocket(address, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
-        this.logger = new Logger("RequestServer", Constants.DEBUG);
+        this.logger = new Logger("RequestServer", Constants.TRACE);
         this.socket.open();
     }
 
@@ -169,7 +169,8 @@ public class RequestServer {
 
             logger.trace("[ConnectionHandler] Getting header channel");
             Future<InputStream> requestChannel = plexer.waitInputChannel(1);
-            try (InputStream requestStream = requestChannel.get()) {
+            try {
+                InputStream requestStream = requestChannel.get(Constants.TIMEOUT_DELAY, TimeUnit.MILLISECONDS);
                 logger.debug("[ConnectionHandler] Parsing request header");
                 JsonStreamParser requestParser = new JsonStreamParser(requestStream, true, (header) -> {
                     onRequest(plexer, header);
@@ -184,8 +185,8 @@ public class RequestServer {
                 logger.error("[ConnectionHandler] Input channel resolution encountered an exception");
                 e.printStackTrace();
 
-            } catch (IOException e) {
-                logger.error("[ConnectionHandler] IOException while trying to get request channel");
+            } catch (TimeoutException e) {
+                logger.error("ConnectionHandler] Timed out waiting for request header channel");
                 e.printStackTrace();
             }
         }
