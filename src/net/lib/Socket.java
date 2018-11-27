@@ -91,7 +91,7 @@ public abstract class Socket {
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
 
-        this.logger = new Logger("Socket", Constants.INFO);
+        this.logger = new Logger("Socket", Constants.DEBUG);
         this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 
@@ -518,7 +518,7 @@ public abstract class Socket {
 
         } else {
             // if not acknowledged in order
-            System.out.println("[Socket][onAck] ACK received out of order, resending last packet");
+            this.logger.finer("[onAck] ACK received out of order, resending last packet. Received " + ackId + " expected " + this.acknowledgedId.get());
             this.sendTrivial(lastSend, offset, length);
         }
     }

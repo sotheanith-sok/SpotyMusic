@@ -197,10 +197,14 @@ public class Socketplexer {
                 channel = in.readInt();
                 length = in.readInt();
 
+                this.logger.trace("[demultiplexer] Receiving " + length + " bytes for channel " + channel);
+
                 off = 0;
                 read = 0;
                 while ((read += in.read(trx, off, length - read)) < length) off += read;
                 this.logger.finest("[demultiplexer] Demultiplexed " + length + " bytes from channel " + channel);
+                System.out.write(trx, 0, length);
+                System.out.println();
 
                 synchronized (this.inputsLock) {
                     this.inputChannels.get(channel).getOutputStream().write(trx, 0, length);
@@ -260,7 +264,6 @@ public class Socketplexer {
                     gen.writeNumberField(CHANNEL_ID_FIELD_NAME, id);
                     gen.writeNumberField(BUFFER_SIZE_FIELD_NAME, bufferCapacity);
                     gen.writeEndObject();
-                    this.logger.trace("[openOutputChannel] OpenChannel command written " + this.outputChannels.get(0).available() + " bytes in control buffer");
                 });
 
                 this.logger.debug("[openOutputChannel] OpenChannel command enqueued");

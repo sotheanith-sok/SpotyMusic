@@ -164,7 +164,7 @@ public class DFS {
 
                         } catch (TimeoutException e) {
                             fout.cancel(false);
-                            this.clientLog.warn("[enumerateBlocks] Timed out while trying to move block to another node");
+                            this.clientLog.warn("[organizeBlocks] Timed out while trying to move block to another node");
                             e.printStackTrace();
 
                             if (in != null) {
