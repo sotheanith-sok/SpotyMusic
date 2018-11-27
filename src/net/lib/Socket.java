@@ -386,7 +386,7 @@ public abstract class Socket {
             throw new SocketTimeoutException("Socket timed out while trying to send data");
         }
 
-        this.logger.trace("[sendPacket] Packet id=" + id + " sent and acknowledged");
+        this.logger.debug("[sendPacket] Packet id=" + id + " sent and acknowledged");
     }
 
     protected void sendTrivial(byte[] packet, int off, int len) {
