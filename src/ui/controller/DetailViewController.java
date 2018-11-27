@@ -61,8 +61,10 @@ public class DetailViewController implements Initializable {
                }
 
             }
+            if(!row.isEmpty()){
+               row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
+            }
          });
-         row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
          return row;
       });
       tableView.setItems(songObservableList);

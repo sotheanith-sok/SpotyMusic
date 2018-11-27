@@ -42,13 +42,15 @@ public class SongsContextMenu extends ContextMenu {
       remover.getItems().clear();
       for(Playlist playlist : playlists){
          //Create menu for adder
-         MenuItem item0 = new MenuItem(playlist.getName());
-         item0.setUserData(playlist);
-         adder.getItems().add(item0);
-         item0.setOnAction(event -> {
-            addToPlaylist((Playlist) ((MenuItem) event.getSource()).getUserData());
-         });
-
+         if(!playlist.getSongs().contains(song)){
+            MenuItem item0 = new MenuItem(playlist.getName());
+            item0.setUserData(playlist);
+            adder.getItems().add(item0);
+            item0.setOnAction(event -> {
+               addToPlaylist((Playlist) ((MenuItem) event.getSource()).getUserData());
+            });
+         }
+         
          //Create menu for remover
          if (playlist.getSongs().contains(song)){
             MenuItem item1 = new MenuItem(playlist.getName());

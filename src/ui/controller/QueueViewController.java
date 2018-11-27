@@ -60,8 +60,11 @@ public class QueueViewController implements Initializable {
                Song clickedRow = row.getItem();
                mouseClicked(clickedRow);
             }
+            if(!row.isEmpty()){
+               row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
+            }
          });
-         row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
+
          return row;
       });
 

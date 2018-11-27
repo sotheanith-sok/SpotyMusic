@@ -40,6 +40,7 @@ public class SearchHandler implements Runnable {
 
         // connect to other nodes
         for (Integer node : nodes) {
+           if (node == this.library.mesh.getNodeId()) continue;
             try {
                 Socket socket = this.library.mesh.tryConnect(node);
                 Socketplexer socketplexer = new Socketplexer(socket, this.library.executor);
