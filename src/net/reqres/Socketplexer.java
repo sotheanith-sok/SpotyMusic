@@ -100,10 +100,15 @@ public class Socketplexer {
     private void multiplexer() {
         this.logger.log("[multiplexer] Multiplexer thread starting");
 
+        this.logger.trace("[multiplexer] Creating DataOutputStream");
         DataOutputStream out = new DataOutputStream(this.socket.outputStream());
+
+
+        this.logger.trace("[multiplexer] Initializing transfer buffer");
         byte[] trx = new byte[Constants.PACKET_SIZE - 8];
         boolean dataWritten = false;
 
+        this.logger.trace("[multiplexer] Entering multiplexing loop");
         while (!this.socket.isReceiveClosed()) {
             dataWritten = false;
 
@@ -129,6 +134,9 @@ public class Socketplexer {
                         out.write(trx, 0, length);
                         dataWritten = true;
                         this.logger.finest("[multiplexer] Multiplexed " + length + " bytes from channel " + channel);
+
+                    } else {
+                        //this.logger.trace("[multiplexer] Channel " + channel + " has no data to send");
                     }
 
                 } catch (IOException e) {
@@ -234,16 +242,23 @@ public class Socketplexer {
      * @see #waitInputChannel(int)
      */
     public OutputStream openOutputChannel(int id, int bufferCapacity) {
+        this.logger.fine("[openOutputChannel Opening output channel " + id);
         if (id <= 0) throw new IllegalArgumentException("Invalid channel ID. ID must be greater than zero");
         synchronized (this.outputsLock) {
             if (this.outputChannels.containsKey(id)) {
-                throw new IllegalArgumentException("There is already an output channel with id number " + id);
+                this.logger.finer("[openOutputChannel] Output channel already opened");
+                return this.outputChannels.get(id).getOutputStream();
 
             } else {
-                JsonField.ObjectField command = JsonField.emptyObject();
-                command.setProperty(COMMAND_FIELD_NAME, COMMAND_OPEN_CHANNEL);
-                command.setProperty(CHANNEL_ID_FIELD_NAME, id);
-                command.setProperty(BUFFER_SIZE_FIELD_NAME, bufferCapacity);
+                this.logger.finer("[openOutputChannel] Creating new output channel");
+
+                this.controlWriter.enqueue((gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_OPEN_CHANNEL);
+                    gen.writeNumberField(CHANNEL_ID_FIELD_NAME, id);
+                    gen.writeNumberField(BUFFER_SIZE_FIELD_NAME, bufferCapacity);
+                    gen.writeEndObject();
+                });
 
                 RingBuffer buffer = new RingBuffer(bufferCapacity);
                 this.pendingChannels.put(id, buffer);
@@ -297,7 +312,10 @@ public class Socketplexer {
      */
     public Future<InputStream> waitInputChannel(int id) {
         synchronized (this.inputsLock) {
-            if (this.waitingChannels.containsKey(id)) {
+            if (this.inputChannels.containsKey(id)) {
+                return CompletableFuture.completedFuture(this.inputChannels.get(id).getInputStream());
+
+            } else if (this.waitingChannels.containsKey(id)) {
                 return this.waitingChannels.get(id);
 
             } else {
@@ -354,6 +372,8 @@ public class Socketplexer {
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         RingBuffer buffer = new RingBuffer(bufferSize);
 
+        this.logger.fine("[onOpenChannel] Received OpenChannel for channel " + channel);
+
         synchronized (this.inputsLock) {
             this.inputChannels.put(channel, buffer);
 
@@ -364,6 +384,7 @@ public class Socketplexer {
             }
         }
 
+        this.logger.debug("[onOpenChannel] Sending OpenChannelAck");
         this.controlWriter.enqueue((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_OPEN_ACK);
@@ -380,6 +401,8 @@ public class Socketplexer {
      */
     private void onOpenAck(JsonField.ObjectField packet) {
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
+        this.logger.fine("[onOpenAck] Received OpenAck for channel " + channel);
+
         synchronized (this.outputsLock) {
             RingBuffer buffer = this.pendingChannels.get(channel);
             this.pendingChannels.remove(channel);
@@ -395,6 +418,8 @@ public class Socketplexer {
      */
     private void onCloseChannel(JsonField.ObjectField packet) {
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
+        this.logger.fine("[onCloseChannel] Received CloseChannel command for channel " + channel);
+
         synchronized (this.inputsLock) {
             RingBuffer buffer = this.inputChannels.get(channel);
             this.inputChannels.remove(channel);
@@ -404,6 +429,7 @@ public class Socketplexer {
             } catch (IOException e) {}
         }
 
+        this.logger.debug("[onCloseChannel] Sending CloseChannelAck");
         this.controlWriter.enqueue((gen) -> {
             gen.writeStartObject();
             gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_ACK);
@@ -421,6 +447,9 @@ public class Socketplexer {
      * @param packet the received acknowledge packet
      */
     private void onCloseAck(JsonField.ObjectField packet) {
+        try {
+            this.logger.fine("[onCloseAck] Received CloseAck  for channel " + packet.getLongProperty(CHANNEL_ID_FIELD_NAME));
+        } catch (Exception e) {}
         this.checkShouldClose();
     }
 
@@ -439,6 +468,7 @@ public class Socketplexer {
             channelsOpened += this.inputChannels.size() - 1;
         }
 
+        this.logger.finest("[checkShouldClose] " + channelsOpened + " use channels opened");
         if (channelsOpened == 0) {
             // no more user channels opened
             this.controlWriter.close();
@@ -455,7 +485,7 @@ public class Socketplexer {
     private void onControlPacket(JsonField field) {
         if (!field.isObject()) return;
 
-        this.logger.debug("[onCOntrolPacket] Received control packet");
+        this.logger.debug("[onControlPacket] Received control packet");
 
         JsonField.ObjectField packet = (JsonField.ObjectField) field;
         String type = packet.getStringProperty(COMMAND_FIELD_NAME);
