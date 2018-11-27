@@ -3,6 +3,7 @@ package net.reqres;
 import net.Constants;
 import net.common.*;
 import net.lib.Socket;
+import utils.Logger;
 import utils.RingBuffer;
 
 import java.io.*;
@@ -37,6 +38,8 @@ public class Socketplexer {
     private final Object outputsLock;
     private HashMap<Integer, RingBuffer> outputChannels;
 
+    private Logger logger;
+
     private AsyncJsonStreamGenerator controlWriter;
 
     private final Object inputsLock;
@@ -55,16 +58,21 @@ public class Socketplexer {
     public Socketplexer(Socket socket, ExecutorService executor) {
         this.socket = socket;
 
+        this.logger = new Logger("Socketplexer", Constants.TRACE);
+
+        //this.logger.trace(" Initializing channel collections");
         this.outputChannels = new HashMap<>();
         this.inputChannels = new HashMap<>();
         this.pendingChannels = new HashMap<>();
         this.waitingChannels = new HashMap<>();
 
+        //this.logger.trace(" Initializing locks");
         this.outputsLock = new Object();
         this.inputsLock = new Object();
 
         this.multiplexerLock = new Object();
 
+        this.logger.trace(" Initializing control buffers");
         RingBuffer controlRecBuf = new RingBuffer(DEFAULT_SUB_BUFFER_SIZE);
         synchronized (this.inputsLock) {
             this.inputChannels.put(0, controlRecBuf);
@@ -78,6 +86,7 @@ public class Socketplexer {
         this.controlWriter = new AsyncJsonStreamGenerator(controlSendBuf.getOutputStream());
         executor.submit(this.controlWriter);
 
+        this.logger.trace(" Starting mux/demux threads");
         executor.submit(this::demultiplexer);
         executor.submit(this::multiplexer);
     }
@@ -89,6 +98,8 @@ public class Socketplexer {
      * data, and sends that data over the underlying socket.
      */
     private void multiplexer() {
+        this.logger.log("[multiplexer] Multiplexer thread starting");
+
         DataOutputStream out = new DataOutputStream(this.socket.outputStream());
         byte[] trx = new byte[Constants.PACKET_SIZE - 8];
         boolean dataWritten = false;
@@ -102,12 +113,14 @@ public class Socketplexer {
 
                 try {
                     if (!buffer.isReadOpened()) {
+                        this.logger.finer("[multiplexer] Sending channel close command for channel " + channel);
                         this.controlWriter.enqueue((gen) -> {
                             gen.writeStartObject();
                             gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_CHANNEL);
                             gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
                             gen.writeEndObject();
                         });
+                        this.inputChannels.remove(channel);
 
                     } else if (buffer.available() > 0) {
                         int length = buffer.getInputStream().read(trx, 0, trx.length);
@@ -115,10 +128,11 @@ public class Socketplexer {
                         out.writeInt(length);
                         out.write(trx, 0, length);
                         dataWritten = true;
+                        this.logger.finest("[multiplexer] Multiplexed " + length + " bytes from channel " + channel);
                     }
 
                 } catch (IOException e) {
-                    System.err.println("[Socketplexer][multiplexer] IOException while trying to multiplex data");
+                    this.logger.error("[multiplexer] IOException while trying to multiplex data");
                     e.printStackTrace();
                 }
             }
@@ -128,25 +142,27 @@ public class Socketplexer {
                     try {
                         this.multiplexerLock.wait(100);
                     } catch (InterruptedException e) {
-                        System.err.println("[Socketplexer][multiplexer] Multiplexer thread interrupted while sleeping");
+                        this.logger.info("[multiplexer] Multiplexer thread interrupted while sleeping");
                         //e.printStackTrace();
                     }
                 }
             }
         }
 
+        this.logger.log("[multiplexer] Socket receiving closed, terminating multiplexer");
+
         synchronized (this.inputsLock) {
             for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
                 try {
                     entry.getValue().getInputStream().close();
                 } catch (IOException e) {
-                    System.err.println("[Socketplexer][terminate] IOException while closing sending sub-buffer");
+                    this.logger.warn("[multiplexer] IOException while closing sending sub-buffer");
                     //e.printStackTrace();
                 }
             }
         }
 
-        System.out.println("[Socketplexer][multiplexer] Socketplexer multiplexing thread shutting down");
+        this.logger.log("[multiplexer] Multiplexer thread shutting down");
     }
 
     /**
@@ -156,6 +172,8 @@ public class Socketplexer {
      * input channel's buffer.
      */
     private void demultiplexer() {
+        this.logger.log("[demultiplexer] Demultiplexer thread starting");
+
         DataInputStream in = new DataInputStream(this.socket.inputStream());
         byte[] trx = new byte[Constants.PACKET_SIZE - 8];
 
@@ -172,28 +190,33 @@ public class Socketplexer {
                 off = 0;
                 read = 0;
                 while ((read += in.read(trx, off, length - read)) < length) off += read;
+                this.logger.finest("[demultiplexer] Demultiplexed " + length + " bytes from channel " + channel);
 
                 synchronized (this.inputsLock) {
                     this.inputChannels.get(channel).getOutputStream().write(trx, 0, length);
+                    this.logger.debug("[demultiplexer] Transferred data to receive buffer");
                 }
 
             } catch (IOException e) {
+                this.logger.warn("[demultiplexer] IOException while demultiplexing data");
                 e.printStackTrace();
             }
         }
+
+        this.logger.log("[demultiplexer] Socket closed, terminating demultiplexer");
 
         synchronized (this.outputsLock) {
             for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
                 try {
                     entry.getValue().getOutputStream().close();
                 } catch (IOException e) {
-                    System.err.println("[Socketplexer][demultiplexer] IOException while closing receiving sub-buffer");
+                    this.logger.warn("[demultiplexer] IOException while closing receiving sub-buffer");
                     //e.printStackTrace();
                 }
             }
         }
 
-        System.out.println("[Socketplexer][demultiplexer] Socketplexer demultiplexer thread shutting down");
+        this.logger.log("[demultiplexer] Demultiplexer shutting down");
     }
 
     /**
@@ -289,12 +312,14 @@ public class Socketplexer {
      * Forcibly terminates all channels and closes the underlying Socket.
      */
     public void terminate() {
+        this.logger.fine("[terminate] Terminating socketplexer");
+
         synchronized (this.outputsLock) {
             for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
                 try {
                     entry.getValue().getOutputStream().close();
                 } catch (IOException e) {
-                    System.err.println("[Socketplexer][terminate] IOException while closing receiving sub-buffer");
+                    this.logger.warn("[terminate] IOException while closing receiving sub-buffer");
                     //e.printStackTrace();
                 }
             }
@@ -305,7 +330,7 @@ public class Socketplexer {
                 try {
                     entry.getValue().getInputStream().close();
                 } catch (IOException e) {
-                    System.err.println("[Socketplexer][terminate] IOException while closing sending sub-buffer");
+                    this.logger.warn("[terminate] IOException while closing sending sub-buffer");
                     //e.printStackTrace();
                 }
             }
@@ -430,14 +455,17 @@ public class Socketplexer {
     private void onControlPacket(JsonField field) {
         if (!field.isObject()) return;
 
+        this.logger.debug("[onCOntrolPacket] Received control packet");
+
         JsonField.ObjectField packet = (JsonField.ObjectField) field;
         String type = packet.getStringProperty(COMMAND_FIELD_NAME);
+        this.logger.fine("[onControlPacket] Received control packet: " + type);
         switch (type) {
             case COMMAND_OPEN_CHANNEL: this.onOpenChannel(packet); break;
             case COMMAND_OPEN_ACK: this.onOpenAck(packet); break;
             case COMMAND_CLOSE_CHANNEL: this.onCloseChannel(packet); break;
             case COMMAND_CLOSE_ACK: this.onCloseAck(packet); break;
-            default : System.err.println("[Socketplexer][onControlPacket] Unrecognized packet type on control channel");
+            default : this.logger.info("[onControlPacket] Unrecognized packet type on control channel");
         }
     }
 
