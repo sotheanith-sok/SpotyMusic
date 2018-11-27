@@ -1,18 +1,17 @@
 package ui.controller;
 
+import connect.Playlist;
 import connect.Song;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import persistence.DataManager;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -55,13 +54,15 @@ public class DetailViewController implements Initializable {
       tableView.setRowFactory(tv -> {
          TableRow<Song> row = new TableRow<>();
          row.setOnMouseClicked(event -> {
-            if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY
-                    && event.getClickCount() == 2) {
-
+            if (!row.isEmpty() && event.getClickCount() == 2) {
                Song clickedRow = row.getItem();
-               mouseClicked(clickedRow);
+               if(event.getButton() == MouseButton.PRIMARY){
+                  mouseClicked(clickedRow);
+               }
+
             }
          });
+         row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
          return row;
       });
       tableView.setItems(songObservableList);

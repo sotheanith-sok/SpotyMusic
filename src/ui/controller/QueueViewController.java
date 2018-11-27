@@ -1,5 +1,6 @@
 package ui.controller;
 
+import connect.Playlist;
 import connect.Song;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -60,6 +61,7 @@ public class QueueViewController implements Initializable {
                mouseClicked(clickedRow);
             }
          });
+         row.setContextMenu(new SongsContextMenu(row.getItem(),(ObservableList<Playlist>)parentViewController.getCurrentLibrary().getPlaylists()));
          return row;
       });
 
