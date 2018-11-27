@@ -91,7 +91,7 @@ public abstract class Socket {
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
 
-        this.logger = new Logger("Socket", Constants.TRACE);
+        this.logger = new Logger("Socket", Constants.INFO);
         this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 

@@ -145,7 +145,7 @@ public class ServerSocket {
                     this.state.compareAndSet(SYN_RECEIVED, ESTABLISHED);
 
                 } catch (SocketTimeoutException e) {
-                    System.err.println("[SlaveSocket][sender] Timed out sending response SYN");
+                    this.logger.warn("[SlaveSocket][sender] Timed out sending response SYN");
                     e.printStackTrace();
                 }
             }
@@ -169,7 +169,7 @@ public class ServerSocket {
                 this.transfer.offer(packet, Constants.TIMEOUT_DELAY / 4, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 if (this.state.get() == CLOSED) return;
-                System.err.println("[SlaveSocket][transferPacket] Interrupted while trying to transfer packet to receiver thread");
+                this.logger.warn("[SlaveSocket][transferPacket] Interrupted while trying to transfer packet to receiver thread");
                 e.printStackTrace();
             }
         }
@@ -184,13 +184,13 @@ public class ServerSocket {
 
         @Override
         public void onClose(int id) {
-            //if (this.state.get() == ESTABLISHED) System.out.println("[SlaveSocket][onClose] Client sent CLOSE packet");
+            if (this.state.get() == ESTABLISHED) this.logger.log("[SlaveSocket][onClose] Client sent CLOSE packet");
             super.onClose(id);
         }
 
         @Override
         protected void onClosed() {
-            //System.out.println("[SlaveSocket][onClosed] SlaveSocket closed.");
+            this.logger.log("[SlaveSocket][onClosed] SlaveSocket closed.");
             //System.out.println("[SlaveSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
             //System.out.println("[SlaveSocket][onClosed] this.isReceiveClosed() = " + this.isReceiveClosed());
             socketClosed(this);

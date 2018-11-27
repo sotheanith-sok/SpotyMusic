@@ -137,11 +137,11 @@ public class DFS {
                         this.serverLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
 
                         InputStream in = null;
+                        Future<OutputStream> fout = this.writeBlock(block);
                         try {
-                            Future<OutputStream> fout = this.writeBlock(block);
                             in = new FileInputStream(block.getFile());
 
-                            OutputStream out = fout.get(5, TimeUnit.SECONDS);
+                            OutputStream out = fout.get(10, TimeUnit.SECONDS);
 
                             int trxd = 0;
                             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
@@ -163,6 +163,7 @@ public class DFS {
                             }
 
                         } catch (TimeoutException e) {
+                            fout.cancel(false);
                             this.serverLog.warn("[enumerateBlocks] Timed out while trying to move block to another node");
                             e.printStackTrace();
 
