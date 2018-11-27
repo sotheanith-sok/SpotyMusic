@@ -7,7 +7,7 @@ public class Constants {
     public static final int FOOTER_OVERHEAD = 8;
     public static final int PACKET_BUFFER_SIZE = PACKET_SIZE + HEADER_OVERHEAD + FOOTER_OVERHEAD;
     public static final long RESEND_DELAY = 2048;
-    public static final long TIMEOUT_DELAY = 4096;
+    public static final long TIMEOUT_DELAY = 1024 * 6;
     public static final int BUFFER_SIZE = 1024 * 200;
 
     // client package

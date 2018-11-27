@@ -54,6 +54,8 @@ public class MeshNode {
         this.logger = new Logger("MeshNode", Constants.TRACE);
         this.searchLock = new Object();
 
+        this.logger.info(" Server address: " + this.server.getServerSocket().localAddress() + ":" + this.server.getServerSocket().getPort());
+
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_QUERY, this::onNetQuery);
         this.multicastSocket.addHandler(PACKET_TYPE_NETWORK_INFO, this::onNetInfo);
         this.multicastSocket.addHandler(PACKET_TYPE_NET_JOIN, this::onNetJoin);
@@ -66,6 +68,8 @@ public class MeshNode {
         this.node_count = new AtomicInteger(0);
 
         this.nodeConnectListeners = new LinkedList<>();
+
+
 
         this.executor.submit(this::search);
     }
@@ -136,7 +140,7 @@ public class MeshNode {
                 this.logger.finest("[tryConnect] Connected to remote node successfully");
                 return socket;
 
-            } catch (SocketTimeoutException e) {
+            } catch (SocketException e) {
                 this.nodes.remove(nodeId);
                 this.sendNodeGone(nodeId);
                 this.logger.warn("[tryConnect] Connection timed out.");

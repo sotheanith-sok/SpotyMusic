@@ -169,6 +169,7 @@ public class DFS {
                             if (in != null) {
                                 try { in.close(); } catch (IOException e1) {}
                             }
+                            break;
 
                         } catch (Exception e) {
                             this.serverLog.warn("[enumerateBlocks] Exception while trying to transfer block");

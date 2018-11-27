@@ -33,11 +33,12 @@ public class ClientSocket extends Socket {
     }
 
     public void connect() throws SocketException, SocketTimeoutException {
+        this.state.set(Socket.LISTEN);
         this.socket = new DatagramSocket(new InetSocketAddress(0));
         this.socket.connect(this.remote, this.port);
         this.socket.setSoTimeout((int) Constants.TIMEOUT_DELAY / 2);
-        this.receiver.start();
         this.sendSyn();
+        this.receiver.start();
         this.state.set(SYN_SENT);
         //System.out.println("[ClientSocket] SYN acknowledged");
         this.sender.start();

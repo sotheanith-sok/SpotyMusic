@@ -2,6 +2,7 @@ package net.lib;
 
 import net.Constants;
 import utils.CRC64;
+import utils.Logger;
 import utils.RingBuffer;
 
 import java.io.*;
@@ -14,6 +15,8 @@ import java.util.zip.Checksum;
 public abstract class Socket {
 
     protected AtomicInteger state;
+
+    protected Logger logger;
 
     protected InetAddress remote;
     protected int port;
@@ -46,7 +49,7 @@ public abstract class Socket {
     protected final Object senderLock;
     protected AtomicBoolean reversePoke;
 
-   // receiving
+    // receiving
     /**
      * The ID of the last packet that was received and acknowledged.
      * Used to enforce packet ordering.
@@ -88,6 +91,8 @@ public abstract class Socket {
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
 
+        this.logger = new Logger("Socket", Constants.TRACE);
+        this.logger.info(" New socket connected to: " + remote + ":" + port);
     }
 
     // public API and convenience methods
@@ -126,6 +131,7 @@ public abstract class Socket {
     }
 
     public void close() {
+        this.logger.log("[close] Closing socket");
         try {
             this.sendBuffer.getOutputStream().close();
         } catch (IOException e) {
@@ -134,11 +140,12 @@ public abstract class Socket {
     }
 
     public void reversePoke() {
-       this.reversePoke.set(true);
-       synchronized (this.senderLock) {
-          this.senderLock.notifyAll();
-       }
-       //System.out.println("[Socket][reversePoke] Reverse Poke!");
+        this.logger.finer("[reversePoke] Sending reverse poke");
+        this.reversePoke.set(true);
+        synchronized (this.senderLock) {
+            this.senderLock.notifyAll();
+        }
+        //System.out.println("[Socket][reversePoke] Reverse Poke!");
     }
 
     // sending system
@@ -154,11 +161,12 @@ public abstract class Socket {
      * Sends the given data over the Socket. Blocks until the data is sent successfully.
      *
      * @param data the data to send
-     * @param off the offset at which to start in data
-     * @param len the length of data to send
+     * @param off  the offset at which to start in data
+     * @param len  the length of data to send
      */
     protected void sendMessage(byte[] data, int off, int len) throws SocketTimeoutException, IOException {
-        if (this.state.get() == CLOSED || this.state.get() == CLOSE_SENT) throw new IllegalStateException("Cannot send message data when connection being closed");
+        if (this.state.get() == CLOSED || this.state.get() == CLOSE_SENT)
+            throw new IllegalStateException("Cannot send message data when connection being closed");
         try {
             int id;
             // send packet
@@ -183,45 +191,62 @@ public abstract class Socket {
     }
 
     protected void sendSyn() throws SocketTimeoutException {
+        this.logger.log("[sendSyn] Sending SYN packet");
         this.lastReceivedTime = Math.max(this.lastReceivedTime, System.currentTimeMillis());
-        if (this.state.get() >= SYN_SENT) throw new IllegalStateException("SYN packet already sent");
+        if (this.state.get() >= SYN_SENT) {
+            this.logger.warn("[sendSyn] SYN packet already sent");
+            throw new IllegalStateException("SYN packet already sent");
+        }
         try {
+            this.logger.trace("[sendSyn] Building SYN packet");
             int id;
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(dest);
             out.writeInt(PacketType.SYN.value);
             out.writeInt(id = this.messageId.incrementAndGet());
+
+            this.logger.debug("[sendSyn] Sending SYN packet");
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
 
+            this.logger.debug("[sendSyn] SYN packet sent");
+
         } catch (SocketTimeoutException e) {
+            this.logger.warn("[sendSyn] Timed out while trying to send SYN packet");
             throw e;
 
         } catch (IOException e) {
-            System.err.println("[Socket][sendSync] IOException while sending SYNC packet");
+            this.logger.warn("[sendSync] IOException while sending SYN packet");
             e.printStackTrace();
         }
     }
 
     protected void sendAck(int ackId) {
-        if (this.state.get() == CLOSED) throw new IllegalStateException("Cannot send ACK on closed socket");
+        this.logger.trace("[sendAck] Sending ACK with AckID=" + ackId);
+        if (this.state.get() == CLOSED) {
+            this.logger.warn("[sendAck] Socket is closed");
+            throw new IllegalStateException("Cannot send ACK on closed socket");
+        }
         try {
+            this.logger.trace("[sendAck] Building ACK packet");
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(dest);
             out.writeInt(PacketType.ACK.value);
             out.writeInt(ackId);
             out.writeInt(this.getWindow());
+            this.logger.trace("[sendAck] Sending ACK packet");
             this.sendTrivial(dest.toByteArray(), 0, dest.size());
             this.lastReceivedId.set(ackId);
             if (this.debug <= Constants.FINEST) System.out.println("[Socket][sendAck] Sent Ack ackId=" + ackId);
 
         } catch (IOException e) {
-            System.err.println("[Socket][sendAck] IOException while trying to send ACK packet");
+            this.logger.warn("[sendAck] IOException while trying to send ACK packet");
             e.printStackTrace();
         }
     }
 
     protected void sendClose() throws SocketTimeoutException {
-        if (this.state.get() != ESTABLISHED && this.state.get() != CLOSE_RECEIVED) throw new IllegalStateException("Cannot send CLOSE packet when connection is not established");
+        if (this.state.get() != ESTABLISHED && this.state.get() != CLOSE_RECEIVED)
+            throw new IllegalStateException("Cannot send CLOSE packet when connection is not established");
         try {
             int id;
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
@@ -243,10 +268,10 @@ public abstract class Socket {
                 this.onClosed();
             }
 
-        }  catch (SocketTimeoutException e) {
+        } catch (SocketTimeoutException e) {
             throw e;
 
-        }catch (IOException e) {
+        } catch (IOException e) {
             System.err.println("[Socket][sendClose] IOException while trying to send CLOSE packet");
             e.printStackTrace();
         }
@@ -273,52 +298,76 @@ public abstract class Socket {
     /**
      * Sends the given packet, blocking until the packet is sent and acknowledged.
      *
-     * @param id the ID number of the packet to send
+     * @param id     the ID number of the packet to send
      * @param packet the data to send in the packet
-     * @param off the offset at which relevant packet data starts
-     * @param len the length of the data to send
+     * @param off    the offset at which relevant packet data starts
+     * @param len    the length of the data to send
      * @throws IOException if the socket is closed while sending data
      */
     protected void sendPacket(int id, byte[] packet, int off, int len) throws SocketTimeoutException, IOException {
+        this.logger.finest("[sendPacket] Sending packet " + id);
         do {
-            if (this.state.get() == CLOSED) throw new IOException("Socket closed while waiting to send");
+            if (this.state.get() == CLOSED) {
+                this.logger.warn("[sendPacket] Socket is closed");
+                throw new IOException("Socket closed while waiting to send");
+            }
             if (this.acknowledgedId.get() + 1 == id) {
+                //this.logger.trace("[sendPacket] Packet is up next to be sent");
                 // if next in line to be sent
                 if (this.waitingAck.compareAndSet(false, true)) {
+                    this.logger.trace("[sendPacket] Logging packet data");
                     // send packet
                     this.lastSend = packet;
                     this.offset = off;
                     this.length = len;
+
+                    this.logger.trace("[sendPacket] Sending packet trivially");
                     this.sendTrivial(packet, off, len);
 
                     // wait for acknowledgement
                     synchronized (this.waitingLock) {
-                        if (this.acknowledgedId.get() == id) {
-                            this.waitingAck.set(false);
-                            break;
+                        do {
+                            if (this.acknowledgedId.get() == id) {
+                                this.waitingAck.set(false);
+                                break;
+                            }
 
-                        } else {
                             try {
+                                this.logger.trace("[sendPacket] Waiting for acknowledgement");
                                 this.waitingLock.wait(Constants.RESEND_DELAY);
                                 if (this.acknowledgedId.get() == id) {
+                                    this.logger.trace("[sendPacket] Acknowledgement received");
                                     this.waitingAck.set(false);
                                     break;
                                 }
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            if (System.currentTimeMillis() - lastReceivedTime > Constants.TIMEOUT_DELAY) {
-                                this.reportTimeout();
-                                throw new SocketTimeoutException("Socket timed out while trying to send packet");
-                            }
-                            if (this.debug <= Constants.INFO) System.out.println("[Socket][sendPacket][INFO] Packet not acknowledged, sending packet again");
-                        }
+                                if (this.acknowledgedId.get() == id) {
+                                    this.logger.trace("[sendPacket] Acknowledgement received");
+                                    this.waitingAck.set(false);
+                                    break;
 
+                                } else {
+                                    this.logger.debug("[sendPacket] Interrupted while waiting ");
+                                    this.waitingAck.set(false);
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        } while (System.currentTimeMillis() - lastReceivedTime < Constants.TIMEOUT_DELAY);
+                        this.waitingAck.set(false);
+                    }
+
+                } else {
+                    synchronized (this.waitingLock) {
+                        try {
+                            this.waitingLock.wait(100);
+
+                        } catch (InterruptedException e) {}
                     }
                 }
 
             } else {
-                System.err.println("[Socket][sendPacket] Packet not being sent in order. id=" + id + " lastAcknowledged=" + acknowledgedId.get());
+                this.logger.warn("[sendPacket] Packet not being sent in order. id=" + id + " lastAcknowledged=" + acknowledgedId.get());
                 try {
                     synchronized (this.waitingLock) {
                         this.waitingLock.wait();
@@ -329,9 +378,15 @@ public abstract class Socket {
                 }
             }
 
-        } while (true);
+        } while (this.acknowledgedId.get() < id && System.currentTimeMillis() - lastReceivedTime < Constants.TIMEOUT_DELAY);
 
-        if (this.debug <= Constants.DEBUG) System.out.println("[Socket][sendPacket][DEBUG] Packet id=" + id + " sent and acknowledged");
+        if (System.currentTimeMillis() - lastReceivedTime > Constants.TIMEOUT_DELAY) {
+            this.logger.warn("[sendPacket] Timed out while trying to send packet");
+            this.reportTimeout();
+            throw new SocketTimeoutException("Socket timed out while trying to send data");
+        }
+
+        this.logger.trace("[sendPacket] Packet id=" + id + " sent and acknowledged");
     }
 
     protected void sendTrivial(byte[] packet, int off, int len) {
@@ -342,11 +397,11 @@ public abstract class Socket {
                 this.getSocket().send(p);
 
             } catch (BindException e) {
-                System.err.println("[Socket][sendTrivial] BindException while trying to send packet. Remote address: " + this.remote + ":" + this.port);
+                this.logger.error("[sendTrivial] BindException while trying to send packet. Remote address: " + this.remote + ":" + this.port);
                 e.printStackTrace();
 
             } catch (IOException e) {
-                System.err.println("[Socket][sendTrivial] IOException while sending packet");
+                this.logger.warn("[sendTrivial] IOException while sending packet");
                 e.printStackTrace();
             }
         }
@@ -358,11 +413,11 @@ public abstract class Socket {
 
         InputStream src = this.sendBuffer.getInputStream();
         while (this.state.get() != CLOSED && this.state.get() != CLOSE_RECEIVED && (this.sendBuffer.available() > 0 || this.sendBuffer.isWriteOpened())) {
-           if (this.reversePoke.get()) {
-              this.sendAck(this.lastReceivedId.get());
-           }
+            if (this.reversePoke.get()) {
+                this.sendAck(this.lastReceivedId.get());
+            }
 
-           // if remote can accept, send data
+            // if remote can accept, send data
             try {
                 if (this.remoteWindow.get() > 0 && src.available() > 0) {
                     try {
@@ -370,15 +425,15 @@ public abstract class Socket {
                         if (amnt == -1) break;
                         //System.out.println("[Socket][sender] Sending " + amnt + " bytes");
                         this.sendMessage(trx, 0, amnt); // blocks until data sent or socket closed
-                        if (this.debug <= Constants.LOG) System.out.println("[Socket][sender][debug] Sent " + amnt + " bytes of message data");
+                        this.logger.debug("[sender] Sent " + amnt + " bytes of message data");
 
                     } catch (IOException e) {
-                        System.err.println("[Socket][sender] IOException while trying to send data");
+                        this.logger.info("[sender] IOException while trying to send data");
                         e.printStackTrace();
                     }
                 }
             } catch (IOException e) {
-                System.err.println("[Socket][sender] IOException while checking for available data to send");
+                this.logger.warn("[sender] IOException while checking for available data to send");
                 e.printStackTrace();
             }
 
@@ -387,11 +442,11 @@ public abstract class Socket {
             }
 
             synchronized (this.senderLock) {
-               try {
-                  this.senderLock.wait(100);
-               } catch (InterruptedException e) {
-                  e.printStackTrace();
-               }
+                try {
+                    this.senderLock.wait(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -400,12 +455,12 @@ public abstract class Socket {
                 this.sendClose();
 
             } catch (SocketTimeoutException e) {
-                System.err.println("[Socket][sender] Did not receive ACK to CLOSE packet");
+                this.logger.info("[sender] Did not receive ACK to CLOSE packet");
                 e.printStackTrace();
             }
         }
 
-        //System.out.println("[Socket][sender] Sender thread terminating");
+        this.logger.log("[sender] Sender thread terminating");
     }
 
     // receiving system
@@ -426,9 +481,11 @@ public abstract class Socket {
 
                 //System.out.write(data, off, len);
 
-                if (this.debug <= Constants.LOG) System.out.println("[Socket][onMessage][LOG] Received " + len + " bytes of message data");
+                if (this.debug <= Constants.LOG)
+                    System.out.println("[Socket][onMessage][LOG] Received " + len + " bytes of message data");
                 this.receiveBuffer.getOutputStream().write(data, off, len);
-                if (this.debug <= Constants.LOG) System.out.println("[Socket][onMessage][LOG] Wrote " + len + " bytes to receive buffer");
+                if (this.debug <= Constants.LOG)
+                    System.out.println("[Socket][onMessage][LOG] Wrote " + len + " bytes to receive buffer");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -447,17 +504,17 @@ public abstract class Socket {
             this.lastAckTime = System.currentTimeMillis();
             this.remoteWindow.set(window);
             synchronized (this.waitingLock) {
-               this.waitingLock.notifyAll();
+                this.waitingLock.notifyAll();
             }
             synchronized (this.senderLock) {
-               this.senderLock.notifyAll();
+                this.senderLock.notifyAll();
             }
 
         } else if (this.acknowledgedId.get() == ackId) {
-           this.remoteWindow.set(window);
-           synchronized (this.senderLock) {
-              this.senderLock.notifyAll();
-           }
+            this.remoteWindow.set(window);
+            synchronized (this.senderLock) {
+                this.senderLock.notifyAll();
+            }
 
         } else {
             // if not acknowledged in order
@@ -468,7 +525,7 @@ public abstract class Socket {
 
     protected void onClose(int id) {
         if (enforceOrdering(id)) {
-            if (this.debug <= Constants.FINE) System.out.println("[Socket][onClose][debug] Received CLOSE packet");
+            this.logger.log("[onClose] Received CLOSE packet");
 
             if (this.state.get() == ESTABLISHED) {
                 this.state.set(CLOSE_RECEIVED);
@@ -483,7 +540,7 @@ public abstract class Socket {
                 this.receiveBuffer.getOutputStream().close();
                 this.sendBuffer.getOutputStream().close();
             } catch (IOException e) {
-                System.err.println("[Socket][onClose] IOException while trying to close send buffer in response to received CLOSE packet");
+                this.logger.info("[onClose] IOException while trying to close send buffer in response to received CLOSE packet");
                 e.printStackTrace();
             }
         }
@@ -523,7 +580,8 @@ public abstract class Socket {
             PacketType type = PacketType.fromValue(reader.readInt());
             int id = reader.readInt();
 
-            if (this.debug <= Constants.FINER) System.out.println("[Socket][onPacket] Received packet: type=" + type + " id=" + id);
+            if (this.debug <= Constants.FINER)
+                System.out.println("[Socket][onPacket] Received packet: type=" + type + " id=" + id);
 
             if (type == PacketType.SYN) {
                 this.onSyn(pack.getAddress(), pack.getPort(), id);
@@ -557,16 +615,23 @@ public abstract class Socket {
     protected abstract DatagramPacket receivePacket() throws IOException;
 
     protected void receiver() {
+        this.logger.log("[receiver][" + System.currentTimeMillis() + "] Receiver thread starting");
+        this.lastReceivedTime = System.currentTimeMillis();
+
         while (this.state.get() != CLOSED) {
             DatagramPacket packet;
 
             try {
-                //System.out.println("[Socket][receiver] Attempting to receive packet");
+                this.logger.trace("[receiver] Attempting to receive packet");
                 packet = this.receivePacket();
 
                 if (packet == null) {
-                    if (this.state.get() == CLOSED) break;
+                    if (this.state.get() == CLOSED) {
+                        this.logger.fine("[receiver] Socket has been closed");
+                        break;
+                    }
                     if (System.currentTimeMillis() - this.lastReceivedTime > Constants.TIMEOUT_DELAY) {
+                        this.logger.log("[receiver][" + System.currentTimeMillis() + "] Timed out while waiting for packet");
                         this.reportTimeout();
                     }
 
@@ -579,7 +644,7 @@ public abstract class Socket {
             }
         }
 
-        //System.out.println("[Socket][receiver] Receiver thread terminating");
+        this.logger.log("[receiver] Receiver thread terminating");
     }
 
     // lifecycle functions
@@ -589,7 +654,7 @@ public abstract class Socket {
 
     protected void reportTimeout() {
         this.state.set(CLOSED);
-        if (this.debug <= Constants.WARN) System.out.println("[Socket][reportTimeout][WARN] Socket timed out");
+        this.logger.info("[reportTimeout] Socket timed out");
         this.onTimeout();
     }
 
