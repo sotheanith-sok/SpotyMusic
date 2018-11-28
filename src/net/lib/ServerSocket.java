@@ -195,10 +195,5 @@ public class ServerSocket {
             //System.out.println("[SlaveSocket][onClosed] this.isReceiveClosed() = " + this.isReceiveClosed());
             socketClosed(this);
         }
-
-        @Override
-        protected void onTimeout() {
-
-        }
     }
 }

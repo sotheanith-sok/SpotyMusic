@@ -93,9 +93,4 @@ public class ClientSocket extends Socket {
         this.logger.log("[ClientSocket][onClosed] ClientSocket closed successfully");
         //System.out.println("[ClientSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
     }
-
-    @Override
-    protected void onTimeout() {
-
-    }
 }

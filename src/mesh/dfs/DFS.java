@@ -49,8 +49,8 @@ public class DFS {
         this.mesh = mesh;
         this.executor = executor;
 
-        this.serverLog = new Logger("DFS][server", Constants.LOG);
-        this.clientLog = new Logger("DFS][client", Constants.LOG);
+        this.serverLog = new Logger("DFS][server", Constants.TRACE);
+        this.clientLog = new Logger("DFS][client", Constants.TRACE);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();

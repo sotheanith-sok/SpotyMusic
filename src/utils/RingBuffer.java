@@ -154,7 +154,7 @@ public class RingBuffer {
                     if (len > 0) {
                         try {
                             //System.out.println("[RingBuffer][BufferProvider][write] BufferProvider waiting for space");
-                            lock.wait();
+                            lock.wait(1000, 0);
                         } catch (InterruptedException e) {}
                     }
                 }

@@ -7,6 +7,7 @@ import utils.RingBuffer;
 
 import java.io.*;
 import java.net.*;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.CheckedOutputStream;
@@ -64,7 +65,7 @@ public abstract class Socket {
 
     protected Thread receiver;
 
-    public int debug = Constants.ERROR;
+    private LinkedList<TimeoutListener> timeoutListeners;
 
     public Socket(InetAddress remote, int port) {
         this(remote, port, Constants.BUFFER_SIZE, Constants.BUFFER_SIZE);
@@ -92,8 +93,10 @@ public abstract class Socket {
         this.receiver = new Thread(this::receiver);
         this.receiver.setName("[Socket][receiver]");
 
-        this.logger = new Logger("Socket", Constants.DEBUG);
-        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.TRACE);
+        this.timeoutListeners = new LinkedList<>();
+
+        this.logger = new Logger("Socket", Constants.LOG);
+        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.LOG);
         this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 
@@ -141,13 +144,16 @@ public abstract class Socket {
         }
     }
 
+    public void addTimeoutListener(TimeoutListener listener) {
+        this.timeoutListeners.add(listener);
+    }
+
     public void reversePoke() {
         this.logger.finer("[reversePoke] Sending reverse poke");
         this.reversePoke.set(true);
         synchronized (this.senderLock) {
             this.senderLock.notifyAll();
         }
-        //System.out.println("[Socket][reversePoke] Reverse Poke!");
     }
 
     // sending system
@@ -639,7 +645,13 @@ public abstract class Socket {
     // lifecycle functions
     protected abstract void onClosed();
 
-    protected abstract void onTimeout();
+    protected void onTimeout() {
+        for (TimeoutListener listener : this.timeoutListeners) {
+            try {
+                listener.onTimeout();
+            } catch (Exception e) {}
+        }
+    }
 
     protected void reportTimeout() {
         this.state.set(CLOSED);
