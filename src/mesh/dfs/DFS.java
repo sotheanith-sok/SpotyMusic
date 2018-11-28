@@ -138,10 +138,11 @@ public class DFS {
 
                         InputStream in = null;
                         Future<OutputStream> fout = this.writeBlock(block);
+                        OutputStream out = null;
                         try {
                             in = new FileInputStream(block.getFile());
 
-                            OutputStream out = fout.get(10, TimeUnit.SECONDS);
+                            out = fout.get(2500, TimeUnit.MILLISECONDS);
 
                             int trxd = 0;
                             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
@@ -172,8 +173,16 @@ public class DFS {
                             }
                             break;
 
+                        } catch (IOException e) {
+                            this.clientLog.error("[organizeBlocks] IOException while transferring block");
+                            e.printStackTrace();
+
+                            if (in != null) try { in.close(); } catch (IOException e1) {}
+                            if (out != null) try { out.close(); } catch (IOException e1) {}
+                            break;
+
                         } catch (Exception e) {
-                            this.clientLog.warn("[enumerateBlocks] Exception while trying to transfer block");
+                            this.clientLog.error("[organizeBlocks] Exception while trying to transfer block");
                             e.printStackTrace();
                             break;
                         }
@@ -459,7 +468,7 @@ public class DFS {
 
             try {
                 this.clientLog.trace("[requestFileBlock] Obtaining response header stream");
-                headerStream = headerStreamFuture.get(150, TimeUnit.MILLISECONDS);
+                headerStream = headerStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
                 this.clientLog.debug("[requestFileBlock] Got response header stream");
 
             } catch (InterruptedException | TimeoutException e) {
@@ -491,7 +500,7 @@ public class DFS {
                             Future<InputStream> dataStreamFuture = plexer.waitInputChannel(2);
                             try {
                                 this.clientLog.trace("[requestFileBlock] Obtaining response body stream");
-                                InputStream dataStream = dataStreamFuture.get(150, TimeUnit.MILLISECONDS);
+                                InputStream dataStream = dataStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
                                 if (future.isCancelled()) {
                                     this.clientLog.fine("[requestFileBlock] Got response body stream, but request was canceled");
                                     try { dataStream.close(); } catch (IOException e) {}
@@ -627,7 +636,7 @@ public class DFS {
 
             try {
                 this.clientLog.trace("[writeBlock] Obtaining response header stream");
-                headerStream = headerStreamFuture.get(150, TimeUnit.MILLISECONDS);
+                headerStream = headerStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
 
             } catch (InterruptedException | TimeoutException e) {
                 this.clientLog.error("[writeBlock] Unable to obtain response header channel");
