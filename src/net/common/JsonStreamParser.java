@@ -63,6 +63,7 @@ public class JsonStreamParser implements Runnable {
 
         } catch (IOException e) {
             this.finished();
+            if (this.parser.isClosed()) return;
             this.logger.warn(" IOException while parsing JSON input stream");
             e.printStackTrace();
         }

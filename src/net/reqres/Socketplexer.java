@@ -218,6 +218,7 @@ public class Socketplexer {
                 }
 
             } catch (IOException e) {
+                if (this.socket.isReceiveClosed()) break;
                 this.logger.warn("[demultiplexer] IOException while demultiplexing data");
                 e.printStackTrace();
             }
