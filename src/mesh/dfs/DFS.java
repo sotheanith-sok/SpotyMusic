@@ -414,69 +414,120 @@ public class DFS {
 
         CompletableFuture<InputStream> future = new CompletableFuture<>();
 
-        // if block is on this node, then just read it directly
-        if (this.blocks.containsKey(block.getBlockName())) {
-            BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
-            try {
-                InputStream in = new BufferedInputStream(new FileInputStream(localBlock.getFile()));
-                future.complete(in);
+        this.executor.submit(() -> {
+            // if block is on this node, then just read it directly
+            if (this.blocks.containsKey(block.getBlockName())) {
+                BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
+                try {
+                    InputStream in = new BufferedInputStream(new FileInputStream(localBlock.getFile()));
+                    future.complete(in);
 
-            } catch (FileNotFoundException e) {
-                future.completeExceptionally(e);
-            }
-
-            this.clientLog.finer("[requestFileBlock] Request for block handled locally");
-            return future;
-        }
-
-        Socket connection;
-
-        this.clientLog.debug("[requestFileBlock] Connecting to node " + node_id + "...");
-        try {
-            connection = mesh.tryConnect(node_id);
-
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-            this.clientLog.warn("[requestFileBlock] Unable to connect to node " + node_id);
-            e.printStackTrace();
-            return future;
-        }
-
-        Socketplexer plexer = new Socketplexer(connection, this.executor);
-
-        // send request header
-        this.clientLog.finer("[requestFileBlock] Sending request header");
-        this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(net.Constants.REQUEST_TYPE_PROPERTY, REQUEST_READ_BLOCK);
-            gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
-            gen.writeEndObject();
-        }));
-
-        this.clientLog.finer("[requestFileBlock] Parsing response header");
-        this.executor.submit(new JsonStreamParser(plexer.getInputChannel(1), true, (field) -> {
-            if (!field.isObject()) return;
-
-            JsonField.ObjectField header = (JsonField.ObjectField) field;
-            if (header.containsKey(net.Constants.REQUEST_TYPE_PROPERTY) &&
-                    header.getStringProperty(net.Constants.REQUEST_TYPE_PROPERTY).equals(RESPONSE_READ_BLOCK)) {
-
-                if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
-                    if (future.isCancelled()) plexer.terminate();
-                    else future.complete(plexer.getInputChannel(2));
-                    this.clientLog.log("[requestFileBlock] Downloading block from remote");
-
-                } else if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_NOT_FOUND)) {
-                    this.clientLog.log("[requestFileBlock] Remote node reported block not found");
-                    future.completeExceptionally(new FileNotFoundException("Remote node said was file block not found"));
+                } catch (FileNotFoundException e) {
+                    future.completeExceptionally(e);
                 }
 
-            } else {
-                this.clientLog.warn("[requestFileBlock] Malformed response header");
-                plexer.terminate();
-                future.completeExceptionally(new Exception("Malformed response header"));
+                this.clientLog.finer("[requestFileBlock] Request for block handled locally");
+                return;
             }
-        }));
+
+            Socket connection;
+
+            this.clientLog.debug("[requestFileBlock] Connecting to node " + node_id + "...");
+            try {
+                connection = mesh.tryConnect(node_id);
+
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+                this.clientLog.error("[requestFileBlock] Unable to connect to node " + node_id);
+                e.printStackTrace();
+                return;
+            }
+
+            Socketplexer plexer = new Socketplexer(connection, this.executor);
+
+            // send request header
+            this.clientLog.finer("[requestFileBlock] Sending request header");
+            this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(net.Constants.REQUEST_TYPE_PROPERTY, REQUEST_READ_BLOCK);
+                gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
+                gen.writeEndObject();
+            }));
+
+            InputStream headerStream;
+            Future<InputStream> headerStreamFuture = plexer.waitInputChannel(1);
+
+            try {
+                this.clientLog.trace("[requestFileBlock] Obtaining response header stream");
+                headerStream = headerStreamFuture.get(150, TimeUnit.MILLISECONDS);
+                this.clientLog.debug("[requestFileBlock] Got response header stream");
+
+            } catch (InterruptedException | TimeoutException e) {
+                this.clientLog.error("[requestFileBLock] Unable to obtain response header stream");
+                e.printStackTrace();
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+
+            } catch (ExecutionException e) {
+                this.clientLog.error("[requestFileBLock] ExecutionException while obtaining response header stream");
+                e.printStackTrace();
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
+
+            this.clientLog.finer("[requestFileBlock] Parsing response header");
+            this.executor.submit(new JsonStreamParser(headerStream, true, (field) -> {
+                if (!field.isObject()) return;
+
+                JsonField.ObjectField header = (JsonField.ObjectField) field;
+                if (header.containsKey(net.Constants.REQUEST_TYPE_PROPERTY) &&
+                        header.getStringProperty(net.Constants.REQUEST_TYPE_PROPERTY).equals(RESPONSE_READ_BLOCK)) {
+
+                    if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
+                        if (future.isCancelled()) plexer.terminate();
+                        else {
+                            Future<InputStream> dataStreamFuture = plexer.waitInputChannel(2);
+                            try {
+                                this.clientLog.trace("[requestFileBlock] Obtaining response body stream");
+                                InputStream dataStream = dataStreamFuture.get(150, TimeUnit.MILLISECONDS);
+                                if (future.isCancelled()) {
+                                    this.clientLog.fine("[requestFileBlock] Got response body stream, but request was canceled");
+                                    try { dataStream.close(); } catch (IOException e) {}
+                                    plexer.terminate();
+                                    return;
+                                }
+
+                                future.complete(dataStream);
+                                this.clientLog.debug("[requestFileBlock] Successfully retrieved file block");
+
+                            } catch (InterruptedException | TimeoutException e) {
+                                this.clientLog.error("[requestFileBlock] Unable to obtain response body stream");
+                                e.printStackTrace();
+                                plexer.terminate();
+                                future.completeExceptionally(e);
+
+                            } catch (ExecutionException e) {
+                                this.clientLog.error("[requestFileBlock] ExecutionException while trying to obtain response body");
+                                e.printStackTrace();
+                                plexer.terminate();
+                                future.completeExceptionally(e);
+                            }
+                        }
+
+                    } else if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_NOT_FOUND)) {
+                        this.clientLog.log("[requestFileBlock] Remote node reported block not found");
+                        future.completeExceptionally(new FileNotFoundException("Remote node said was file block not found"));
+                    }
+
+                } else {
+                    this.clientLog.warn("[requestFileBlock] Malformed response header");
+                    plexer.terminate();
+                    future.completeExceptionally(new Exception("Malformed response header"));
+                }
+            }));
+        });
 
         return future;
     }
@@ -489,6 +540,8 @@ public class DFS {
             for (int i = 0; i < replication; i++) {
                 block.setReplicaNumber(i);
                 Future<InputStream> request = requestFileBlock(block);
+
+                if (future.isCancelled()) return;
 
                 try {
                     future.complete(request.get());
@@ -503,7 +556,6 @@ public class DFS {
                     // this should happen if the block isn't found or the node isn't connected
                 }
 
-                if (future.isCancelled()) return;
             }
 
             future.completeExceptionally(new Exception("Unable to locate file block"));
@@ -570,7 +622,29 @@ public class DFS {
                 this.clientLog.finest("[writeBlock] Request headers sent");
             }));
 
-            JsonStreamParser parser = new JsonStreamParser(plexer.getInputChannel(1), true, (field) -> {
+            InputStream headerStream;
+            Future<InputStream> headerStreamFuture = plexer.waitInputChannel(1);
+
+            try {
+                this.clientLog.trace("[writeBlock] Obtaining response header stream");
+                headerStream = headerStreamFuture.get(150, TimeUnit.MILLISECONDS);
+
+            } catch (InterruptedException | TimeoutException e) {
+                this.clientLog.error("[writeBlock] Unable to obtain response header channel");
+                e.printStackTrace();
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+
+            } catch (ExecutionException e) {
+                this.clientLog.error("[writeBlock] ExecutionException while trying to obtain response header channel");
+                e.printStackTrace();
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
+
+            JsonStreamParser parser = new JsonStreamParser(headerStream, true, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField packet = (JsonField.ObjectField) field;

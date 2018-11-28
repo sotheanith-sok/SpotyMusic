@@ -9,9 +9,7 @@ import utils.RingBuffer;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * The SocketPlexer multiplexes multiple data streams across a single {@link Socket}.
@@ -161,8 +159,8 @@ public class Socketplexer {
 
         this.logger.log("[multiplexer] Socket receiving closed, terminating multiplexer");
 
-        synchronized (this.inputsLock) {
-            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+        synchronized (this.outputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
                 try {
                     entry.getValue().getInputStream().close();
                 } catch (IOException e) {
@@ -201,7 +199,11 @@ public class Socketplexer {
 
                 off = 0;
                 read = 0;
-                while ((read += in.read(trx, off, length - read)) < length) off += read;
+                while ((read += in.read(trx, off, length - read)) < length && read != -1) off += read;
+                if (read == -1) {
+                    this.logger.info("[demultiplexer] Socket receive buffer closed");
+                    break;
+                }
                 this.logger.finest("[demultiplexer] Demultiplexed " + length + " bytes from channel " + channel);
                 System.out.write(trx, 0, length);
                 System.out.println();
@@ -219,7 +221,7 @@ public class Socketplexer {
 
         this.logger.log("[demultiplexer] Socket closed, terminating demultiplexer");
 
-        synchronized (this.outputsLock) {
+        synchronized (this.inputsLock) {
             for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
                 try {
                     entry.getValue().getOutputStream().close();
@@ -334,6 +336,10 @@ public class Socketplexer {
         }
     }
 
+    public InputStream waitInputStream(int id, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return this.waitInputChannel(id).get(timeout, unit);
+    }
+
     /**
      * Forcibly terminates all channels and closes the underlying Socket.
      */
@@ -388,7 +394,14 @@ public class Socketplexer {
             if (this.waitingChannels.containsKey(channel)) {
                 CompletableFuture<InputStream> future = this.waitingChannels.get(channel);
                 this.waitingChannels.remove(channel);
-                if (future.complete(buffer.getInputStream()));
+                if (future.isCancelled()) {
+                    try {
+                        buffer.getInputStream().close();
+                    } catch (IOException e) {}
+
+                } else {
+                    future.complete(buffer.getInputStream());
+                }
             }
         }
 
