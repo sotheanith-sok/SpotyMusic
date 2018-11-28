@@ -95,8 +95,8 @@ public abstract class Socket {
 
         this.timeoutListeners = new LinkedList<>();
 
-        this.logger = new Logger("Socket", Constants.LOG);
-        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.LOG);
+        this.logger = new Logger("Socket", Constants.DEBUG);
+        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.DEBUG);
         this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 
@@ -185,7 +185,7 @@ public abstract class Socket {
             out.writeInt(id = messageId.incrementAndGet());
             out.write(data, off, len);
             long checksum = check.getChecksum().getValue();
-            //System.out.println("[Socket][sendMessage] Checksum value: " + checksum);
+            this.logger.debug("[sendMessage] Sending " + len + " bytes of message data. Checksum value: " + checksum);
             out.writeLong(checksum);
             this.sendPacket(id, dest.toByteArray(), 0, dest.size());
 
