@@ -43,6 +43,8 @@ public class Constants {
 
     public static final long MAX_BLOCK_SIZE = 1024 * 1024 * 4;
 
+    public static final long MAX_CHANNEL_WAIT = 1000;
+
     public static final String PROPERTY_RESPONSE_STATUS = "PROP_RESPONSE_STATUS";
     public static final String RESPONSE_STATUS_OK = "STATUS_OK";
     public static final String RESPONSE_STATUS_NOT_FOUND = "STATUS_NOT_FOUND";

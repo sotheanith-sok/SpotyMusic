@@ -76,7 +76,7 @@ public class WriteBlockRequestHandler implements Runnable {
         InputStream in = null;
         try {
             Future<InputStream> future = this.socketplexer.waitInputChannel(2);
-            in = future.get(1000, TimeUnit.MILLISECONDS);
+            in = future.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
 
             byte[] trx = new byte[1024 * 8];
             int read = 0;

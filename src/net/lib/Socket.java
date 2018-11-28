@@ -463,7 +463,9 @@ public abstract class Socket {
 
     // receiving system
     protected void onMessage(int id, byte[] data, int off, int len) {
-        if (this.enforceOrdering(id)) {
+        // enforce ordering manually, in case of checksum mismatch
+        if (this.lastReceivedId.get() + 1 == id) {
+
             try {
                 ByteArrayInputStream in = new ByteArrayInputStream(data, off + len, Constants.FOOTER_OVERHEAD);
                 DataInputStream read = new DataInputStream(in);
@@ -475,7 +477,13 @@ public abstract class Socket {
 
                 if (calculated != expected) {
                     this.logger.warn("[onMessage] Checksum mismatch! Calculated = " + calculated + " Received = " + expected);
+                    this.sendAck(this.lastReceivedId.get());
+                    return;
+
+                } else {
+                    this.sendAck(id);
                 }
+
 
                 //System.out.write(data, off, len);
 
@@ -489,6 +497,7 @@ public abstract class Socket {
 
         } else {
             this.logger.warn("[onMessage] MESSAGE packet received out of order");
+            this.sendAck(this.lastReceivedId.get());
         }
     }
 

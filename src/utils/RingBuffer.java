@@ -151,7 +151,7 @@ public class RingBuffer {
 
                     lock.notifyAll();
 
-                    if (len > 0) {
+                    if (len > 0 && writeOpened.get()) {
                         try {
                             //System.out.println("[RingBuffer][BufferProvider][write] BufferProvider waiting for space");
                             lock.wait(1000, 0);
