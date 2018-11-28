@@ -23,7 +23,6 @@ public class TestFileStreamer extends StreamGenerator {
 
     public TestFileStreamer(Socket socket) {
         super(socket, true);
-        this.socket.debug = Constants.FINER;
         this.testFile = new File(DataManager.rootDirectory.getPath() + "/Media/Artists/Taylor Davis/Enchanted Christmas/Greensleeves.wav");
         //this.testFile = new File(DataManager.rootDirectory.getPath() + "/TestFile.txt");
     }

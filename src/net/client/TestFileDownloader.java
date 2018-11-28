@@ -23,7 +23,6 @@ public class TestFileDownloader implements Runnable {
 
     public TestFileDownloader(Socket socket) {
         this.socket = socket;
-        socket.debug = Constants.FINER;
         this.dest = new File(DataManager.rootDirectory.getPath() + "/TestFile.wav");
         //this.dest = new File(DataManager.rootDirectory.getPath() + "/TestFile1.txt");
     }

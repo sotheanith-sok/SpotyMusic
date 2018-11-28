@@ -36,6 +36,10 @@ public class Logger {
         this.threshold = Constants.WARN;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void println(int level, String message) {
         if (this.filterLevel > level) return;
         String levelLabel = Integer.toString(level);
