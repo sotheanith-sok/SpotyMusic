@@ -25,7 +25,7 @@ public class MeshClientPlaylist implements Playlist {
 
     public MeshClientPlaylist(String title, List<Long> songs, MeshLibrary library) {
         this.title = title;
-        this.ids = ids;
+        this.ids = songs;
         this.library = library;
         this.songs = this.library.getSongs().filtered(this::filter);
     }
