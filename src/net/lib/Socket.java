@@ -175,6 +175,8 @@ public abstract class Socket {
     protected void sendMessage(byte[] data, int off, int len) throws SocketTimeoutException, IOException {
         if (this.state.get() == CLOSED || this.state.get() == CLOSE_SENT)
             throw new IOException("Cannot send message data when connection is closed or closing");
+        if (len > Constants.PACKET_SIZE - (4 * 2))
+            throw new IOException("Message size cannot exceed PACKET_SIZE - 8B");
         try {
             int id;
             // send packet
@@ -406,7 +408,7 @@ public abstract class Socket {
     }
 
     protected void sender() {
-        byte[] trx = new byte[Constants.PACKET_SIZE];
+        byte[] trx = new byte[Constants.PACKET_SIZE - (4 * 2)];
         lastAckTime = System.currentTimeMillis();
 
         InputStream src = this.sendBuffer.getInputStream();

@@ -56,7 +56,7 @@ public class Socketplexer {
     public Socketplexer(Socket socket, ExecutorService executor) {
         this.socket = socket;
 
-        this.logger = new Logger("Socketplexer", Constants.TRACE);
+        this.logger = new Logger("Socketplexer", Constants.FINE);
 
         //this.logger.trace(" Initializing channel collections");
         this.outputChannels = new HashMap<>();
