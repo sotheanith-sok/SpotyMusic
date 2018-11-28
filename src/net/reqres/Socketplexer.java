@@ -541,6 +541,10 @@ public class Socketplexer {
         }
     }
 
+    public void setLogFilter(int level) {
+        this.logger.setFilter(level);
+    }
+
     private static final String COMMAND_FIELD_NAME = "FIELD_COMMAND";
     private static final String COMMAND_OPEN_CHANNEL = "COMMAND_OPEN_CHANNEL";
     private static final String COMMAND_OPEN_ACK = "COMMAND_OPEN_ACK";
