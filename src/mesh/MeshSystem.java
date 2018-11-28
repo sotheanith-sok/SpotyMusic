@@ -35,7 +35,7 @@ public class MeshSystem {
 
     private MeshSystem() {
         this.configs = new ObservableMap<>();
-        this.executor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
+        this.executor = new ScheduledThreadPoolExecutor(64);
     }
 
     public static MeshSystem getInstance() {
