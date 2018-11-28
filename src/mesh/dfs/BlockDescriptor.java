@@ -27,7 +27,7 @@ public class BlockDescriptor {
     }
 
     public BlockDescriptor(String blockName) {
-        this(new File(DFS.blockDirectory.getPath() + blockName));
+        this(new File(DFS.blockDirectory.getPath() + File.separatorChar + blockName));
     }
 
     public BlockDescriptor(String fileName, int block_number) {
