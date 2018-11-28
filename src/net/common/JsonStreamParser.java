@@ -3,6 +3,8 @@ package net.common;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import net.Constants;
+import utils.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,13 +28,14 @@ public class JsonStreamParser implements Runnable {
 
     private boolean globalArrayAsStream = false;
 
-    public boolean debug = false;
+    private Logger logger;
 
     public JsonStreamParser(InputStream source, boolean autoCloseSocket, Handler handler) {
         this.source = source;
         this.autoCloseSocket = autoCloseSocket;
         this.handler = handler;
         this.contextStack = new LinkedList<>();
+        this.logger = new Logger("JsonStreamParser", Constants.WARN);
     }
 
     public JsonStreamParser(InputStream source, boolean autoCloseSocket, Handler handler, boolean globalArrayAsStream) {
@@ -40,20 +43,27 @@ public class JsonStreamParser implements Runnable {
         this.globalArrayAsStream = globalArrayAsStream;
     }
 
+    public Logger getLogger() {
+        return this.logger;
+    }
+
     @Override
     public void run() {
         try {
+            this.logger.trace(" Initializing parser");
             this.initialize();
+
+            this.logger.debug(" Parser initialized");
 
             while (!finished && this.parser.nextToken() != null) {
                 this.processToken(this.parser.getCurrentToken(), this.parser);
             }
 
-            if (this.debug) System.out.println("[JsonStreamParser] Parser reports input source ended");
+            this.logger.log(" Parser reports input source ended");
 
         } catch (IOException e) {
             this.finished();
-            System.err.println("[JsonStreamParser][update] IOException while parsing JSON input stream");
+            this.logger.warn(" IOException while parsing JSON input stream");
             e.printStackTrace();
         }
     }
@@ -63,11 +73,11 @@ public class JsonStreamParser implements Runnable {
     }
 
     protected void finished() {
-        //System.out.println("[JsonStreamParser][finished] SocketJsonParser finished");
+        this.logger.log("[finished] JsonStreamParser finished");
         finished = true;
 
         if (this.autoCloseSocket) {
-            if (this.debug) System.out.println("[JsonStreamParser][finished] JsonStream finished, closing source");
+            this.logger.log("[finished] JsonStream finished, closing source");
             try {
                 this.source.close();
             } catch (IOException e) {
@@ -86,7 +96,7 @@ public class JsonStreamParser implements Runnable {
     }
 
     protected void processToken(JsonToken token, JsonParser parser) throws IOException {
-        if (this.debug) System.out.println("[JsonStreamParser][processToken] Token: " + token);
+        this.logger.trace("[processToken] Token: " + token);
 
         if (token == JsonToken.START_OBJECT) {
             this.contextStack.push(new ParserContext(true));

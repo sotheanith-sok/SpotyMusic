@@ -40,6 +40,10 @@ public class Logger {
         this.name = name;
     }
 
+    public void setFilter(int filt) {
+        this.filterLevel = filt;
+    }
+
     public void println(int level, String message) {
         if (this.filterLevel > level) return;
         String levelLabel = Integer.toString(level);

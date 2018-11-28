@@ -570,7 +570,6 @@ public class DFS {
                 this.clientLog.finest("[writeBlock] Request headers sent");
             }));
 
-            this.clientLog.finest("[writeBlock] Parsing response headers");
             JsonStreamParser parser = new JsonStreamParser(plexer.getInputChannel(1), true, (field) -> {
                 if (!field.isObject()) return;
 
@@ -603,8 +602,9 @@ public class DFS {
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
             });
-            parser.debug = true;
-            this.executor.submit(parser);
+            parser.getLogger().setFilter(Constants.DEBUG);
+            this.clientLog.finest("[writeBlock] Parsing response headers");
+            parser.run();
         });
 
         return future;
