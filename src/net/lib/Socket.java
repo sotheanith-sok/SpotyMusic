@@ -467,6 +467,8 @@ public abstract class Socket {
         if (this.lastReceivedId.get() + 1 == id) {
 
             try {
+                this.logger.debug("[onMessage] Received " + len + " bytes of message data");
+
                 ByteArrayInputStream in = new ByteArrayInputStream(data, off + len, Constants.FOOTER_OVERHEAD);
                 DataInputStream read = new DataInputStream(in);
                 long expected = read.readLong();
@@ -484,10 +486,6 @@ public abstract class Socket {
                     this.sendAck(id);
                 }
 
-
-                //System.out.write(data, off, len);
-
-                this.logger.debug("[onMessage] Received " + len + " bytes of message data");
                 this.receiveBuffer.getOutputStream().write(data, off, len);
                 this.logger.debug("[onMessage] Wrote " + len + " bytes to receive buffer");
 

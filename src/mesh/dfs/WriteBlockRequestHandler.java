@@ -84,6 +84,8 @@ public class WriteBlockRequestHandler implements Runnable {
                 out.write(trx, 0, read);
             }
 
+            System.out.println("[WriteBlockRequestHandler] End of request body stream");
+
             in.close();
             out.close();
 
@@ -106,6 +108,6 @@ public class WriteBlockRequestHandler implements Runnable {
         // add block to list of blocks
         this.dfs.blocks.put(this.block.getBlockName(), this.block);
 
-        System.out.println("[WriteBlockRequesthandler][run] Successfully wrote block " + block.getBlockName());
+        System.out.println("[WriteBlockRequestHandler][run] Successfully wrote block " + block.getBlockName());
     }
 }
