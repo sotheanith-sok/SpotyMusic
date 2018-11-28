@@ -142,6 +142,7 @@ public class DFS {
 
                         try {
                             stats = statsFuture.get(1000, TimeUnit.MILLISECONDS);
+
                         } catch (InterruptedException | TimeoutException e) {
                             statsFuture.cancel(false);
                             this.clientLog.warn("[organizeBlocks] Unable to retrieve block stats");
@@ -150,7 +151,8 @@ public class DFS {
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e1) {}
-                            continue;
+                            //continue;
+                            break;
 
                         } catch (ExecutionException e) {
                             this.clientLog.error("[organizeBlocks] ExecutionException while trying to retrieve block stats");
@@ -159,14 +161,16 @@ public class DFS {
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e1) {}
-                            continue;
+                            //continue;
+                            break;
                         }
 
                         if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                             if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) == block.blockSize()) {
                                 this.clientLog.log("[organizeBlocks] Remote already has block");
                                 block.getFile().delete();
-                                continue;
+                                //continue;
+                                break;
                             }
                         }
 
@@ -200,7 +204,8 @@ public class DFS {
                                 try {
                                     Thread.sleep(500);
                                 } catch (InterruptedException e1) {}
-                                continue;
+                                //continue;
+                                break;
 
                             }
 
@@ -347,7 +352,9 @@ public class DFS {
 
     private void blockStatsHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
         this.serverLog.finer("[blockStatsHandler] Handling " + REQUEST_BLOCK_STATS + " request");
+        this.serverLog.trace("[blockStatsHandler] Getting block name parameter");
         String blockName = request.getStringProperty(PROPERTY_BLOCK_NAME);
+        this.serverLog.debug("[blockStatsHandler] Request for stats of block " + blockName);
         if (this.blocks.containsKey(blockName)) {
             BlockDescriptor block = this.blocks.get(blockName);
             executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
@@ -362,7 +369,7 @@ public class DFS {
             }));
 
         } else {
-            this.serverLog.warn("[blockStatsHandler] Received request for stats on non-existent block");
+            this.serverLog.info("[blockStatsHandler] Received request for stats on non-existent block");
             executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_BLOCK_STATS);
@@ -803,6 +810,7 @@ public class DFS {
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_BLOCK_STATS);
             gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
             gen.writeEndObject();
+            this.clientLog.trace("[getBlockStats] Request headers sent");
         }));
 
         this.clientLog.fine("[getBlockStats] Parsing response header");
