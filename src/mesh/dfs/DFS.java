@@ -17,10 +17,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -128,13 +125,50 @@ public class DFS {
                 }
 
                 byte[] trx = new byte[1024 * 8];
-                for (BlockDescriptor block : this.blocks.values()) {
+                for (BlockDescriptor block : Collections.unmodifiableCollection(this.blocks.values())) {
                     int blockId = block.getBlockId();
                     int bestId = this.getBestId(blockId);
                     this.clientLog.trace("[organizeBlocks] Block " + blockId + " best matches node " + bestId);
 
                     if (bestId != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 2) {
                         this.clientLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
+
+                        this.blocks.remove(block.getBlockName());
+
+                        this.clientLog.finer("[organizeBlocks] Checking for block on remote");
+
+                        Future<JsonField.ObjectField> statsFuture = this.getBlockStats(block);
+                        JsonField.ObjectField stats;
+
+                        try {
+                            stats = statsFuture.get(1000, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException | TimeoutException e) {
+                            statsFuture.cancel(false);
+                            this.clientLog.warn("[organizeBlocks] Unable to retrieve block stats");
+                            e.printStackTrace();
+                            this.blocks.put(block.getBlockName(), block);
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e1) {}
+                            continue;
+
+                        } catch (ExecutionException e) {
+                            this.clientLog.error("[organizeBlocks] ExecutionException while trying to retrieve block stats");
+                            e.printStackTrace();
+                            this.blocks.put(block.getBlockName(), block);
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e1) {}
+                            continue;
+                        }
+
+                        if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
+                            if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) == block.blockSize()) {
+                                this.clientLog.log("[organizeBlocks] Remote already has block");
+                                block.getFile().delete();
+                                continue;
+                            }
+                        }
 
                         InputStream in = null;
                         Future<OutputStream> fout = this.writeBlock(block);
@@ -152,25 +186,55 @@ public class DFS {
                             in.close();
                             out.close();
 
-                            this.clientLog.finer("[organizeBlocks] Moved block " + block.getBlockName() + " to node " + bestId);
+                            this.clientLog.finest("[organizeBlocks] Confirming existence of block on remote");
+
+                            statsFuture = this.getBlockStats(block);
+                            try {
+                                stats = statsFuture.get(1000, TimeUnit.MILLISECONDS);
+
+                            } catch (ExecutionException | InterruptedException | TimeoutException e) {
+                                statsFuture.cancel(false);
+                                this.clientLog.warn("[organizeBlocks] Unable to retrieve stats of uploaded block");
+                                e.printStackTrace();
+                                this.blocks.put(block.getBlockName(), block);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e1) {}
+                                continue;
+
+                            }
+
+                            this.clientLog.finer("[organizeBlocks] Copied block " + block.getBlockName() + " data to node " + bestId);
 
                             if (block.getBlockNumber() == 0) {
                                 this.clientLog.finest("[organiseBlocks] Moved first block in file, copying file descriptor to destination node");
                                 FileDescriptor descriptor = this.files.get(block.getFileName());
                                 if (descriptor != null) {
-                                    this.putFileMetadata(descriptor, bestId);
+                                    Future<?> future = this.putFileMetadata(descriptor, bestId);
+                                    try {
+                                        future.get(1500, TimeUnit.MILLISECONDS);
+                                    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                                        future.cancel(false);
+                                        this.clientLog.error("[organizeBlocks] Exception while sending file descriptor");
+                                        e.printStackTrace();
+                                    }
                                     this.files.remove(block.getFileName());
                                 }
                             }
+
+                            this.clientLog.log("[organizeBlocks] Block " + block.getBlockName() + " transferred to " + bestId);
+
+                            if (block.getFile().delete())
+                                this.clientLog.fine("[organizeBlocks] Local block deleted");
+                            else
+                                this.clientLog.info("[organizeBlocks] Unable to delete local copy of block");
 
                         } catch (TimeoutException e) {
                             fout.cancel(false);
                             this.clientLog.warn("[organizeBlocks] Timed out while trying to move block to another node");
                             e.printStackTrace();
 
-                            if (in != null) {
-                                try { in.close(); } catch (IOException e1) {}
-                            }
+                            try { in.close(); } catch (IOException e1) {}
                             break;
 
                         } catch (IOException e) {
@@ -186,6 +250,10 @@ public class DFS {
                             e.printStackTrace();
                             break;
                         }
+
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {}
                     }
                 }
 
@@ -759,6 +827,7 @@ public class DFS {
             } catch (InterruptedException | TimeoutException | ExecutionException e) {
                 this.clientLog.warn("[getBlockSize] There was a problem opening the response channel");
                 e.printStackTrace();
+                socketplexer.terminate();
                 future.completeExceptionally(e);
             }
 
