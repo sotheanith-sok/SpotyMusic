@@ -405,7 +405,7 @@ public abstract class Socket {
 
         InputStream src = this.sendBuffer.getInputStream();
         while (this.state.get() != CLOSED && this.state.get() != CLOSE_RECEIVED && (this.sendBuffer.available() > 0 || this.sendBuffer.isWriteOpened())) {
-            if (this.reversePoke.get()) {
+            if (this.reversePoke.compareAndSet(true, false)) {
                 this.sendAck(this.lastReceivedId.get());
             }
 
