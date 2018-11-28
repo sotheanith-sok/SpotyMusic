@@ -29,7 +29,7 @@ public class Socketplexer {
     /**
      * The default size of the buffers used to buffer data being received/sent over each channel.
      */
-    private static final int DEFAULT_SUB_BUFFER_SIZE = 2048;
+    private static final int DEFAULT_SUB_BUFFER_SIZE = 4096;
 
     private Socket socket;
 
@@ -226,16 +226,7 @@ public class Socketplexer {
 
         this.logger.log("[demultiplexer] Socket closed, terminating demultiplexer");
 
-        synchronized (this.inputsLock) {
-            for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
-                try {
-                    entry.getValue().getOutputStream().close();
-                } catch (IOException e) {
-                    this.logger.warn("[demultiplexer] IOException while closing receiving sub-buffer");
-                    //e.printStackTrace();
-                }
-            }
-        }
+        this.doClose();
 
         this.logger.log("[demultiplexer] Demultiplexer shutting down");
     }
