@@ -140,7 +140,7 @@ public class DFS {
                         Future<OutputStream> fout = this.writeBlock(block);
                         OutputStream out = null;
                         try {
-                            in = new FileInputStream(block.getFile());
+                            in = new BufferedInputStream(new FileInputStream(block.getFile()));
 
                             out = fout.get(2500, TimeUnit.MILLISECONDS);
 
