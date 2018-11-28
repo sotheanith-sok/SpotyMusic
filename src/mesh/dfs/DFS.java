@@ -171,6 +171,8 @@ public class DFS {
                                 block.getFile().delete();
                                 //continue;
                                 break;
+                            } else {
+                                this.clientLog.log("[organizeBlocks] Remote has block, but size does not match. Local size=" + block.blockSize() + " Remote size=" + stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE));
                             }
                         }
 
