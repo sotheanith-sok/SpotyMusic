@@ -11,7 +11,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
@@ -20,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SearchHandler implements Runnable {
 
@@ -36,21 +36,16 @@ public class SearchHandler implements Runnable {
     public void run() {
         Set<Integer> nodes = this.library.mesh.getAvailableNodes();
 
+        final Object connectionsLock = new Object();
         LinkedList<Socketplexer> connections = new LinkedList<>();
 
         // connect to other nodes
         for (Integer node : nodes) {
-           if (node == this.library.mesh.getNodeId()) continue;
+            if (node == this.library.mesh.getNodeId()) continue;
             try {
                 Socket socket = this.library.mesh.tryConnect(node);
                 Socketplexer socketplexer = new Socketplexer(socket, this.library.executor);
                 connections.add(socketplexer);
-                this.library.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.REQUEST_SEARCH_MESH);
-                    gen.writeStringField(MeshLibrary.PROPERTY_SEARCH_PARAMETER, searchParam);
-                    gen.writeEndObject();
-                }));
 
             } catch (NodeUnavailableException | SocketException | SocketTimeoutException e) {
                 System.err.println("[SearchHandler][run] Unable to connect to node " + node);
@@ -60,34 +55,67 @@ public class SearchHandler implements Runnable {
 
         // send search request to other nodes
         for (Socketplexer socketplexer : connections) {
-            try {
-                this.library.executor.submit(new JsonStreamParser(socketplexer.waitInputChannel(1).get(), true, (field) -> {
-                    if (!field.isObject()) return;
-                    JsonField.ObjectField header = (JsonField.ObjectField) field;
-                    if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
-                        this.library.executor.submit(new JsonStreamParser(socketplexer.getInputChannel(2), true, (field1) -> {
-                            if (!field1.isObject()) return;
-                            JsonField.ObjectField song = (JsonField.ObjectField) field1;
-                            this.library.addSong(new MeshClientSong(
-                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE),
-                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_ARTIST),
-                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_ALBUM),
-                                    song.getLongProperty(MeshLibrary.PROPERTY_SONG_DURATION),
-                                    song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME),
-                                    this.library
-                            ));
-
-                        }, true));
-
-                    } else {
-                        socketplexer.terminate();
+            this.library.executor.submit(() -> {
+                try {
+                    (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
+                        gen.writeStartObject();
+                        gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.REQUEST_SEARCH_MESH);
+                        gen.writeStringField(MeshLibrary.PROPERTY_SEARCH_PARAMETER, searchParam);
+                        gen.writeEndObject();
+                    })).run();
+                } catch (IOException e) {
+                    synchronized (connectionsLock) {
                         connections.remove(socketplexer);
                     }
-                }));
+                    return;
+                }
 
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
+                AtomicBoolean ok = new AtomicBoolean(false);
+
+                try {
+                    (new JsonStreamParser(socketplexer.waitInputChannel(1).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field) -> {
+                        if (!field.isObject()) return;
+                        JsonField.ObjectField header = (JsonField.ObjectField) field;
+                        ok.set(header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK));
+                    })).run();
+
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[SearchHandler] Unable send search query");
+                    System.err.println("[SearchHandler] \t" + e.getMessage());
+                    socketplexer.terminate();
+                    synchronized (connectionsLock) { connections.remove(socketplexer); }
+                    return;
+                }
+
+                if (!ok.get()) {
+                    socketplexer.terminate();
+                    synchronized (connectionsLock) { connections.remove(socketplexer); }
+                    return;
+                }
+
+                try {
+                    (new JsonStreamParser(socketplexer.waitInputChannel(2).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field1) -> {
+                        if (!field1.isObject()) return;
+                        JsonField.ObjectField song = (JsonField.ObjectField) field1;
+                        this.library.addSong(new MeshClientSong(
+                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE),
+                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_ARTIST),
+                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_ALBUM),
+                                song.getLongProperty(MeshLibrary.PROPERTY_SONG_DURATION),
+                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME),
+                                this.library
+                        ));
+                    }, true)).run();
+
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    System.err.println("[SearchHandler] Unable to parse search query response");
+                    System.err.println("[SearchHandler] \t" + e.getMessage());
+
+                } finally {
+                    socketplexer.terminate();
+                    synchronized (connectionsLock) { connections.remove(socketplexer); }
+                }
+            });
         }
 
         long entries = 0;
@@ -126,20 +154,26 @@ public class SearchHandler implements Runnable {
                 System.err.println("[SearchHandler][run] IOException while reading inverted index file");
                 e.printStackTrace();
 
-                try { in.close(); } catch (IOException e1) {}
+                try {
+                    in.close();
+                } catch (IOException e1) {
+                }
                 continue;
             }
         }
 
         System.out.println("[SearchHandler][run] Scanned " + entries + " entries in local index blocks, " + matches + " matches");
 
-        while (!connections.isEmpty()) {
-            try {
-                Thread.sleep(150);
-            } catch (InterruptedException e) {}
+        synchronized (connectionsLock) {
+            while (!connections.isEmpty()) {
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException e) {
+                }
 
-            for (Socketplexer socketplexer : connections) {
-                if (!socketplexer.isOpened()) connections.remove(socketplexer);
+                for (Socketplexer socketplexer : connections) {
+                    if (!socketplexer.isOpened()) connections.remove(socketplexer);
+                }
             }
         }
 
