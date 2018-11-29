@@ -29,12 +29,18 @@ public class ReadBlockRequestHandler implements Runnable {
         try {
             in = new BufferedInputStream(new FileInputStream(f));
 
-            this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_READ_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_READ_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e1) {
+                System.err.println("[ReadBlockRequestHandler] Unable to obtain response header stream");
+                this.socketplexer.terminate();
+                return;
+            }
 
             out = this.socketplexer.openOutputChannel(2, 1024 * 16);
 
@@ -46,25 +52,32 @@ public class ReadBlockRequestHandler implements Runnable {
 
             in.close();
             out.close();
+            socketplexer.terminate();
 
         } catch (FileNotFoundException e) {
-            this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_READ_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
-                gen.writeEndObject();
-            }));
-            System.err.println("[ReadBlockRequestHandler][run] Attempt to read nonexistent block! " + block.getBlockName());
+            try {
+                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, DFS.RESPONSE_READ_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                    gen.writeEndObject();
+                })).run();
+
+            } catch (IOException e1) {
+                System.err.println("[ReadBlockRequestHandler] Unable to obtain response header stream");
+                this.socketplexer.terminate();
+            }
+            System.err.println("[ReadBlockRequestHandler] Attempt to read nonexistent block! " + block.getBlockName());
 
         } catch (IOException e) {
-            System.err.println("[ReadBlockRequestHandler][run] IOException while reading block " + block.getBlockName());
+            System.err.println("[ReadBlockRequestHandler] IOException while reading block " + block.getBlockName());
             e.printStackTrace();
 
             if (in != null) {
                 try {
                     in.close();
                 } catch (IOException e1) {
-                    System.err.println("[ReadBlockRequestHandler][run] Unable to close inputstream after IOException!");
+                    System.err.println("[ReadBlockRequestHandler] Unable to close inputstream after IOException!");
                 }
             }
 
@@ -72,11 +85,11 @@ public class ReadBlockRequestHandler implements Runnable {
                 try {
                     out.close();
                 } catch (IOException e1) {
-                    System.err.println("[ReadBlockRequestHandler][run] Unable to close response stream after IOException!");
+                    System.err.println("[ReadBlockRequestHandler] Unable to close response stream after IOException!");
                 }
             }
         }
 
-        System.out.println("[ReadBlockRequestHandler][run] Successfully read block " + block.getBlockName());
+        System.out.println("[ReadBlockRequestHandler] Successfully read block " + block.getBlockName());
     }
 }

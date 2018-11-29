@@ -35,15 +35,20 @@ public class WriteBlockRequestHandler implements Runnable {
         try {
             if (!f.exists()) f.createNewFile();
         } catch (IOException e) {
-            System.err.println("[WriteBlockRequestHandler][run] Unable to create file to store block! " + block.getBlockName());
+            System.err.println("[WriteBlockRequestHandler] Unable to create file to store block! " + block.getBlockName());
             e.printStackTrace();
 
-            this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e1) {
+                System.err.println("[WriteBlockRequestHandler] Unable to obtain response header stream");
+                this.socketplexer.terminate();
+            }
 
             return;
         }
@@ -52,23 +57,35 @@ public class WriteBlockRequestHandler implements Runnable {
         try {
             out = new BufferedOutputStream(new FileOutputStream(block.getFile(), this.append));
 
-            this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeEndObject();
+                })).run();
+
+            } catch (IOException e) {
+                System.err.println("[WriteBlockRequestHandler] Unable to obtain response header stream");
+                this.socketplexer.terminate();
+            }
 
         } catch (FileNotFoundException e) {
-            System.err.println("[WriteBlockRequestHandler][run] Unable to open file to write block! " + block.getBlockName());
+            System.err.println("[WriteBlockRequestHandler] Unable to open file to write block! " + block.getBlockName());
             e.printStackTrace();
 
-            this.dfs.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                    gen.writeEndObject();
+                })).run();
+
+            } catch (IOException e1) {
+                System.err.println("[WriteBlockRequestHandler] Unable to obtain response header stream");
+                this.socketplexer.terminate();
+            }
 
             return;
         }
@@ -88,13 +105,14 @@ public class WriteBlockRequestHandler implements Runnable {
 
             in.close();
             out.close();
+            this.socketplexer.terminate();
 
         } catch (IOException e) {
-            System.err.println("[WriteBlockRequestHandler][run] There was a problem while writing received block! " + block.getBlockName());
+            System.err.println("[WriteBlockRequestHandler] There was a problem while writing received block! " + block.getBlockName());
             e.printStackTrace();
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            System.err.println("[WriteBlockRequestHandler][run] There was a problem getting the block data");
+            System.err.println("[WriteBlockRequestHandler] There was a problem getting the block data");
             e.printStackTrace();
 
         } finally {
@@ -109,6 +127,6 @@ public class WriteBlockRequestHandler implements Runnable {
         this.block.updateStats();
         this.dfs.blocks.put(this.block.getBlockName(), this.block);
 
-        System.out.println("[WriteBlockRequestHandler][run] Successfully wrote block " + block.getBlockName());
+        System.out.println("[WriteBlockRequestHandler] Successfully wrote block " + block.getBlockName());
     }
 }
