@@ -247,13 +247,17 @@ public class Socketplexer {
      * @see #getInputChannel(int)
      * @see #waitInputChannel(int)
      */
-    public OutputStream openOutputChannel(int id, int bufferCapacity) {
+    public OutputStream openOutputChannel(int id, int bufferCapacity) throws IOException {
         this.logger.fine("[openOutputChannel Opening output channel " + id);
         if (id <= 0) throw new IllegalArgumentException("Invalid channel ID. ID must be greater than zero");
+        if (this.socket.isSendClosed()) throw new IOException("Socketplexer is closed");
         synchronized (this.outputsLock) {
             if (this.outputChannels.containsKey(id)) {
                 this.logger.finer("[openOutputChannel] Output channel already opened");
                 return this.outputChannels.get(id).getOutputStream();
+
+            } else if (this.pendingChannels.containsKey(id)) {
+                return this.pendingChannels.get(id).getOutputStream();
 
             } else {
                 this.logger.finer("[openOutputChannel] Creating new output channel");
@@ -282,7 +286,7 @@ public class Socketplexer {
      * @param id the ID number of the channel to open
      * @return an OutputStream to write data to the channel
      */
-    public OutputStream openOutputChannel(int id) {
+    public OutputStream openOutputChannel(int id) throws IOException {
         return this.openOutputChannel(id, DEFAULT_SUB_BUFFER_SIZE);
     }
 
