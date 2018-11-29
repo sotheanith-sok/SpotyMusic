@@ -180,14 +180,17 @@ public class RequestServer {
             } catch (InterruptedException e) {
                 logger.warn("[ConnectionHandler] Interrupted while waiting for request input channel");
                 e.printStackTrace();
+                plexer.terminate();
 
             } catch (ExecutionException e) {
                 logger.error("[ConnectionHandler] Input channel resolution encountered an exception");
                 e.printStackTrace();
+                plexer.terminate();
 
             } catch (TimeoutException e) {
                 logger.error("ConnectionHandler] Timed out waiting for request header channel");
                 e.printStackTrace();
+                plexer.terminate();
             }
         }
     }

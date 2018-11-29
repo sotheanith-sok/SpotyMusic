@@ -52,6 +52,7 @@ public class DeferredStreamJsonGenerator implements Runnable {
 
         } catch (IOException e) {
             if (gen.isClosed()) return;
+            try { this.out.close(); } catch (IOException e1) {}
             System.err.println("[DeferredStreamJsonGenerator][run] IOException while running deferred generator task");
             e.printStackTrace();
         }

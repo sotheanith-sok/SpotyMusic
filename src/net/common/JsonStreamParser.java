@@ -59,7 +59,7 @@ public class JsonStreamParser implements Runnable {
                 this.processToken(this.parser.getCurrentToken(), this.parser);
             }
 
-            this.logger.log(" Parser reports input source ended");
+            if (!finished) this.finished();
 
         } catch (IOException e) {
             this.finished();
@@ -74,6 +74,7 @@ public class JsonStreamParser implements Runnable {
     }
 
     protected void finished() {
+        if (this.finished) return;
         this.logger.log("[finished] JsonStreamParser finished");
         finished = true;
 

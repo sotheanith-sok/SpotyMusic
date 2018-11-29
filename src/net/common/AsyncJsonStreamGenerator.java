@@ -70,6 +70,7 @@ public class AsyncJsonStreamGenerator implements Runnable {
         } catch (IOException e) {
             System.err.println("[AsyncJsonStreamGenerator][run] IOException while creating JsonGenerator");
             e.printStackTrace();
+            try { this.out.close(); } catch (IOException e1) {}
             return;
         }
 
