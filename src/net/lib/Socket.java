@@ -301,6 +301,7 @@ public abstract class Socket {
             this.logger.finest("[sendPoke] Sent POKE id=" + id);
 
         } catch (IOException e) {
+            if (this.getSocket().isClosed() || this.state.get() == CLOSED) return;
             this.logger.error("[sendPoke] IOException while trying to send POKE packet");
             e.printStackTrace();
         }
