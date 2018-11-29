@@ -275,6 +275,7 @@ public abstract class Socket {
             } else if (this.state.get() == CLOSE_RECEIVED) {
                 // received close, now fully closed
                 this.state.set(CLOSED);
+                this.logger.info("[sendClose] Socket closed");
                 this.onClosed();
             }
 
@@ -537,6 +538,7 @@ public abstract class Socket {
 
             } else if (this.state.compareAndSet(CLOSE_SENT, CLOSED)) {
                 this.state.set(CLOSED);
+                this.logger.info("[onClose] Socket closed");
                 this.onClosed();
 
             }
