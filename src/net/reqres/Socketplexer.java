@@ -114,6 +114,8 @@ public class Socketplexer {
                 int channel = entry.getKey();
                 RingBuffer buffer = entry.getValue();
 
+                if (this.socket.isSendClosed()) break;
+
                 try {
                     if (!buffer.isReadOpened()) {
                         this.logger.finer("[multiplexer] Sending channel close command for channel " + channel);
@@ -145,7 +147,7 @@ public class Socketplexer {
                 }
             }
 
-            if (!dataWritten) {
+            if (!dataWritten && !this.socket.isSendClosed()) {
                 synchronized (this.multiplexerLock) {
                     try {
                         this.multiplexerLock.wait(100);
@@ -157,7 +159,7 @@ public class Socketplexer {
             }
         }
 
-        this.logger.log("[multiplexer] Socket receiving closed, terminating multiplexer");
+        this.logger.log("[multiplexer] Socket closed, terminating multiplexer");
 
         synchronized (this.outputsLock) {
             for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
@@ -471,8 +473,10 @@ public class Socketplexer {
 
     private void doClose() {
         this.logger.log("[doClose] Closing Socketplexer");
-        try { this.controlWriter.enqueue((gen) -> gen.writeEndArray()); } catch (Exception e) {}
-        this.controlWriter.close();
+        try { this.controlWriter.enqueue((gen) -> {
+            gen.writeEndArray();
+            gen.close();
+        }); } catch (Exception e) {}
 
         synchronized (this.outputsLock) {
             this.outputsLock.notifyAll();

@@ -142,7 +142,7 @@ public class DFS {
                         JsonField.ObjectField stats;
 
                         try {
-                            stats = statsFuture.get(2500, TimeUnit.MILLISECONDS);
+                            stats = statsFuture.get(3500, TimeUnit.MILLISECONDS);
 
                         } catch (InterruptedException | TimeoutException e) {
                             statsFuture.cancel(false);
