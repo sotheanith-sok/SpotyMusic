@@ -34,19 +34,34 @@ public class MeshSearchRequestHandler implements Runnable {
 
         List<BlockDescriptor> blocks = this.library.dfs.getLocalBlocks(MeshLibrary.INDEX_FILE_NAME);
 
-        this.library.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_SEARCH_MESH);
-            gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-            gen.writeEndObject();
-        }));
+        try {
+            (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_SEARCH_MESH);
+                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                gen.writeEndObject();
+            })).run();
+        } catch (IOException e) {
+            System.err.println("[MeshSearchRequestHandler] Unable to obtain response header stream");
+            this.socketplexer.terminate();
+            return;
+        }
 
-        OutputStream out = this.socketplexer.openOutputChannel(2);
+        OutputStream out = null;
+        try {
+            out = this.socketplexer.openOutputChannel(2);
+        } catch (IOException e) {
+            System.err.println("[MeshSearchRequestHandler] Unable to obtain response body stream");
+            this.socketplexer.terminate();
+            return;
+        }
         AsyncJsonStreamGenerator generator = new AsyncJsonStreamGenerator(out);
         this.library.executor.submit(generator);
         generator.enqueue((gen) -> gen.writeStartArray());
 
         for (BlockDescriptor block : blocks) {
+            if (!socketplexer.isOpened()) return;
+
             Future<InputStream> fin = this.library.dfs.getFileBlock(block, MeshLibrary.INDEX_FILE_REPLICAS);
             InputStream in;
 
@@ -86,7 +101,10 @@ public class MeshSearchRequestHandler implements Runnable {
                 System.err.println("[MeshSearchRequestHandler][run] IOException while reading inverted index file");
                 e.printStackTrace();
 
-                try { in.close(); } catch (IOException e1) {}
+                try {
+                    in.close();
+                } catch (IOException e1) {
+                }
                 continue;
             }
         }
