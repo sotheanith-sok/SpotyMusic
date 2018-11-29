@@ -1,10 +1,6 @@
 package mesh.dfs;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import net.common.JsonField;
-
 import java.io.File;
-import java.io.IOException;
 
 public class BlockDescriptor {
 
@@ -16,6 +12,10 @@ public class BlockDescriptor {
 
     private File file;
 
+    private long fileSize;
+
+    private long lastModified;
+
     public BlockDescriptor(File f) {
         if (f.isDirectory()) throw new IllegalArgumentException("File block cannot be a directory");
         this.file = f;
@@ -24,6 +24,11 @@ public class BlockDescriptor {
         this.fileName = parts[0];
         this.block_number = Integer.parseInt(parts[1]);
         this.replica_number = Integer.parseInt(parts[2]);
+
+        if (f.exists()) {
+            this.fileSize = f.length();
+            this.lastModified = f.lastModified();
+        }
     }
 
     public BlockDescriptor(String blockName) {
@@ -39,6 +44,11 @@ public class BlockDescriptor {
         this.fileName = fileName;
         this.block_number = block_number;
         this.replica_number = replica_number;
+
+        if (this.file.exists()) {
+            this.fileSize = this.file.length();
+            this.lastModified = this.file.lastModified();
+        }
     }
 
     public File getFile() {
@@ -78,11 +88,18 @@ public class BlockDescriptor {
     }
 
     public long blockSize() {
-        return this.file.length();
+        return this.fileSize;
     }
 
     public long lastModified() {
-        return this.file.lastModified();
+        return this.lastModified;
+    }
+
+    protected void updateStats() {
+        if (this.file.exists()) {
+            this.fileSize = this.file.length();
+            this.lastModified = this.file.lastModified();
+        }
     }
 
     public static final String PROPERTY_BLOCK_NUMBER = "PROP_BLOCK_NUMBER";

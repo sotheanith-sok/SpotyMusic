@@ -60,13 +60,6 @@ public class DFS {
         if (!rootDirectory.exists()) rootDirectory.mkdir();
         if (!blockDirectory.exists()) blockDirectory.mkdirs();
 
-        // enumerate existing blocks
-        this.serverLog.debug("[init] Starting Block Enumerator");
-        this.executor.submit(this::enumerateBlocks);
-        // enumerate existing files
-        this.serverLog.debug("[init] Starting File Enumerator");
-        this.executor.submit(this::enumerateFiles);
-
         // register request handlers
         this.serverLog.debug("[init] Registering request handlers");
         this.mesh.registerRequestHandler(REQUEST_READ_BLOCK, this::readBlockHandler);
@@ -79,6 +72,14 @@ public class DFS {
 
         this.serverLog.debug("[init] Registering packet handlers");
         this.mesh.registerPacketHandler(COMMAND_DELETE_FILE, this::deleteFileHandler);
+
+        // enumerate existing blocks
+        this.serverLog.debug("[init] Starting Block Enumerator");
+        this.executor.submit(this::enumerateBlocks);
+        // enumerate existing files
+        this.serverLog.debug("[init] Starting File Enumerator");
+        this.executor.submit(this::enumerateFiles);
+
     }
 
     private void enumerateBlocks() {

@@ -106,6 +106,7 @@ public class WriteBlockRequestHandler implements Runnable {
         }
 
         // add block to list of blocks
+        this.block.updateStats();
         this.dfs.blocks.put(this.block.getBlockName(), this.block);
 
         System.out.println("[WriteBlockRequestHandler][run] Successfully wrote block " + block.getBlockName());
