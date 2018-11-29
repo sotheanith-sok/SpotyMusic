@@ -36,7 +36,7 @@ public class ReadBlockRequestHandler implements Runnable {
                 gen.writeEndObject();
             }));
 
-            out = this.socketplexer.openOutputChannel(2);
+            out = this.socketplexer.openOutputChannel(2, 1024 * 16);
 
             byte[] trx = new byte[1024 * 8];
             int read = 0;

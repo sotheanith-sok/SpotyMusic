@@ -662,7 +662,6 @@ public class DFS {
         return this.writeBlock(block, false);
     }
 
-    // add logging
     public Future<OutputStream> writeBlock(BlockDescriptor block, boolean append) {
         this.clientLog.log("[writeBlock] Request to write block " + block.getBlockName() + " append=" + append);
         int node_id = getBestId(block.getBlockId());
@@ -974,8 +973,8 @@ public class DFS {
         CompletableFuture<InputStream> future = new CompletableFuture<>();
 
         this.executor.submit(() -> {
-            RingBuffer buffer = new RingBuffer(1024 * 24);
-            byte[] trx = new byte[1024 * 8];
+            RingBuffer buffer = new RingBuffer(1024 * 150);
+            byte[] trx = new byte[1024 * 16];
 
             OutputStream buffer_out = buffer.getOutputStream();
             Future<InputStream> blockStream = getFileBlock(new BlockDescriptor(fileName, 0), replication);
@@ -1145,7 +1144,7 @@ public class DFS {
     public Future<OutputStream> writeFile(String fileName, int replicas, boolean tryAppend) {
         CompletableFuture<OutputStream> future = new CompletableFuture<>();
 
-        System.out.println("[DFS][writeFile][FINER] Request to write file " + fileName);
+        this.clientLog.log("[writeFile] Request to write file " + fileName);
 
         this.executor.submit(() -> {
             int replication = replicas;
