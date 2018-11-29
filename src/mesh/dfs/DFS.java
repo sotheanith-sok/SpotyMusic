@@ -142,7 +142,7 @@ public class DFS {
                         JsonField.ObjectField stats;
 
                         try {
-                            stats = statsFuture.get(1000, TimeUnit.MILLISECONDS);
+                            stats = statsFuture.get(2500, TimeUnit.MILLISECONDS);
 
                         } catch (InterruptedException | TimeoutException e) {
                             statsFuture.cancel(false);
@@ -197,7 +197,7 @@ public class DFS {
 
                             statsFuture = this.getBlockStats(block);
                             try {
-                                stats = statsFuture.get(1000, TimeUnit.MILLISECONDS);
+                                stats = statsFuture.get(2500, TimeUnit.MILLISECONDS);
 
                             } catch (ExecutionException | InterruptedException | TimeoutException e) {
                                 statsFuture.cancel(false);
