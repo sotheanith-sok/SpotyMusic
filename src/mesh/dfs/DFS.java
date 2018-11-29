@@ -971,13 +971,13 @@ public class DFS {
                 if (future.isCancelled() || !buffer.isWriteOpened()) return;
 
                 try {
-                    System.out.println("[DFS][readFile] Retrieving block " + i);
+                    this.clientLog.fine("[readFile] Retrieving block " + i);
 
                     InputStream block = blockStream.get(2, TimeUnit.SECONDS);
                     if (!future.isDone() && !future.isCancelled()) future.complete(buffer.getInputStream());
                     if (i + 1 < blockCount) blockStream = getFileBlock(new BlockDescriptor(fileName, i + 1), replication);
 
-                    //System.out.println("[DFS][readFile] Retrieved block " + i);
+                    this.clientLog.finer("[readFile] Retrieved block " + i);
 
                     int read;
                     while ((read = block.read(trx, 0, trx.length)) != -1) {
@@ -987,14 +987,15 @@ public class DFS {
                             blockStream.cancel(false);
                             break;
                         }
-                        //System.out.println("[DFS][readFile] Read " + read + " bytes from DFS");
+                        this.clientLog.trace("[readFile] Read " + read + " bytes from DFS");
                     }
 
                     block.close();
 
                 } catch (InterruptedException e) {
-                    System.err.println("[DFS][readFile] Interrupted while waiting for file block");
+                    this.clientLog.warn("[readFile] Interrupted while waiting for file block");
                     if (!future.isDone()) future.completeExceptionally(e);
+                    blockStream.cancel(false);
                     try {
                         buffer.getOutputStream().close();
                     } catch (IOException e1) {}
@@ -1002,6 +1003,7 @@ public class DFS {
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                     if (!future.isDone()) future.completeExceptionally(e);
+                    blockStream.cancel(false);
                     try {
                         buffer.getOutputStream().close();
                     } catch (IOException e1) {}
@@ -1013,8 +1015,9 @@ public class DFS {
                     } catch (IOException e1) {}
 
                 } catch (TimeoutException e) {
-                    System.err.println("[DFS][readFile] Timed out while trying to retrieve block " + i);
+                    this.clientLog.info("[readFile] Timed out while trying to retrieve block " + i);
                     e.printStackTrace();
+                    blockStream.cancel(false);
                     try { buffer_out.close(); } catch (IOException e1) {}
                     future.completeExceptionally(e);
                     break;
@@ -1044,6 +1047,7 @@ public class DFS {
             } catch (InterruptedException | TimeoutException | ExecutionException e) {
                 System.err.println("[DFS][readFile] Exception while fetching file metadata");
                 e.printStackTrace();
+                file.cancel(false);
                 future.completeExceptionally(e);
                 return;
             }
@@ -1058,6 +1062,7 @@ public class DFS {
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 System.err.println("[DFS][readFile] There was a problem getting the requested file");
                 e.printStackTrace();
+                in.cancel(false);
                 future.completeExceptionally(e);
             }
         });
