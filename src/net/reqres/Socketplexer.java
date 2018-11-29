@@ -471,24 +471,11 @@ public class Socketplexer {
 
     private void doClose() {
         this.logger.log("[doClose] Closing Socketplexer");
+        try { this.controlWriter.enqueue((gen) -> gen.writeEndArray()); } catch (Exception e) {}
         this.controlWriter.close();
-        this.socket.close();
 
         synchronized (this.outputsLock) {
-            for (Map.Entry<Integer, RingBuffer> entry : this.pendingChannels.entrySet()) {
-                try {
-                    entry.getValue().getInputStream().close();
-                } catch (IOException e) {}
-            }
-
-            for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
-                try {
-                    entry.getValue().getOutputStream().close();
-                } catch (IOException e) {
-                    this.logger.warn("[terminate] IOException while closing receiving sub-buffer");
-                    //e.printStackTrace();
-                }
-            }
+            this.outputsLock.notifyAll();
         }
 
         synchronized (this.inputsLock) {
@@ -507,6 +494,24 @@ public class Socketplexer {
             }
         }
 
+        synchronized (this.outputsLock) {
+            for (Map.Entry<Integer, RingBuffer> entry : this.pendingChannels.entrySet()) {
+                try {
+                    entry.getValue().getInputStream().close();
+                } catch (IOException e) {}
+            }
+
+            for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
+                try {
+                    entry.getValue().getOutputStream().close();
+                } catch (IOException e) {
+                    this.logger.warn("[terminate] IOException while closing receiving sub-buffer");
+                    //e.printStackTrace();
+                }
+            }
+        }
+
+        this.socket.close();
     }
 
     /**
