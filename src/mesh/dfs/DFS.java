@@ -763,7 +763,6 @@ public class DFS {
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
             });
-            parser.getLogger().setFilter(Constants.DEBUG);
             this.clientLog.finest("[writeBlock] Parsing response headers");
             parser.run();
         });
@@ -808,7 +807,7 @@ public class DFS {
         Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
         this.clientLog.fine("[getBlockStats] Sending request header");
-        this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+        Future<?> requestFuture = this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
             gen.writeStartObject();
             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_BLOCK_STATS);
             gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
@@ -819,9 +818,10 @@ public class DFS {
         this.clientLog.fine("[getBlockStats] Parsing response header");
         this.executor.submit(() -> {
             try {
+                requestFuture.get();
                 InputStream in = socketplexer.waitInputChannel(1).get(2500, TimeUnit.MILLISECONDS);
 
-                this.executor.submit(new JsonStreamParser(in, true, (JsonField field) -> {
+                JsonStreamParser parser = new JsonStreamParser(in, true, (JsonField field) -> {
                     if (!field.isObject()) return;
                     JsonField.ObjectField response = (JsonField.ObjectField) field;
 
@@ -833,15 +833,20 @@ public class DFS {
                     }
 
                     future.complete(response);
-                }));
+                });
+                parser.run();
+                socketplexer.terminate();
+
+                if (!future.isDone()) {
+                    future.completeExceptionally(new Exception("An unknown problem occurred"));
+                }
 
             } catch (InterruptedException | TimeoutException | ExecutionException e) {
-                this.clientLog.warn("[getBlockSize] There was a problem opening the response channel");
+                this.clientLog.warn("[getBlockStats] There was a problem opening the response channel");
                 e.printStackTrace();
                 socketplexer.terminate();
                 future.completeExceptionally(e);
             }
-
         });
 
         return future;
