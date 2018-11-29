@@ -51,7 +51,7 @@ public class MeshNode {
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
         this.server = new RequestServer(this.executor, serverAddress);
 
-        this.logger = new Logger("MeshNode", Constants.TRACE);
+        this.logger = new Logger("MeshNode", Constants.LOG);
         this.searchLock = new Object();
 
         this.logger.info(" Server address: " + this.server.getServerSocket().localAddress() + ":" + this.server.getServerSocket().getPort());
@@ -68,8 +68,6 @@ public class MeshNode {
         this.node_count = new AtomicInteger(0);
 
         this.nodeConnectListeners = new LinkedList<>();
-
-
 
         this.executor.submit(this::search);
     }
