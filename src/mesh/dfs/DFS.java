@@ -151,7 +151,8 @@ public class DFS {
                             this.blocks.put(block.getBlockName(), block);
                             try {
                                 Thread.sleep(500);
-                            } catch (InterruptedException e1) {}
+                            } catch (InterruptedException e1) {
+                            }
                             //continue;
                             break;
 
@@ -161,7 +162,8 @@ public class DFS {
                             this.blocks.put(block.getBlockName(), block);
                             try {
                                 Thread.sleep(500);
-                            } catch (InterruptedException e1) {}
+                            } catch (InterruptedException e1) {
+                            }
                             //continue;
                             break;
                         }
@@ -206,7 +208,8 @@ public class DFS {
                                 this.blocks.put(block.getBlockName(), block);
                                 try {
                                     Thread.sleep(500);
-                                } catch (InterruptedException e1) {}
+                                } catch (InterruptedException e1) {
+                                }
                                 //continue;
                                 break;
                             }
@@ -241,15 +244,24 @@ public class DFS {
                             this.clientLog.warn("[organizeBlocks] Timed out while trying to move block to another node");
                             e.printStackTrace();
 
-                            try { in.close(); } catch (IOException e1) {}
+                            try {
+                                in.close();
+                            } catch (IOException e1) {
+                            }
                             break;
 
                         } catch (IOException e) {
                             this.clientLog.error("[organizeBlocks] IOException while transferring block");
                             e.printStackTrace();
 
-                            if (in != null) try { in.close(); } catch (IOException e1) {}
-                            if (out != null) try { out.close(); } catch (IOException e1) {}
+                            if (in != null) try {
+                                in.close();
+                            } catch (IOException e1) {
+                            }
+                            if (out != null) try {
+                                out.close();
+                            } catch (IOException e1) {
+                            }
                             break;
 
                         } catch (Exception e) {
@@ -260,7 +272,8 @@ public class DFS {
 
                         try {
                             Thread.sleep(500);
-                        } catch (InterruptedException e) {}
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
 
@@ -325,13 +338,17 @@ public class DFS {
 
         } else {
             this.serverLog.warn("[readBlockHandler] Received request for non-existent block");
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen)-> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_READ_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
-                gen.writeEndObject();
-            });
-            response.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_READ_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.serverLog.warn("[readBlockHandler] Unable to obtain response header output stream");
+                socketplexer.terminate();
+            }
         }
     }
 
@@ -341,7 +358,7 @@ public class DFS {
         BlockDescriptor block = null;
         if (this.blocks.containsKey(blockName)) block = this.blocks.get(blockName);
         else block = new BlockDescriptor(blockName);
-        (new WriteBlockRequestHandler(socketplexer, block,this)).run();
+        (new WriteBlockRequestHandler(socketplexer, block, this)).run();
     }
 
     private void appendBlockHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
@@ -360,27 +377,35 @@ public class DFS {
         this.serverLog.debug("[blockStatsHandler] Request for stats of block " + blockName);
         if (this.blocks.containsKey(blockName)) {
             BlockDescriptor block = this.blocks.get(blockName);
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_BLOCK_STATS);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_SIZE, block.blockSize());
-                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_MODIFIED, block.lastModified());
-                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_NUMBER, block.getBlockNumber());
-                gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_REPLICA, block.getReplicaNumber());
-                gen.writeEndObject();
-            });
-            response.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_BLOCK_STATS);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_SIZE, block.blockSize());
+                    gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_MODIFIED, block.lastModified());
+                    gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_NUMBER, block.getBlockNumber());
+                    gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_REPLICA, block.getReplicaNumber());
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
+                socketplexer.terminate();
+            }
 
         } else {
             this.serverLog.info("[blockStatsHandler] Received request for stats on non-existent block");
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_BLOCK_STATS);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
-                gen.writeEndObject();
-            });
-            response.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_BLOCK_STATS);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
+                socketplexer.terminate();
+            }
         }
     }
 
@@ -390,36 +415,37 @@ public class DFS {
             String fileName = request.getStringProperty(FileDescriptor.PROPERTY_FILE_NAME);
             if (this.files.containsKey(fileName)) {
                 FileDescriptor file = this.files.get(fileName);
-                DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
                     file.serialize(gen, true);
                     gen.writeEndObject();
-                });
-
-                response.run();
+                })).run();
 
             } else {
                 this.serverLog.warn("[fileQueryHandler] Received query for non-existent file");
-                DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
                     gen.writeEndObject();
-                });
-                response.run();
+                })).run();
             }
 
         } catch (Exception e) {
             this.serverLog.warn("[fileQueryHandler] Exception thrown while handling file query request");
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
-                gen.writeEndObject();
-            });
-            response.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e1) {
+                this.serverLog.warn("[fileQueryHandler] Unable to obtain response stream");
+                socketplexer.terminate();
+            }
         }
 
     }
@@ -430,22 +456,24 @@ public class DFS {
             FileDescriptor descriptor = FileDescriptor.fromJson(request);
             this.files.put(descriptor.getFileName(), descriptor);
 
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+            (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_PUT_FILE_METADATA);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
                 gen.writeEndObject();
-            });
-            response.run();
+            })).run();
 
         } catch (Exception e) {
-            DeferredStreamJsonGenerator response = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_PUT_FILE_METADATA);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
-                gen.writeEndObject();
-            });
-            response.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_PUT_FILE_METADATA);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e1) {
+                this.serverLog.warn("[filePutHandler] Unable to obtain response stream");
+            }
         }
     }
 
@@ -465,24 +493,31 @@ public class DFS {
                 this.files.remove(block.getFileName());
             }
 
-            DeferredStreamJsonGenerator responseGenerator = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-                gen.writeEndObject();
-            });
-
-            responseGenerator.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.serverLog.warn("[deleteBlockHandler] Unable to obtain response stream");
+                socketplexer.terminate();
+            }
 
         } else {
             this.serverLog.info("[deleteBlockHandler] Received request to delete non-existent block");
-            DeferredStreamJsonGenerator responseGenerator = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
-                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
-                gen.writeEndObject();
-            });
-            responseGenerator.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_DELETE_BLOCK);
+                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.serverLog.warn("[deleteBlockHandler] Unable to obtain response stream");
+                socketplexer.terminate();
+            }
         }
     }
 
@@ -495,7 +530,8 @@ public class DFS {
             for (BlockDescriptor block : this.getLocalBlocks(fileName)) {
                 this.serverLog.finest("[deleteFileHandler] Deleting block " + block.getBlockName());
                 File file = block.getFile();
-                if (!file.delete()) this.serverLog.warn("[deleteFileHandler] There was a problem deleting block " + block.getBlockName());
+                if (!file.delete())
+                    this.serverLog.warn("[deleteFileHandler] There was a problem deleting block " + block.getBlockName());
                 this.blocks.remove(block.getBlockName());
             }
         });
@@ -541,12 +577,19 @@ public class DFS {
 
             // send request header
             this.clientLog.finer("[requestFileBlock] Sending request header");
-            this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(net.Constants.REQUEST_TYPE_PROPERTY, REQUEST_READ_BLOCK);
-                gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_READ_BLOCK);
+                    gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.clientLog.warn("[requestFileBLock] Unable to obtain request header stream");
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
 
             InputStream headerStream;
             Future<InputStream> headerStreamFuture = plexer.waitInputChannel(1);
@@ -572,13 +615,12 @@ public class DFS {
             }
 
             this.clientLog.finer("[requestFileBlock] Parsing response header");
-            this.executor.submit(new JsonStreamParser(headerStream, true, (field) -> {
+            (new JsonStreamParser(headerStream, true, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField header = (JsonField.ObjectField) field;
                 if (header.containsKey(net.Constants.REQUEST_TYPE_PROPERTY) &&
                         header.getStringProperty(net.Constants.REQUEST_TYPE_PROPERTY).equals(RESPONSE_READ_BLOCK)) {
-
                     if (header.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                         if (future.isCancelled()) plexer.terminate();
                         else {
@@ -588,7 +630,9 @@ public class DFS {
                                 InputStream dataStream = dataStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
                                 if (future.isCancelled()) {
                                     this.clientLog.fine("[requestFileBlock] Got response body stream, but request was canceled");
-                                    try { dataStream.close(); } catch (IOException e) {}
+                                    try {
+                                        dataStream.close();
+                                    } catch (IOException e) { }
                                     plexer.terminate();
                                     return;
                                 }
@@ -620,7 +664,7 @@ public class DFS {
                     plexer.terminate();
                     future.completeExceptionally(new Exception("Malformed response header"));
                 }
-            }));
+            })).run();
         });
 
         return future;
@@ -707,13 +751,20 @@ public class DFS {
             final Socketplexer plexer = new Socketplexer(connection, this.executor);
 
             this.clientLog.finest("[writeBlock] Sending request headers");
-            this.executor.submit(new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
-                gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
-                gen.writeEndObject();
-                this.clientLog.finest("[writeBlock] Request headers sent");
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
+                    gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
+                    gen.writeEndObject();
+                    this.clientLog.finest("[writeBlock] Request headers sent");
+                })).run();
+            } catch (IOException e) {
+                this.clientLog.warn("[writeBlock] Unable to obtain request header stream");
+                plexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
 
             InputStream headerStream;
             Future<InputStream> headerStreamFuture = plexer.waitInputChannel(1);
@@ -737,7 +788,8 @@ public class DFS {
                 return;
             }
 
-            JsonStreamParser parser = new JsonStreamParser(headerStream, true, (field) -> {
+            this.clientLog.finest("[writeBlock] Parsing response headers");
+            (new JsonStreamParser(headerStream, true, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField packet = (JsonField.ObjectField) field;
@@ -757,8 +809,14 @@ public class DFS {
                         this.clientLog.fine("[writeBlock] Ready to write block, but request was canceled.");
 
                     } else {
-                        future.complete(plexer.openOutputChannel(2));
-                        this.clientLog.fine("[writeBlock] Ready to write block to remote node");
+                        try {
+                            future.complete(plexer.openOutputChannel(2, 1024 * 10));
+                            this.clientLog.fine("[writeBlock] Ready to write block to remote node");
+
+                        } catch (IOException e) {
+                            this.clientLog.warn("[writeBlock] Unable to obtain upload stream");
+                            plexer.terminate();
+                        }
                     }
 
                 } else {
@@ -768,9 +826,7 @@ public class DFS {
                     future.completeExceptionally(new Exception("Received response code: " +
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
-            });
-            this.clientLog.finest("[writeBlock] Parsing response headers");
-            parser.run();
+            })).run();
         });
 
         return future;
@@ -815,20 +871,26 @@ public class DFS {
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
             this.clientLog.fine("[getBlockStats] Sending request header");
-            DeferredStreamJsonGenerator headerGenerator = new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_BLOCK_STATS);
-                gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
-                gen.writeEndObject();
-                this.clientLog.trace("[getBlockStats] Request headers sent");
-            });
-            headerGenerator.run();
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_BLOCK_STATS);
+                    gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
+                    gen.writeEndObject();
+                    this.clientLog.trace("[getBlockStats] Request headers sent");
+                })).run();
+            } catch (IOException e) {
+                this.clientLog.warn("[getBlockStats] Unable to obtain request header stream");
+                socketplexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
 
             this.clientLog.fine("[getBlockStats] Parsing response header");
             try {
                 InputStream in = socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS);
 
-                JsonStreamParser parser = new JsonStreamParser(in, true, (JsonField field) -> {
+                (new JsonStreamParser(in, true, (JsonField field) -> {
                     if (!field.isObject()) return;
                     JsonField.ObjectField response = (JsonField.ObjectField) field;
 
@@ -840,8 +902,7 @@ public class DFS {
                     }
 
                     future.complete(response);
-                });
-                parser.run();
+                })).run();
                 socketplexer.terminate();
 
                 if (!future.isDone()) {
@@ -911,23 +972,29 @@ public class DFS {
                 Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
                 this.clientLog.finest("[getFileStats] Sending request headers");
-                this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_FILE_METADATA);
-                    gen.writeStringField(FileDescriptor.PROPERTY_FILE_NAME, fileName);
-                    gen.writeEndObject();
-                }));
+                try {
+                    (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
+                        gen.writeStartObject();
+                        gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_FILE_METADATA);
+                        gen.writeStringField(FileDescriptor.PROPERTY_FILE_NAME, fileName);
+                        gen.writeEndObject();
+                    })).run();
+                } catch (IOException e) {
+                    this.clientLog.warn("[getFileStats] Unable to obtain request header stream");
+                    socketplexer.terminate();
+                    future.completeExceptionally(e);
+                    return;
+                }
 
                 AtomicReference<JsonField.ObjectField> aresponse = new AtomicReference<>();
 
                 try {
                     this.clientLog.finest("[getFileStats] Parsing response headers...");
-                    JsonStreamParser parser = new JsonStreamParser(socketplexer.waitInputChannel(1).get(2500, TimeUnit.MILLISECONDS), true, (field) -> {
+                    (new JsonStreamParser(socketplexer.waitInputChannel(1).get(2500, TimeUnit.MILLISECONDS), true, (field) -> {
                         if (field.isObject()) {
                             aresponse.set((JsonField.ObjectField) field);
                         }
-                    });
-                    parser.run();
+                    })).run();
 
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     this.clientLog.warn("[getFileStats] Exception while processing response data");
@@ -941,16 +1008,19 @@ public class DFS {
                 if (response.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_NOT_FOUND)) {
                     this.clientLog.fine("[getFileStats] Remote node reported file not found");
                     exc = new FileNotFoundException("Remote reported no such file");
+                    socketplexer.terminate();
                     continue;
 
                 } else if (response.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_SERVER_ERROR)) {
                     this.clientLog.fine("[getFileStats] Remote node encountered an unexpected error");
                     exc = new Exception("Remote had a problem processing the request");
+                    socketplexer.terminate();
                     continue;
                 }
 
                 this.clientLog.fine("[getFileStats] Successfully got file stats");
                 future.complete(FileDescriptor.fromJson(response));
+                socketplexer.terminate();
                 break;
             }
 
@@ -970,6 +1040,7 @@ public class DFS {
 
     // add logging
     public Future<InputStream> readFile(String fileName, int blockCount, int replication) {
+        this.clientLog.log("[readFile] Request to read file from DFS");
         CompletableFuture<InputStream> future = new CompletableFuture<>();
 
         this.executor.submit(() -> {
@@ -980,14 +1051,27 @@ public class DFS {
             Future<InputStream> blockStream = getFileBlock(new BlockDescriptor(fileName, 0), replication);
 
             for (int i = 0; i < blockCount && buffer.isWriteOpened(); i++) {
-                if (future.isCancelled() || !buffer.isWriteOpened()) return;
+                if (future.isCancelled() || !buffer.isWriteOpened()) {
+                    blockStream.cancel(false);
+                    return;
+                }
 
                 try {
                     this.clientLog.fine("[readFile] Retrieving block " + i);
 
-                    InputStream block = blockStream.get(2, TimeUnit.SECONDS);
-                    if (!future.isDone() && !future.isCancelled()) future.complete(buffer.getInputStream());
-                    if (i + 1 < blockCount) blockStream = getFileBlock(new BlockDescriptor(fileName, i + 1), replication);
+                    InputStream block = blockStream.get(5, TimeUnit.SECONDS);
+
+                    if (future.isCancelled() || !buffer.isReadOpened()) {
+                        block.close();
+                        break;
+                    }
+
+                    if (!future.isDone()) {
+                        future.complete(buffer.getInputStream());
+                    }
+
+                    if (i + 1 < blockCount)
+                        blockStream = getFileBlock(new BlockDescriptor(fileName, i + 1), replication);
 
                     this.clientLog.finer("[readFile] Retrieved block " + i);
 
@@ -996,7 +1080,7 @@ public class DFS {
                         if (buffer.isWriteOpened()) buffer_out.write(trx, 0, read);
                         else {
                             block.close();
-                            blockStream.cancel(false);
+                            if (blockStream.isDone()) blockStream.get().close(); else blockStream.cancel(false);
                             break;
                         }
                         this.clientLog.trace("[readFile] Read " + read + " bytes from DFS");
@@ -1004,41 +1088,29 @@ public class DFS {
 
                     block.close();
 
-                } catch (InterruptedException e) {
-                    this.clientLog.warn("[readFile] Interrupted while waiting for file block");
-                    if (!future.isDone()) future.completeExceptionally(e);
-                    blockStream.cancel(false);
-                    try {
-                        buffer.getOutputStream().close();
-                    } catch (IOException e1) {}
-
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                    if (!future.isDone()) future.completeExceptionally(e);
-                    blockStream.cancel(false);
-                    try {
-                        buffer.getOutputStream().close();
-                    } catch (IOException e1) {}
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    try {
-                        buffer.getOutputStream().close();
-                    } catch (IOException e1) {}
-
-                } catch (TimeoutException e) {
+                } catch (TimeoutException | InterruptedException | ExecutionException | IOException e) {
                     this.clientLog.info("[readFile] Timed out while trying to retrieve block " + i);
                     e.printStackTrace();
-                    blockStream.cancel(false);
-                    try { buffer_out.close(); } catch (IOException e1) {}
-                    future.completeExceptionally(e);
+                    if (!future.isDone()) future.completeExceptionally(e);
+
+                    try {
+                        if (blockStream.isDone()) blockStream.get().close();
+                        else blockStream.cancel(false);
+
+                    } catch (IOException | InterruptedException | ExecutionException e1) {}
+
+                    try {
+                        buffer.getOutputStream().close();
+                    } catch (IOException e1) {}
+
                     break;
                 }
             }
 
             try {
                 buffer_out.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         });
 
         return future;
@@ -1069,7 +1141,7 @@ public class DFS {
 
             Future<InputStream> in = this.readFile(fileName, blockCount, replicas);
             try {
-                future.complete(in.get(7500, TimeUnit.MILLISECONDS));
+                future.complete(in.get(10000, TimeUnit.MILLISECONDS));
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 System.err.println("[DFS][readFile] There was a problem getting the requested file");
@@ -1107,15 +1179,22 @@ public class DFS {
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
-            this.executor.submit(new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_PUT_FILE_METADATA);
-                fileDescriptor.serialize(gen, true);
-                gen.writeEndObject();
-            }));
+            try {
+                (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_PUT_FILE_METADATA);
+                    fileDescriptor.serialize(gen, true);
+                    gen.writeEndObject();
+                })).run();
+            } catch (IOException e) {
+                this.clientLog.warn("[getBlockStats] Unable to obtain request header stream");
+                socketplexer.terminate();
+                future.completeExceptionally(e);
+                return;
+            }
 
             try {
-                this.executor.submit(new JsonStreamParser(socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS), true, (field) -> {
+                (new JsonStreamParser(socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS), true, (field) -> {
                     if (!field.isObject()) return;
                     JsonField.ObjectField packet = (JsonField.ObjectField) field;
                     String status = packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS);
@@ -1125,7 +1204,8 @@ public class DFS {
                     } else {
                         future.completeExceptionally(new Exception("Server returned status code " + status));
                     }
-                }));
+                })).run();
+                socketplexer.terminate();
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 System.err.println("[DFS][putFileMetadata] Exception while parsing response header");
@@ -1197,7 +1277,8 @@ public class DFS {
             int blockNumber = append ? (int) lastBlock.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_NUMBER) : 0;
 
             Future<OutputStream>[] outputs = new Future[replication];
-            for (int i = 0; i < replication; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), append);
+            for (int i = 0; i < replication; i++)
+                outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), append);
 
             try {
                 for (int i = 0; i < replication; i++) outputs[i].get();
@@ -1245,12 +1326,12 @@ public class DFS {
                             System.err.println("[DFS][writeStream] Exception while closing output");
                             e1.printStackTrace();
                         }
-                    }
-                    else outputs[i].cancel(false);
+                    } else outputs[i].cancel(false);
                 }
                 try {
                     in.close();
-                } catch (IOException e1) {}
+                } catch (IOException e1) {
+                }
                 e.printStackTrace();
             }
 
@@ -1311,7 +1392,8 @@ public class DFS {
                 blockNumber++;
             }
 
-            for (int i = 0; i < replicas; i++) outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), true);
+            for (int i = 0; i < replicas; i++)
+                outputs[i] = writeBlock(new BlockDescriptor(fileName, blockNumber, i), true);
 
             for (int i = 0; i < replicas; i++) {
                 try {
@@ -1331,7 +1413,7 @@ public class DFS {
 
             FileDescriptor metadata = new FileDescriptor(fileName, (create ? 0 : descriptor.getTotalSize()) + data.length, blockNumber + 1, replicas);
             for (int i = 0; i < replicas; i++) {
-                BlockDescriptor blockDescriptor= new BlockDescriptor(fileName, 0, i);
+                BlockDescriptor blockDescriptor = new BlockDescriptor(fileName, 0, i);
                 int id = this.getBestId(blockDescriptor.getBlockId());
                 this.putFileMetadata(metadata, id);
             }
@@ -1353,7 +1435,8 @@ public class DFS {
         for (BlockDescriptor block : this.getLocalBlocks(fileName)) {
             this.clientLog.finest("[deleteFile] Deleting block " + block.getBlockName());
             File file = block.getFile();
-            if (!file.delete()) this.clientLog.warn("[deleteFile] There was a problem deleting block " + block.getBlockName());
+            if (!file.delete())
+                this.clientLog.warn("[deleteFile] There was a problem deleting block " + block.getBlockName());
             this.blocks.remove(block.getBlockName());
         }
     }
@@ -1364,7 +1447,8 @@ public class DFS {
         blocks:
         for (BlockDescriptor block : this.blocks.values()) {
             if (block.getFileName().equals(fileName)) {
-                for (BlockDescriptor block1 : blocks) if (block1.getBlockNumber() == block.getBlockNumber()) continue blocks;
+                for (BlockDescriptor block1 : blocks)
+                    if (block1.getBlockNumber() == block.getBlockNumber()) continue blocks;
                 blocks.add(block);
             }
         }
