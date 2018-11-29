@@ -205,8 +205,8 @@ public class Socketplexer {
                     break;
                 }
                 this.logger.finest("[demultiplexer] Demultiplexed " + length + " bytes from channel " + channel);
-                System.out.write(trx, 0, length);
-                System.out.println();
+                //System.out.write(trx, 0, length);
+                //System.out.println();
 
                 synchronized (this.inputsLock) {
                     try {
