@@ -95,8 +95,8 @@ public abstract class Socket {
 
         this.timeoutListeners = new LinkedList<>();
 
-        this.logger = new Logger("Socket", Constants.DEBUG);
-        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.DEBUG);
+        this.logger = new Logger("Socket", Constants.INFO);
+        this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.LOG);
         this.logger.info(" New socket bound to: " + remote + ":" + port);
     }
 
