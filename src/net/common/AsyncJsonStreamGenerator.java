@@ -82,6 +82,7 @@ public class AsyncJsonStreamGenerator implements Runnable {
                     }
 
                 } catch (IOException e) {
+                    if (gen.isClosed()) break;
                     System.err.println("[AsyncJsonStreamGenerator][run] IOException while invoking deferred json generators");
                     e.printStackTrace();
                 }
