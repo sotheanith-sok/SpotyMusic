@@ -772,6 +772,7 @@ public class DFS {
 
             this.clientLog.trace("[writeBlock] Creating Socketplexer");
             final Socketplexer plexer = new Socketplexer(connection, this.executor);
+            plexer.setLogFilter(Constants.DEBUG);
 
             this.clientLog.finest("[writeBlock] Sending request headers");
             OutputStream headersOut = null;
@@ -813,7 +814,7 @@ public class DFS {
             }
 
             this.clientLog.finest("[writeBlock] Parsing response headers");
-            (new JsonStreamParser(headersIn, true, (field) -> {
+            (new JsonStreamParser(headersIn, false, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField packet = (JsonField.ObjectField) field;
@@ -851,6 +852,11 @@ public class DFS {
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
             })).run();
+            try {
+                // give socketplexer time to establish channel
+                Thread.sleep(Constants.MAX_CHANNEL_WAIT);
+            } catch (InterruptedException e) {}
+
             try { headersIn.close(); } catch (IOException e) {}
             try { headersOut.close(); } catch (IOException e) {}
         });

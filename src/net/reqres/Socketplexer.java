@@ -505,10 +505,12 @@ public class Socketplexer {
 
         synchronized (this.outputsLock) {
             channelsOpened += this.outputChannels.size() - 1;
+            channelsOpened += this.pendingChannels.size();
         }
 
         synchronized (this.inputsLock) {
             channelsOpened += this.inputChannels.size() - 1;
+            channelsOpened += this.waitingChannels.size();
         }
 
         this.logger.finest("[checkShouldClose] " + channelsOpened + " use channels opened");
