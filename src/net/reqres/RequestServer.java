@@ -58,7 +58,7 @@ public class RequestServer {
         this.executor = executor;
         this.socket = new ServerSocket(port, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
-        this.logger = new Logger("RequestServer", Constants.TRACE);
+        this.logger = new Logger("RequestServer", Constants.LOG);
         this.socket.open();
     }
 
@@ -73,7 +73,7 @@ public class RequestServer {
         this.executor = executor;
         this.socket = new ServerSocket(address, this::onSocket);
         this.requestHandlers = new ConcurrentHashMap<>();
-        this.logger = new Logger("RequestServer", Constants.TRACE);
+        this.logger = new Logger("RequestServer", Constants.LOG);
         this.socket.open();
     }
 
