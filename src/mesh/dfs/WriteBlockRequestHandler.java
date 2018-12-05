@@ -60,6 +60,7 @@ public class WriteBlockRequestHandler implements Runnable {
         }
 
         OutputStream out = null;
+        OutputStream headersOut = null;
         try {
             this.logger.finer(" Opening FileOutputStream");
             out = new BufferedOutputStream(new FileOutputStream(block.getFile(), this.append));
@@ -67,7 +68,7 @@ public class WriteBlockRequestHandler implements Runnable {
 
             try {
                 this.logger.trace(" Sending response headers");
-                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), false, (gen) -> {
+                (new DeferredStreamJsonGenerator(headersOut = this.socketplexer.openOutputChannel(1), false, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
@@ -86,7 +87,7 @@ public class WriteBlockRequestHandler implements Runnable {
 
             try {
                 this.logger.trace(" Sending response headers");
-                (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen) -> {
+                (new DeferredStreamJsonGenerator(headersOut = this.socketplexer.openOutputChannel(1), true, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, this.append ? DFS.RESPONSE_APPEND_BLOCK : DFS.RESPONSE_WRITE_BLOCK);
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
@@ -107,6 +108,9 @@ public class WriteBlockRequestHandler implements Runnable {
             this.logger.fine(" Getting request body stream");
             Future<InputStream> future = this.socketplexer.waitInputChannel(2);
             in = future.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
+            try { headersOut.close(); } catch (IOException e) {
+                this.logger.warn(" Unable to close header stream");
+            }
             this.logger.finest(" Request body stream opened");
 
             byte[] trx = new byte[1024 * 8];
