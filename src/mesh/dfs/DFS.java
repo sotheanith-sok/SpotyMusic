@@ -771,8 +771,9 @@ public class DFS {
             final Socketplexer plexer = new Socketplexer(connection, this.executor);
 
             this.clientLog.finest("[writeBlock] Sending request headers");
+            OutputStream headersOut = null;
             try {
-                (new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), false, (gen) -> {
+                (new DeferredStreamJsonGenerator(headersOut = plexer.openOutputChannel(1), false, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, append ? REQUEST_APPEND_BLOCK : REQUEST_WRITE_BLOCK);
                     gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
@@ -786,12 +787,12 @@ public class DFS {
                 return;
             }
 
-            InputStream headerStream;
+            InputStream headersIn;
             Future<InputStream> headerStreamFuture = plexer.waitInputChannel(1);
 
             try {
                 this.clientLog.trace("[writeBlock] Obtaining response header stream");
-                headerStream = headerStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
+                headersIn = headerStreamFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
 
             } catch (InterruptedException | TimeoutException e) {
                 this.clientLog.error("[writeBlock] Unable to obtain response header channel");
@@ -809,7 +810,7 @@ public class DFS {
             }
 
             this.clientLog.finest("[writeBlock] Parsing response headers");
-            (new JsonStreamParser(headerStream, true, (field) -> {
+            (new JsonStreamParser(headersIn, true, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField packet = (JsonField.ObjectField) field;
@@ -847,6 +848,8 @@ public class DFS {
                             packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS)));
                 }
             })).run();
+            try { headersIn.close(); } catch (IOException e) {}
+            try { headersOut.close(); } catch (IOException e) {}
         });
 
         return future;
