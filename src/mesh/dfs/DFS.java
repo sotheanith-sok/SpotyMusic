@@ -32,6 +32,8 @@ public class DFS {
 
     private Logger clientLog;
 
+    private Logger blockOrganizerLog;
+
     protected ScheduledExecutorService executor;
 
     private MeshNode mesh;
@@ -48,6 +50,7 @@ public class DFS {
 
         this.serverLog = new Logger("DFS][server", Constants.LOG);
         this.clientLog = new Logger("DFS][client", Constants.LOG);
+        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.DEBUG);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -116,11 +119,11 @@ public class DFS {
 
     private void organizeBlocks() {
         if (this.blockOrganizerRunning.compareAndSet(false, true)) {
-            this.clientLog.debug("[organizeBlocks] Submitting block organizer task");
+            this.blockOrganizerLog.debug(" Submitting block organizer task");
             this.executor.submit(() -> {
-                this.clientLog.log("[organiseBlocks] Block Organizer starting");
+                this.blockOrganizerLog.log(" Block Organizer starting");
                 if (this.mesh.getAvailableNodes().size() < 2) {
-                    this.clientLog.log("[organizeBlocks] There are not enough connected nodes to reorganize blocks");
+                    this.blockOrganizerLog.log(" There are not enough connected nodes to reorganize blocks");
                     this.blockOrganizerRunning.set(false);
                     return;
                 }
@@ -129,14 +132,14 @@ public class DFS {
                 for (BlockDescriptor block : Collections.unmodifiableCollection(this.blocks.values())) {
                     int blockId = block.getBlockId();
                     int bestId = this.getBestId(blockId);
-                    this.clientLog.trace("[organizeBlocks] Block " + blockId + " best matches node " + bestId);
+                    this.blockOrganizerLog.finer(" Block " + blockId + " best matches node " + bestId);
 
                     if (bestId != this.mesh.getNodeId() && this.mesh.getAvailableNodes().size() >= 2) {
-                        this.clientLog.fine("[organizeBlocks] Block " + block.getBlockName() + " does not belong on this node");
+                        this.blockOrganizerLog.fine(" Block " + block.getBlockName() + " does not belong on this node");
 
                         this.blocks.remove(block.getBlockName());
 
-                        this.clientLog.finer("[organizeBlocks] Checking for block on remote");
+                        this.blockOrganizerLog.finer(" Checking for block on remote");
 
                         Future<JsonField.ObjectField> statsFuture = this.getBlockStats(block);
                         JsonField.ObjectField stats;
@@ -146,7 +149,7 @@ public class DFS {
 
                         } catch (InterruptedException | TimeoutException e) {
                             statsFuture.cancel(false);
-                            this.clientLog.warn("[organizeBlocks] Unable to retrieve block stats");
+                            this.blockOrganizerLog.warn(" Unable to retrieve block stats");
                             e.printStackTrace();
                             this.blocks.put(block.getBlockName(), block);
                             try {
@@ -157,7 +160,7 @@ public class DFS {
                             break;
 
                         } catch (ExecutionException e) {
-                            this.clientLog.error("[organizeBlocks] ExecutionException while trying to retrieve block stats");
+                            this.blockOrganizerLog.error(" ExecutionException while trying to retrieve block stats");
                             e.printStackTrace();
                             this.blocks.put(block.getBlockName(), block);
                             try {
@@ -170,16 +173,16 @@ public class DFS {
 
                         if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                             if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) == block.blockSize()) {
-                                this.clientLog.log("[organizeBlocks] Remote has block, sizes match");
+                                this.blockOrganizerLog.log(" Remote has block, sizes match");
                                 block.getFile().delete();
                                 continue;
 
                             } else {
                                 if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_MODIFIED) < block.lastModified()) {
-                                    this.clientLog.log("[organizeBlocks] Remote has block, size does not match, local is newer");
+                                    this.blockOrganizerLog.log(" Remote has block, size does not match, local is newer");
 
                                 } else {
-                                    this.clientLog.log("[organizeBlocks] Remote has block, size does not match, remote is newer");
+                                    this.blockOrganizerLog.log(" Remote has block, size does not match, remote is newer");
                                     // TODO: when working reliably, delete local copy of block
                                     continue;
                                 }
@@ -190,19 +193,29 @@ public class DFS {
                         Future<OutputStream> fout = this.writeBlock(block);
                         OutputStream out = null;
                         try {
+                            this.blockOrganizerLog.finest(" Opening FileInputStream");
                             in = new BufferedInputStream(new FileInputStream(block.getFile()));
+                            this.blockOrganizerLog.debug(" Opened FileInputStream");
 
+                            this.blockOrganizerLog.finest(" Getting WriteBlock request upload stream");
                             out = fout.get(2500, TimeUnit.MILLISECONDS);
+                            this.blockOrganizerLog.debug(" Got upload stream");
 
                             int trxd = 0;
+                            long total = 0;
                             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
                                 out.write(trx, 0, trxd);
+                                this.blockOrganizerLog.trace(" Wrote " + trxd + " bytes to remote");
+                                total += trxd;
                             }
 
+                            this.blockOrganizerLog.debug(" Closing file and upload streams");
                             in.close();
                             out.close();
 
-                            this.clientLog.finest("[organizeBlocks] Confirming existence of block on remote");
+                            this.blockOrganizerLog.finer(" Uploaded " + total + " bytes of block data");
+
+                            this.blockOrganizerLog.finest(" Confirming existence of block on remote");
 
                             statsFuture = this.getBlockStats(block);
                             try {
@@ -210,7 +223,7 @@ public class DFS {
 
                             } catch (ExecutionException | InterruptedException | TimeoutException e) {
                                 statsFuture.cancel(false);
-                                this.clientLog.warn("[organizeBlocks] Unable to retrieve stats of uploaded block");
+                                this.blockOrganizerLog.warn(" Unable to retrieve stats of uploaded block");
                                 e.printStackTrace();
                                 this.blocks.put(block.getBlockName(), block);
                                 try {
@@ -221,10 +234,10 @@ public class DFS {
                                 break;
                             }
 
-                            this.clientLog.finer("[organizeBlocks] Copied block " + block.getBlockName() + " data to node " + bestId);
+                            this.blockOrganizerLog.finer(" Copied block " + block.getBlockName() + " data to node " + bestId);
 
                             if (block.getBlockNumber() == 0) {
-                                this.clientLog.finest("[organiseBlocks] Moved first block in file, copying file descriptor to destination node");
+                                this.blockOrganizerLog.finer(" Moved first block in file, copying file descriptor to destination node");
                                 FileDescriptor descriptor = this.files.get(block.getFileName());
                                 if (descriptor != null) {
                                     Future<?> future = this.putFileMetadata(descriptor, bestId);
@@ -232,23 +245,23 @@ public class DFS {
                                         future.get(1500, TimeUnit.MILLISECONDS);
                                     } catch (TimeoutException | InterruptedException | ExecutionException e) {
                                         future.cancel(false);
-                                        this.clientLog.error("[organizeBlocks] Exception while sending file descriptor");
+                                        this.blockOrganizerLog.error(" Exception while sending file descriptor");
                                         e.printStackTrace();
                                     }
                                     this.files.remove(block.getFileName());
                                 }
                             }
 
-                            this.clientLog.log("[organizeBlocks] Block " + block.getBlockName() + " transferred to " + bestId);
+                            this.blockOrganizerLog.log(" Block " + block.getBlockName() + " transferred to " + bestId);
 
                             if (block.getFile().delete())
-                                this.clientLog.fine("[organizeBlocks] Local block deleted");
+                                this.blockOrganizerLog.fine(" Local block deleted");
                             else
-                                this.clientLog.info("[organizeBlocks] Unable to delete local copy of block");
+                                this.blockOrganizerLog.info(" Unable to delete local copy of block");
 
                         } catch (TimeoutException e) {
                             fout.cancel(false);
-                            this.clientLog.warn("[organizeBlocks] Timed out while trying to move block to another node");
+                            this.blockOrganizerLog.warn(" Timed out while trying to move block to another node");
                             e.printStackTrace();
 
                             try {
@@ -258,7 +271,7 @@ public class DFS {
                             break;
 
                         } catch (IOException e) {
-                            this.clientLog.error("[organizeBlocks] IOException while transferring block");
+                            this.blockOrganizerLog.error(" IOException while transferring block");
                             e.printStackTrace();
 
                             if (in != null) try {
@@ -272,7 +285,7 @@ public class DFS {
                             break;
 
                         } catch (Exception e) {
-                            this.clientLog.error("[organizeBlocks] Exception while trying to transfer block");
+                            this.blockOrganizerLog.error(" Exception while trying to transfer block");
                             e.printStackTrace();
                             break;
                         }
@@ -284,12 +297,12 @@ public class DFS {
                     }
                 }
 
-                this.clientLog.log("[organizeBlocks] All local blocks belong on this node");
+                this.blockOrganizerLog.log(" All local blocks belong on this node");
                 this.blockOrganizerRunning.set(false);
             });
 
         } else {
-            this.clientLog.debug("[organizeBlocks] Block Organizer is already running");
+            this.blockOrganizerLog.debug(" Block Organizer is already running");
         }
     }
 
@@ -840,7 +853,7 @@ public class DFS {
     }
 
     public Future<JsonField.ObjectField> getBlockStats(BlockDescriptor block) {
-        this.clientLog.log("[getBlockStats] Request for block statistics");
+        this.clientLog.log("[getBlockStats] Request for block statistics for block " + block.getBlockName());
 
         if (this.blocks.containsKey(block.getBlockName())) {
             BlockDescriptor localBlock = this.blocks.get(block.getBlockName());
