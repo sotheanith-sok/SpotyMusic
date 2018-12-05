@@ -203,10 +203,13 @@ public class DFS {
 
                             int trxd = 0;
                             long total = 0;
+                            this.blockOrganizerLog.trace(" Reading from local file");
                             while ((trxd = in.read(trx, 0, trx.length)) != -1) {
+                                this.blockOrganizerLog.trace(" Read " + trxd + " from local file");
                                 out.write(trx, 0, trxd);
-                                this.blockOrganizerLog.trace(" Wrote " + trxd + " bytes to remote");
+                                this.blockOrganizerLog.println(5, " Wrote " + trxd + " bytes to socket");
                                 total += trxd;
+                                this.blockOrganizerLog.trace(" Reading from local file");
                             }
 
                             this.blockOrganizerLog.debug(" Closing file and upload streams");
