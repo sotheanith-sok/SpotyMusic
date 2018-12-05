@@ -56,7 +56,7 @@ public class Socketplexer {
     public Socketplexer(Socket socket, ExecutorService executor) {
         this.socket = socket;
 
-        this.logger = new Logger("Socketplexer", Constants.LOG);
+        this.logger = new Logger("Socketplexer", Constants.WARN);
 
         //this.logger.trace(" Initializing channel collections");
         this.outputChannels = new HashMap<>();
@@ -117,17 +117,7 @@ public class Socketplexer {
                 if (this.socket.isSendClosed()) break;
 
                 try {
-                    if (!buffer.isReadOpened()) {
-                        this.logger.finer("[multiplexer] Sending channel close command for channel " + channel);
-                        this.controlWriter.enqueue((gen) -> {
-                            gen.writeStartObject();
-                            gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_CHANNEL);
-                            gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
-                            gen.writeEndObject();
-                        });
-                        this.inputChannels.remove(channel);
-
-                    } else if (buffer.available() > 0) {
+                    if (buffer.available() > 0) {
                         this.logger.trace("[multiplexer] Reading data from output channel buffer " + channel);
                         int length = buffer.getInputStream().read(trx, 0, trx.length);
                         this.logger.trace("[multiplexer] Read " + length + " bytes from buffer, writing to socket");
@@ -136,6 +126,16 @@ public class Socketplexer {
                         out.write(trx, 0, length);
                         dataWritten = true;
                         this.logger.finest("[multiplexer] Multiplexed " + length + " bytes from channel " + channel);
+
+                    } else if (!buffer.isWriteOpened()) {
+                        this.logger.finer("[multiplexer] Sending channel close command for channel " + channel);
+                        this.controlWriter.enqueue((gen) -> {
+                            gen.writeStartObject();
+                            gen.writeStringField(COMMAND_FIELD_NAME, COMMAND_CLOSE_CHANNEL);
+                            gen.writeNumberField(CHANNEL_ID_FIELD_NAME, channel);
+                            gen.writeEndObject();
+                        });
+                        this.outputChannels.remove(channel);
 
                     } else {
                         //this.logger.trace("[multiplexer] Channel " + channel + " has no data to send");
