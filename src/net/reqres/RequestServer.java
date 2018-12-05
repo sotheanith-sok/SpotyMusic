@@ -110,9 +110,11 @@ public class RequestServer {
 
         String requestType = packet.getStringProperty(Constants.REQUEST_TYPE_PROPERTY);
         if (this.requestHandlers.containsKey(requestType)) {
-            this.logger.log("[onRequest] Found handler for request type");
+            this.logger.log("[onRequest] Found handler for request type " + requestType);
             try {
+                this.logger.trace("[onRequest] Invoking request handler");
                 this.requestHandlers.get(requestType).handle(plexer, packet, this.executor);
+                this.logger.trace("[onRequest] Request handler completed");
 
             } catch (Exception e) {
                 this.logger.warn("[onRequest] Exception thrown by request handler");

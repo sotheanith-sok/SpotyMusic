@@ -275,6 +275,10 @@ public class Socketplexer {
                     gen.writeEndObject();
                 });
 
+                synchronized (this.multiplexerLock) {
+                    this.multiplexerLock.notifyAll();
+                }
+
                 this.logger.debug("[openOutputChannel] OpenChannel command enqueued");
 
                 RingBuffer buffer = new RingBuffer(bufferCapacity);
@@ -421,10 +425,31 @@ public class Socketplexer {
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         this.logger.fine("[onOpenAck] Received OpenAck for channel " + channel);
 
+        int bufferSize;
+
         synchronized (this.outputsLock) {
             RingBuffer buffer = this.pendingChannels.get(channel);
+            bufferSize = buffer.size();
             this.pendingChannels.remove(channel);
             this.outputChannels.put(channel, buffer);
+        }
+
+        synchronized (this.inputsLock) {
+            RingBuffer buffer_in = this.inputChannels.getOrDefault(channel, new RingBuffer(bufferSize));
+            this.inputChannels.put(channel, buffer_in);
+
+            if (this.waitingChannels.containsKey(channel)) {
+                CompletableFuture<InputStream> future = this.waitingChannels.get(channel);
+                this.waitingChannels.remove(channel);
+                if (future.isCancelled()) {
+                    try {
+                        buffer_in.getInputStream().close();
+                    } catch (IOException e) {}
+
+                } else {
+                    future.complete(buffer_in.getInputStream());
+                }
+            }
         }
     }
 
