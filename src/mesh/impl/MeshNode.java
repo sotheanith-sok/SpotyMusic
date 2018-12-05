@@ -68,7 +68,9 @@ public class MeshNode {
         this.node_count = new AtomicInteger(0);
 
         this.nodeConnectListeners = new LinkedList<>();
+    }
 
+    public void connect() {
         this.executor.submit(this::search);
     }
 

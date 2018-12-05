@@ -137,6 +137,9 @@ public class MeshSystem {
             e.printStackTrace();
             return;
         }
+
+        System.out.println("[MeshSystem][init] Connecting to mesh network...");
+        this.node.connect();
     }
 
     public MeshLibrary getLibrary() {
