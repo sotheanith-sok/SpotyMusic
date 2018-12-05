@@ -170,12 +170,19 @@ public class DFS {
 
                         if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
                             if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE) == block.blockSize()) {
-                                this.clientLog.log("[organizeBlocks] Remote already has block");
+                                this.clientLog.log("[organizeBlocks] Remote has block, sizes match");
                                 block.getFile().delete();
-                                //continue;
-                                break;
+                                continue;
+
                             } else {
-                                this.clientLog.log("[organizeBlocks] Remote has block, but size does not match. Local size=" + block.blockSize() + " Remote size=" + stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE));
+                                if (stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_MODIFIED) < block.lastModified()) {
+                                    this.clientLog.log("[organizeBlocks] Remote has block, size does not match, local is newer");
+
+                                } else {
+                                    this.clientLog.log("[organizeBlocks] Remote has block, size does not match, remote is newer");
+                                    // TODO: when working reliably, delete local copy of block
+                                    continue;
+                                }
                             }
                         }
 
@@ -869,6 +876,7 @@ public class DFS {
             }
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
+            //socketplexer.setLogFilter(Constants.TRACE);
 
             this.clientLog.fine("[getBlockStats] Sending request header");
             try {
@@ -900,6 +908,8 @@ public class DFS {
                         this.clientLog.warn("[getBlockStats] Malformed response");
                         return;
                     }
+
+                    this.clientLog.fine("[getBlockStats] Got remote stats of block " + block.getBlockName());
 
                     future.complete(response);
                 })).run();
