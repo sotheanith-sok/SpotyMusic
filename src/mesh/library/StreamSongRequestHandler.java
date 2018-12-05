@@ -41,33 +41,49 @@ public class StreamSongRequestHandler implements Runnable {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             if (e.getCause() instanceof FileNotFoundException) {
                 System.err.println("[StreamSongRequestHandler][run] DFS reported song file does not exist");
-                this.library.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
-                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
-                    gen.writeEndObject();
-                })));
+                try {
+                    (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
+                        gen.writeStartObject();
+                        gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
+                        gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
+                        gen.writeEndObject();
+                    }))).run();
+                } catch (IOException e1) {
+                    System.err.println("[StreamSongRequestHandler] Unable to obtain response header stream");
+                    this.socketplexer.terminate();
+                }
                 return;
 
             } else {
                 System.err.println("[StreamSongRequestHandler][run] Unable to get song from DFS");
                 e.printStackTrace();
-                this.library.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
-                    gen.writeStartObject();
-                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
-                    gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
-                    gen.writeEndObject();
-                })));
+                try {
+                    (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
+                        gen.writeStartObject();
+                        gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
+                        gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_SERVER_ERROR);
+                        gen.writeEndObject();
+                    }))).run();
+                } catch (IOException e1) {
+                    System.err.println("[StreamSongRequestHandler] Unable to obtain response header stream");
+                    this.socketplexer.terminate();
+                }
                 return;
             }
         }
 
-        this.library.executor.submit(new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
-            gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
-            gen.writeEndObject();
-        })));
+        try {
+            (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), true, (gen -> {
+                gen.writeStartObject();
+                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, MeshLibrary.RESPONSE_STREAM_SONG);
+                gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
+                gen.writeEndObject();
+            }))).run();
+        } catch (IOException e) {
+            System.err.println("[StreamSongRequestHandler] Unable to obtain response header stream");
+            this.socketplexer.terminate();
+            return;
+        }
 
         try {
             OutputStream out = this.socketplexer.openOutputChannel(2);
