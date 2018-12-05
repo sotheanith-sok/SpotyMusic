@@ -211,12 +211,17 @@ public class Socketplexer {
                 //System.out.println();
 
                 synchronized (this.inputsLock) {
-                    try {
-                        this.inputChannels.get(channel).getOutputStream().write(trx, 0, length);
-                    } catch (IOException e) {
+                    if (this.inputChannels.containsKey(channel)) {
+                        try {
+                            this.inputChannels.get(channel).getOutputStream().write(trx, 0, length);
+                            this.logger.debug("[demultiplexer] Transferred data to receive buffer");
+                        } catch (IOException e) {
+                            this.logger.info("pdemultiplexer] IOException while writing to channel receive buffer");
+                        }
 
+                    } else {
+                        this.logger.info("[demultiplexer] Received data for unopened channel");
                     }
-                    this.logger.debug("[demultiplexer] Transferred data to receive buffer");
                 }
 
             } catch (IOException e) {
@@ -364,24 +369,36 @@ public class Socketplexer {
     private void onOpenChannel(JsonField.ObjectField packet) {
         int bufferSize = (int) packet.getLongProperty(BUFFER_SIZE_FIELD_NAME);
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
-        RingBuffer buffer = new RingBuffer(bufferSize);
+        RingBuffer buffer_in = new RingBuffer(bufferSize);
 
         this.logger.fine("[onOpenChannel] Received OpenChannel for channel " + channel);
 
         synchronized (this.inputsLock) {
-            this.inputChannels.put(channel, buffer);
+            this.inputChannels.put(channel, buffer_in);
 
             if (this.waitingChannels.containsKey(channel)) {
                 CompletableFuture<InputStream> future = this.waitingChannels.get(channel);
                 this.waitingChannels.remove(channel);
                 if (future.isCancelled()) {
                     try {
-                        buffer.getInputStream().close();
+                        buffer_in.getInputStream().close();
                     } catch (IOException e) {}
 
                 } else {
-                    future.complete(buffer.getInputStream());
+                    future.complete(buffer_in.getInputStream());
                 }
+            }
+        }
+
+        synchronized (this.outputsLock) {
+            if (this.pendingChannels.containsKey(channel)) {
+                RingBuffer buffer_out = this.pendingChannels.get(channel);
+                this.pendingChannels.remove(channel);
+                this.outputChannels.put(channel, buffer_out);
+
+            } else if (!this.outputChannels.containsKey(channel)) {
+                RingBuffer buffer_out = new RingBuffer(bufferSize);
+                this.outputChannels.put(channel, buffer_out);
             }
         }
 
