@@ -187,6 +187,8 @@ public class DFS {
                                     continue;
                                 }
                             }
+                        } else {
+                            this.blockOrganizerLog.log(" Remote reported block not found");
                         }
 
                         InputStream in = null;
@@ -430,6 +432,7 @@ public class DFS {
                     gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_REPLICA, block.getReplicaNumber());
                     gen.writeEndObject();
                 })).run();
+                this.serverLog.log("[blockStatsHandler] Request handled");
                 socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
@@ -445,6 +448,7 @@ public class DFS {
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
                     gen.writeEndObject();
                 })).run();
+                this.serverLog.log("[blockStatsHandler] Request handled");
                 socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
@@ -922,7 +926,7 @@ public class DFS {
             }
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
-            //socketplexer.setLogFilter(Constants.DEBUG);
+            socketplexer.setLogFilter(Constants.DEBUG);
 
             Future<InputStream> responseFuture = socketplexer.waitInputChannel(1);
 
@@ -963,7 +967,11 @@ public class DFS {
                     try {
                         in.close();
                         socketplexer.terminate();
-                    } catch (IOException e) {}
+                        this.clientLog.debug("[getBlockStats] Socketplexer terminated");
+                    } catch (IOException e) {
+                        this.clientLog.warn("[getBlockStats] Unable to close request session");
+                        e.printStackTrace();
+                    }
                 })).run();
                 socketplexer.terminate();
 

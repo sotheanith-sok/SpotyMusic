@@ -60,7 +60,7 @@ public class SongStreamer {
                         try {
                             if (this.newSource.get()) {
                                 this.dest.close();
-                                this.source = this.song.getStream().get(5, TimeUnit.SECONDS);
+                                this.source = this.song.getStream().get(10, TimeUnit.SECONDS);
                                 try {
                                     this.dest.open(this.source.getFormat(), 1024 * 16);
                                     if (trx == null || trx.length % dest.getFormat().getFrameSize() != 0)

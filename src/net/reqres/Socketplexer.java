@@ -104,7 +104,7 @@ public class Socketplexer {
 
         this.logger.trace("[multiplexer] Initializing transfer buffer");
         byte[] trx = new byte[Constants.PACKET_SIZE - 8];
-        boolean dataWritten = false;
+        boolean dataWritten;
 
         this.logger.trace("[multiplexer] Entering multiplexing loop");
         while (!this.socket.isReceiveClosed()) {
@@ -216,7 +216,8 @@ public class Socketplexer {
                             this.inputChannels.get(channel).getOutputStream().write(trx, 0, length);
                             this.logger.debug("[demultiplexer] Transferred data to receive buffer");
                         } catch (IOException e) {
-                            this.logger.info("pdemultiplexer] IOException while writing to channel receive buffer");
+                            this.logger.warn("[demultiplexer] IOException while writing to channel receive buffer");
+                            this.logger.warn(e.getMessage());
                         }
 
                     } else {
@@ -401,7 +402,7 @@ public class Socketplexer {
                 }
             }
         }
-/*
+
         synchronized (this.outputsLock) {
             if (this.pendingChannels.containsKey(channel)) {
                 RingBuffer buffer_out = this.pendingChannels.get(channel);
@@ -413,7 +414,7 @@ public class Socketplexer {
                 this.outputChannels.put(channel, buffer_out);
             }
         }
-*/
+
         this.logger.debug("[onOpenChannel] Sending OpenChannelAck");
         this.controlWriter.enqueue((gen) -> {
             gen.writeStartObject();
@@ -441,7 +442,7 @@ public class Socketplexer {
             this.pendingChannels.remove(channel);
             this.outputChannels.put(channel, buffer);
         }
-/*
+
         synchronized (this.inputsLock) {
             RingBuffer buffer_in = this.inputChannels.getOrDefault(channel, new RingBuffer(bufferSize));
             this.inputChannels.put(channel, buffer_in);
@@ -458,7 +459,7 @@ public class Socketplexer {
                     future.complete(buffer_in.getInputStream());
                 }
             }
-        }*/
+        }
     }
 
     /**
@@ -534,8 +535,8 @@ public class Socketplexer {
             gen.close();
         }); } catch (Exception e) {}
 
-        synchronized (this.outputsLock) {
-            this.outputsLock.notifyAll();
+        synchronized (this.multiplexerLock) {
+            this.multiplexerLock.notifyAll();
         }
 
         synchronized (this.inputsLock) {

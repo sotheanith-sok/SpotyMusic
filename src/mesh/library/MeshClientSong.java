@@ -76,7 +76,7 @@ public class MeshClientSong implements Song {
         this.library.executor.submit(() -> {
             try {
                 Future<InputStream> file = this.library.dfs.readFile(this.fileName);
-                InputStream in = file.get(5, TimeUnit.SECONDS);
+                InputStream in = file.get(10, TimeUnit.SECONDS);
                 if (future.isCancelled()) {
                     in.close();
                     return;
