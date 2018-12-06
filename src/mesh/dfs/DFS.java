@@ -234,6 +234,9 @@ public class DFS {
                                         this.blockOrganizerLog.info(" Uploaded block is not complete");
                                         //continue;
                                         break;
+
+                                    } else {
+                                        this.blockOrganizerLog.info(" Block transferred successfully");
                                     }
 
                                 } else {
@@ -255,7 +258,7 @@ public class DFS {
                                 break;
                             }
 
-                            this.blockOrganizerLog.finer(" Copied block " + block.getBlockName() + " data to node " + bestId);
+                            //this.blockOrganizerLog.finer(" Copied block " + block.getBlockName() + " data to node " + bestId);
 
                             if (block.getBlockNumber() == 0) {
                                 this.blockOrganizerLog.finer(" Moved first block in file, copying file descriptor to destination node");
@@ -312,7 +315,7 @@ public class DFS {
                         }
 
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(5000);
                         } catch (InterruptedException e) {
                         }
                     }
@@ -429,6 +432,7 @@ public class DFS {
                     gen.writeNumberField(BlockDescriptor.PROPERTY_BLOCK_REPLICA, block.getReplicaNumber());
                     gen.writeEndObject();
                 })).run();
+                socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();
@@ -443,6 +447,7 @@ public class DFS {
                     gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_NOT_FOUND);
                     gen.writeEndObject();
                 })).run();
+                socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();
@@ -790,7 +795,7 @@ public class DFS {
 
             this.clientLog.trace("[writeBlock] Creating Socketplexer");
             final Socketplexer plexer = new Socketplexer(connection, this.executor);
-            plexer.setLogFilter(Constants.DEBUG);
+            //plexer.setLogFilter(Constants.DEBUG);
 
             this.clientLog.finest("[writeBlock] Sending request headers");
             OutputStream headersOut = null;
@@ -919,7 +924,7 @@ public class DFS {
             }
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
-            //socketplexer.setLogFilter(Constants.TRACE);
+            //socketplexer.setLogFilter(Constants.DEBUG);
 
             this.clientLog.fine("[getBlockStats] Sending request header");
             try {
