@@ -218,11 +218,29 @@ public class DFS {
 
                             this.blockOrganizerLog.finer(" Uploaded " + total + " bytes of block data");
 
+                            try {
+                                // give the remote some time to process
+                                Thread.sleep(250);
+                            } catch (InterruptedException e) {}
+
                             this.blockOrganizerLog.finest(" Confirming existence of block on remote");
 
                             statsFuture = this.getBlockStats(block);
                             try {
-                                stats = statsFuture.get(2500, TimeUnit.MILLISECONDS);
+                                stats = statsFuture.get(5000, TimeUnit.MILLISECONDS);
+                                if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
+                                    long size = stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE);
+                                    if (size != block.blockSize()) {
+                                        this.blockOrganizerLog.info(" Uploaded block is not complete");
+                                        //continue;
+                                        break;
+                                    }
+
+                                } else {
+                                    this.blockOrganizerLog.info(" Remote reported block not found");
+                                    //continue;
+                                    break;
+                                }
 
                             } catch (ExecutionException | InterruptedException | TimeoutException e) {
                                 statsFuture.cancel(false);
