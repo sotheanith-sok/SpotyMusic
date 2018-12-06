@@ -125,7 +125,7 @@ public class Socketplexer {
                         out.writeInt(length);
                         out.write(trx, 0, length);
                         dataWritten = true;
-                        this.logger.finest("[multiplexer] Multiplexed " + length + " bytes from channel " + channel);
+                        this.logger.trace("[multiplexer] Multiplexed " + length + " bytes from channel " + channel);
 
                     } else if (!buffer.isWriteOpened()) {
                         this.logger.finer("[multiplexer] Sending channel close command for channel " + channel);
@@ -228,6 +228,14 @@ public class Socketplexer {
                 if (this.socket.isReceiveClosed()) break;
                 this.logger.warn("[demultiplexer] IOException while demultiplexing data");
                 e.printStackTrace();
+            }
+
+            synchronized (this.inputsLock) {
+                for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
+                    if (!entry.getValue().isWriteOpened()) {
+                        this.inputChannels.remove(entry.getKey());
+                    }
+                }
             }
         }
 
