@@ -433,7 +433,7 @@ public class DFS {
                     gen.writeEndObject();
                 })).run();
                 this.serverLog.log("[blockStatsHandler] Request handled");
-                socketplexer.terminate();
+                //socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();
@@ -449,7 +449,7 @@ public class DFS {
                     gen.writeEndObject();
                 })).run();
                 this.serverLog.log("[blockStatsHandler] Request handled");
-                socketplexer.terminate();
+                //socketplexer.terminate();
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();

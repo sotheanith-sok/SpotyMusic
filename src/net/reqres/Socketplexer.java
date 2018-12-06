@@ -107,7 +107,7 @@ public class Socketplexer {
         boolean dataWritten;
 
         this.logger.trace("[multiplexer] Entering multiplexing loop");
-        while (!this.socket.isReceiveClosed()) {
+        while (!this.socket.isSendClosed()) {
             dataWritten = false;
 
             for (Map.Entry<Integer, RingBuffer> entry : this.outputChannels.entrySet()) {
@@ -218,6 +218,10 @@ public class Socketplexer {
                         } catch (IOException e) {
                             this.logger.warn("[demultiplexer] IOException while writing to channel receive buffer");
                             this.logger.warn(e.getMessage());
+                            if (channel == 0) {
+                                this.doClose();
+                                break;
+                            }
                         }
 
                     } else {
