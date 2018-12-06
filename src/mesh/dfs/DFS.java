@@ -49,8 +49,8 @@ public class DFS {
         this.executor = executor;
 
         this.serverLog = new Logger("DFS][server", Constants.LOG);
-        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
-        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.DEBUG);
+        this.clientLog = new Logger("DFS][client", Constants.LOG);
+        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.LOG);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -433,7 +433,7 @@ public class DFS {
                     gen.writeEndObject();
                 })).run();
                 this.serverLog.log("[blockStatsHandler] Request handled");
-                //socketplexer.terminate();
+
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();
@@ -449,7 +449,7 @@ public class DFS {
                     gen.writeEndObject();
                 })).run();
                 this.serverLog.log("[blockStatsHandler] Request handled");
-                //socketplexer.terminate();
+
             } catch (IOException e) {
                 this.serverLog.warn("[blockStatsHandler] Unable to obtain response stream");
                 socketplexer.terminate();
@@ -926,7 +926,7 @@ public class DFS {
             }
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
-            socketplexer.setLogFilter(Constants.DEBUG);
+            //socketplexer.setLogFilter(Constants.DEBUG);
 
             Future<InputStream> responseFuture = socketplexer.waitInputChannel(1);
 
