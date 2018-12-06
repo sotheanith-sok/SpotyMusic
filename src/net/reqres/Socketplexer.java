@@ -401,7 +401,7 @@ public class Socketplexer {
                 }
             }
         }
-
+/*
         synchronized (this.outputsLock) {
             if (this.pendingChannels.containsKey(channel)) {
                 RingBuffer buffer_out = this.pendingChannels.get(channel);
@@ -413,7 +413,7 @@ public class Socketplexer {
                 this.outputChannels.put(channel, buffer_out);
             }
         }
-
+*/
         this.logger.debug("[onOpenChannel] Sending OpenChannelAck");
         this.controlWriter.enqueue((gen) -> {
             gen.writeStartObject();
@@ -441,7 +441,7 @@ public class Socketplexer {
             this.pendingChannels.remove(channel);
             this.outputChannels.put(channel, buffer);
         }
-
+/*
         synchronized (this.inputsLock) {
             RingBuffer buffer_in = this.inputChannels.getOrDefault(channel, new RingBuffer(bufferSize));
             this.inputChannels.put(channel, buffer_in);
@@ -458,7 +458,7 @@ public class Socketplexer {
                     future.complete(buffer_in.getInputStream());
                 }
             }
-        }
+        }*/
     }
 
     /**

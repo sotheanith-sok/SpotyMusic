@@ -49,7 +49,7 @@ public class DFS {
         this.executor = executor;
 
         this.serverLog = new Logger("DFS][server", Constants.LOG);
-        this.clientLog = new Logger("DFS][client", Constants.LOG);
+        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
         this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.DEBUG);
 
         this.blocks = new ConcurrentHashMap<>();
@@ -415,10 +415,8 @@ public class DFS {
     }
 
     private void blockStatsHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
-        this.serverLog.finer("[blockStatsHandler] Handling " + REQUEST_BLOCK_STATS + " request");
-        this.serverLog.trace("[blockStatsHandler] Getting block name parameter");
         String blockName = request.getStringProperty(PROPERTY_BLOCK_NAME);
-        this.serverLog.debug("[blockStatsHandler] Request for stats of block " + blockName);
+        this.serverLog.log("[blockStatsHandler] Request for stats of block " + blockName);
         if (this.blocks.containsKey(blockName)) {
             BlockDescriptor block = this.blocks.get(blockName);
             try {
@@ -926,6 +924,8 @@ public class DFS {
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
             //socketplexer.setLogFilter(Constants.DEBUG);
 
+            Future<InputStream> responseFuture = socketplexer.waitInputChannel(1);
+
             this.clientLog.fine("[getBlockStats] Sending request header");
             try {
                 (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
@@ -944,7 +944,7 @@ public class DFS {
 
             this.clientLog.fine("[getBlockStats] Parsing response header");
             try {
-                InputStream in = socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS);
+                InputStream in = responseFuture.get(5000, TimeUnit.MILLISECONDS);
 
                 (new JsonStreamParser(in, true, (JsonField field) -> {
                     if (!field.isObject()) return;
@@ -960,6 +960,10 @@ public class DFS {
                     this.clientLog.fine("[getBlockStats] Got remote stats of block " + block.getBlockName());
 
                     future.complete(response);
+                    try {
+                        in.close();
+                        socketplexer.terminate();
+                    } catch (IOException e) {}
                 })).run();
                 socketplexer.terminate();
 
