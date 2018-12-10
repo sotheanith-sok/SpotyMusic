@@ -74,6 +74,8 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
         CompletableFuture<MeshClientUser> future = new CompletableFuture<>();
 
         library.executor.submit(() -> {
+            System.out.println("[MeshClientUser][tryAuth] Attempting to load user: " + user);
+
             String fileName = Utils.hash(user + password, "SHA-256");
 
             Future<Boolean> fexists = library.dfs.fileExists(fileName);
@@ -131,13 +133,16 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
             Map<String, List<Long>> playlists = new HashMap<>();
 
             JsonStreamParser parser = new JsonStreamParser(cin, true, (field) -> {
+                System.out.println(field.toString());
                 if (field.isObject()) {
                     JsonField.ObjectField root = (JsonField.ObjectField) field;
 
                     if (root.containsKey("favs")) {
                         JsonField fav_field = root.getProperty("favs");
+                        System.out.println("[MeshClientUser][tryAuth] Found Favs field");
                         if (fav_field.isArray()) {
                             JsonField.ArrayField fav_array = (JsonField.ArrayField) fav_field;
+                            System.out.println("[MeshClientUser][tryAuth] Reading " + fav_array.getElements().size() + " favorites");
                             for (JsonField fav : fav_array.getElements()) {
                                 if (fav.isString()) {
                                     favs.add(fav.getStringValue());
@@ -149,7 +154,9 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
 
                     if (root.containsKey("attrs")) {
                         JsonField attr_field = root.getProperty("attrs");
+                        System.out.println("[MeshClientUser][tryAuth] Found attributes field");
                         if (attr_field.isObject()) {
+                            System.out.println("[MeshClientUser][tryAuth] Reading " + attr_field.getProperties().size() + " attributes");
                             for (Map.Entry<String, JsonField> entry : attr_field.getProperties().entrySet()) {
                                 attrs.put(entry.getKey(), entry.getValue().getStringValue());
                                 System.out.println("[MeshClientUser][tryAuth] Loaded user attribute: \"" + entry.getKey() + "\"=\"" + entry.getValue().getStringValue() + "\"");
@@ -177,8 +184,16 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
                 }
             });
             parser.run();
+            /*
+            byte[] trx = new byte[1024 * 8];
+            int read = 0;
+            try {
+                while ((read = cin.read(trx, 0, trx.length)) != -1) System.out.write(trx, 0, read);
+            } catch (IOException e) {}
+            */
 
             future.complete(new MeshClientUser(user, password, favs, attrs, playlists, library));
+            System.out.println("[MeshClientUser][tryAuth] Loaded user " + user);
         });
 
         return future;
@@ -216,6 +231,7 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
     }
 
     private void do_save() {
+        System.out.println("[MeshClientUser][do_save] Saving user: " + this.username);
         String fileName = Utils.hash(this.username + this.password, "SHA-256");
 
         Future<OutputStream> fout = this.library.dfs.writeFile(fileName, USER_FILE_REPLICATION);
@@ -278,6 +294,7 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
                     gen.writeStringField(attribute.getKey(), attribute.getValue());
                 }
                 gen.writeEndObject();
+                System.out.println("[MeshClientUser][do_save] Wrote " + this.attributes.size() + " user attributes");
             }
 
             {   // playlists object
@@ -308,6 +325,8 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
         } finally {
             try { cout.close(); } catch (IOException e1) {}
         }
+
+        System.out.println("[MeshClientUser][do_save] Saved user: " + this.username);
     }
 
     public String getUsername() {

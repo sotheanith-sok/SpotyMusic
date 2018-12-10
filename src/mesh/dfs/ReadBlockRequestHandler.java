@@ -52,7 +52,7 @@ public class ReadBlockRequestHandler implements Runnable {
 
             in.close();
             out.close();
-            socketplexer.terminate();
+            //socketplexer.terminate();
 
         } catch (FileNotFoundException e) {
             try {

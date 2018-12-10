@@ -48,9 +48,9 @@ public class DFS {
         this.mesh = mesh;
         this.executor = executor;
 
-        this.serverLog = new Logger("DFS][server", Constants.LOG);
-        this.clientLog = new Logger("DFS][client", Constants.LOG);
-        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.LOG);
+        this.serverLog = new Logger("DFS][server", Constants.DEBUG);
+        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
+        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.DEBUG);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -625,8 +625,9 @@ public class DFS {
 
             // send request header
             this.clientLog.finer("[requestFileBlock] Sending request header");
+            OutputStream headersOut = null;
             try {
-                (new DeferredStreamJsonGenerator(plexer.openOutputChannel(1), false, (gen) -> {
+                (new DeferredStreamJsonGenerator(headersOut = plexer.openOutputChannel(1), false, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_READ_BLOCK);
                     gen.writeStringField(PROPERTY_BLOCK_NAME, block.getBlockName());
@@ -662,8 +663,10 @@ public class DFS {
                 return;
             }
 
+            plexer.setLogFilter(Constants.TRACE);
+
             this.clientLog.finer("[requestFileBlock] Parsing response header");
-            (new JsonStreamParser(headerStream, true, (field) -> {
+            (new JsonStreamParser(headerStream, false, (field) -> {
                 if (!field.isObject()) return;
 
                 JsonField.ObjectField header = (JsonField.ObjectField) field;
@@ -713,6 +716,9 @@ public class DFS {
                     future.completeExceptionally(new Exception("Malformed response header"));
                 }
             })).run();
+
+            try { headersOut.close(); } catch (IOException e) {}
+            try { headerStream.close(); } catch (IOException e) {}
         });
 
         return future;
@@ -755,7 +761,7 @@ public class DFS {
     }
 
     public Future<OutputStream> writeBlock(BlockDescriptor block, boolean append) {
-        this.clientLog.log("[writeBlock] Request to write block " + block.getBlockName() + " append=" + append);
+        this.clientLog.log("[writeBlock] Request to write block " + block.getBlockName() + " append=" + append + " blockId=" + block.getBlockId());
         int node_id = getBestId(block.getBlockId());
         this.clientLog.debug("[writeBlock] Best node_id for block: " + node_id);
 

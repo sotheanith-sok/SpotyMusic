@@ -476,13 +476,17 @@ public class Socketplexer {
         int channel = (int) packet.getLongProperty(CHANNEL_ID_FIELD_NAME);
         this.logger.fine("[onCloseChannel] Received CloseChannel command for channel " + channel);
 
+        this.logger.debug("[onCLoseChannel] Getting channel to close");
         synchronized (this.inputsLock) {
-            RingBuffer buffer = this.inputChannels.get(channel);
-            this.inputChannels.remove(channel);
+            if (this.inputChannels.containsKey(channel)) {
+                RingBuffer buffer = this.inputChannels.get(channel);
+                this.inputChannels.remove(channel);
 
-            try {
-                buffer.getOutputStream().close();
-            } catch (IOException e) {}
+                try {
+                    buffer.getOutputStream().close();
+                } catch (IOException e) {
+                }
+            }
         }
 
         this.logger.debug("[onCloseChannel] Sending CloseChannelAck");
@@ -515,6 +519,7 @@ public class Socketplexer {
      */
     private void checkShouldClose() {
         int channelsOpened = 0;
+        this.logger.debug("[checkShouldClose] Checking if should close");
 
         synchronized (this.outputsLock) {
             channelsOpened += this.outputChannels.size() - 1;
