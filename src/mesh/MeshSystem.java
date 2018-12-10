@@ -49,6 +49,8 @@ public class MeshSystem {
     public void init() {
         if (!root.exists()) root.mkdirs();
 
+        MeshConfiguration config = new MeshConfiguration(-1, -1, -1);
+
         // load mesh configurations
         try {
             if (meshConfigs.exists()) {
@@ -57,10 +59,10 @@ public class MeshSystem {
                     if (!field.isObject()) return;
 
                     JsonField.ObjectField configs = (JsonField.ObjectField) field;
-                    for (JsonField config : configs.getProperties().values()) {
-                        MeshConfiguration inst = MeshConfiguration.fromJson((JsonField.ObjectField) config);
-                        this.configs.put(inst.getNetwork_id(), inst);
-                        System.out.println("[MeshSystem][init] Loaded mesh configuration for network " + inst.getNetwork_id());
+                    for (JsonField jconfig : configs.getProperties().values()) {
+                        MeshConfiguration inst = MeshConfiguration.fromJson((JsonField.ObjectField) jconfig);
+                        this.configs.put(inst.getNodeId(), inst);
+                        System.out.println("[MeshSystem][init] Loaded mesh configuration. NodeId: " + inst.getNodeId());
                     }
 
                 });
@@ -80,6 +82,13 @@ public class MeshSystem {
             System.err.println("[MeshSystem][init] There was a problem parsing the mesh config file");
             e.printStackTrace();
             return;
+        }
+
+        if (this.configs.size() > 0) {
+            config = this.configs.entrySet().iterator().next().getValue();
+
+        } else {
+            this.configs.put(config.getNodeId(), config);
         }
 
         new ObservableMapSerializer<>(this.configs, meshConfigs, MeshConfiguration::serialize, this.executor, 1500, TimeUnit.MILLISECONDS);
@@ -106,7 +115,7 @@ public class MeshSystem {
 
         System.out.println("[MeshSystem][init] Initializing MeshNode...");
         try {
-            this.node = new MeshNode(this.configs, this.executor, multicastAddress, serverAddress);
+            this.node = new MeshNode(config, this.executor, multicastAddress, serverAddress);
             System.out.println("[MeshSystem][init] MeshNode initialized");
 
         } catch (IOException e) {
