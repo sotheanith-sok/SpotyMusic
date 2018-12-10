@@ -156,8 +156,8 @@ public class DFS {
                                 Thread.sleep(500);
                             } catch (InterruptedException e1) {
                             }
-                            //continue;
-                            break;
+                            continue;
+                            //break;
 
                         } catch (ExecutionException e) {
                             this.blockOrganizerLog.error(" ExecutionException while trying to retrieve block stats");
@@ -167,8 +167,8 @@ public class DFS {
                                 Thread.sleep(500);
                             } catch (InterruptedException e1) {
                             }
-                            //continue;
-                            break;
+                            continue;
+                            //break;
                         }
 
                         if (stats.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS).equals(Constants.RESPONSE_STATUS_OK)) {
@@ -234,8 +234,8 @@ public class DFS {
                                     long size = stats.getLongProperty(BlockDescriptor.PROPERTY_BLOCK_SIZE);
                                     if (size != block.blockSize()) {
                                         this.blockOrganizerLog.info(" Uploaded block is not complete");
-                                        //continue;
-                                        break;
+                                        continue;
+                                        //break;
 
                                     } else {
                                         this.blockOrganizerLog.info(" Block transferred successfully");
@@ -243,8 +243,8 @@ public class DFS {
 
                                 } else {
                                     this.blockOrganizerLog.info(" Remote reported block not found");
-                                    //continue;
-                                    break;
+                                    continue;
+                                    //break;
                                 }
 
                             } catch (ExecutionException | InterruptedException | TimeoutException e) {
@@ -256,8 +256,8 @@ public class DFS {
                                     Thread.sleep(500);
                                 } catch (InterruptedException e1) {
                                 }
-                                //continue;
-                                break;
+                                continue;
+                                //break;
                             }
 
                             //this.blockOrganizerLog.finer(" Copied block " + block.getBlockName() + " data to node " + bestId);
