@@ -369,7 +369,7 @@ public class DFS {
         Set<Integer> nodes = this.mesh.getAvailableNodes();
 
         // find node with best matching id number
-        int node_id = 0;
+        int node_id = nodes.iterator().next();
         for (int node : nodes) if (node > node_id && node < block_id) node_id = node;
 
         //this.clientLog.debug("[getBestId] Best node_id for block_id " + block_id + " is " + node_id);

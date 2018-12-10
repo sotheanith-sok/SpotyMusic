@@ -46,7 +46,7 @@ public class MeshNode {
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
         this.server = new RequestServer(this.executor, serverAddress);
 
-        this.logger = new Logger("MeshNode", Constants.LOG);
+        this.logger = new Logger("MeshNode", Constants.DEBUG);
         this.searchLock = new Object();
 
         this.logger.info(" Server address: " + this.server.getServerSocket().localAddress() + ":" + this.server.getServerSocket().getPort());
