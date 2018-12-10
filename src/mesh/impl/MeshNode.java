@@ -26,8 +26,6 @@ public class MeshNode {
 
     private AtomicInteger node_count;
 
-    private Random id_generator;
-
     private Logger logger;
 
     private MulticastPacketSocket multicastSocket;
@@ -73,17 +71,16 @@ public class MeshNode {
     }
 
     private void init() {
-        this.id_generator = new Random(System.currentTimeMillis());
+        Random id_generator = new Random(System.currentTimeMillis());
 
         if (this.config.getNodeCount() < 0){
-            int id = this.id_generator.nextInt();
+            int id = id_generator.nextInt();
             this.config = new MeshConfiguration(id, id, 1);
             this.logger.log("[init] Generated new node id: " + this.config.getNodeId());
         }
 
         this.node_count.set(config.getNodeCount());
         this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
-        for (int i = 0; i < this.node_count.get(); i++) this.id_generator.nextInt();
 
         // look for an existing mesh
         this.logger.log("[init] Looking for existing mesh networks");
