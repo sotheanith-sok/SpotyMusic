@@ -1,6 +1,7 @@
 package mesh.dfs;
 
 import java.io.File;
+import java.util.Random;
 
 public class BlockDescriptor {
 
@@ -16,6 +17,8 @@ public class BlockDescriptor {
 
     private long lastModified;
 
+    private int blockId;
+
     public BlockDescriptor(File f) {
         if (f.isDirectory()) throw new IllegalArgumentException("File block cannot be a directory");
         this.file = f;
@@ -29,6 +32,8 @@ public class BlockDescriptor {
             this.fileSize = f.length();
             this.lastModified = f.lastModified();
         }
+
+        this.computeBlockId();
     }
 
     public BlockDescriptor(String blockName) {
@@ -49,6 +54,8 @@ public class BlockDescriptor {
             this.fileSize = this.file.length();
             this.lastModified = this.file.lastModified();
         }
+
+        this.computeBlockId();
     }
 
     public File getFile() {
@@ -69,6 +76,7 @@ public class BlockDescriptor {
 
     public void setBlockNumber(int block_number) {
         this.block_number = block_number;
+        this.updateStats();
     }
 
     public int getReplicaNumber() {
@@ -77,10 +85,21 @@ public class BlockDescriptor {
 
     public void setReplicaNumber(int replica) {
         this.replica_number = replica;
+        this.updateStats();
+    }
+
+    private void computeBlockId() {
+        String reverse = "";
+        for(int i = this.file.getName().length() - 1; i >= 0; i--)
+            reverse = reverse + this.file.getName().charAt(i);
+
+        Random rand = new Random(reverse.hashCode());
+        for (int i = 0; i < this.getBlockNumber(); i++) rand.nextInt();
+        this.blockId = rand.nextInt();
     }
 
     public int getBlockId() {
-        return this.file.getName().hashCode();
+        return this.blockId;
     }
 
     public boolean blockExists() {
@@ -100,6 +119,8 @@ public class BlockDescriptor {
             this.fileSize = this.file.length();
             this.lastModified = this.file.lastModified();
         }
+
+        this.computeBlockId();
     }
 
     public static final String PROPERTY_BLOCK_NUMBER = "PROP_BLOCK_NUMBER";
