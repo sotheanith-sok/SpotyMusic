@@ -7,6 +7,7 @@ import utils.Logger;
 import utils.RingBuffer;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -235,12 +236,16 @@ public class Socketplexer {
                 e.printStackTrace();
             }
 
-            synchronized (this.inputsLock) {
-                for (Map.Entry<Integer, RingBuffer> entry : this.inputChannels.entrySet()) {
-                    if (!entry.getValue().isWriteOpened()) {
-                        this.inputChannels.remove(entry.getKey());
+            try {
+                synchronized (this.inputsLock) {
+                    for (Map.Entry<Integer, RingBuffer> entry : Collections.unmodifiableSet(this.inputChannels.entrySet())) {
+                        if (!entry.getValue().isWriteOpened()) {
+                            this.inputChannels.remove(entry.getKey());
+                        }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 

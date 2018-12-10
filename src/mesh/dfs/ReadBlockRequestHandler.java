@@ -27,7 +27,7 @@ public class ReadBlockRequestHandler implements Runnable {
         InputStream in = null;
         OutputStream out = null;
         try {
-            in = new BufferedInputStream(new FileInputStream(f));
+            in = new BufferedInputStream(new FileInputStream(f), 75 * 1024);
 
             try {
                 (new DeferredStreamJsonGenerator(this.socketplexer.openOutputChannel(1), false, (gen) -> {
@@ -44,7 +44,7 @@ public class ReadBlockRequestHandler implements Runnable {
 
             out = this.socketplexer.openOutputChannel(2, 1024 * 16);
 
-            byte[] trx = new byte[1024 * 8];
+            byte[] trx = new byte[1024 * 16];
             int read = 0;
             while ((read = in.read(trx, 0, trx.length)) != -1) {
                 out.write(trx, 0, read);

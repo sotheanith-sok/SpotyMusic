@@ -48,9 +48,9 @@ public class DFS {
         this.mesh = mesh;
         this.executor = executor;
 
-        this.serverLog = new Logger("DFS][server", Constants.DEBUG);
-        this.clientLog = new Logger("DFS][client", Constants.DEBUG);
-        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.DEBUG);
+        this.serverLog = new Logger("DFS][server", Constants.FINER);
+        this.clientLog = new Logger("DFS][client", Constants.FINER);
+        this.blockOrganizerLog = new Logger("DFS][organizeBlocks", Constants.FINER);
 
         this.blocks = new ConcurrentHashMap<>();
         this.files = new ObservableMap<>();
@@ -366,11 +366,21 @@ public class DFS {
     }
 
     private int getBestId(int block_id) {
-        Set<Integer> nodes = this.mesh.getAvailableNodes();
+        PriorityQueue<Integer> nodes = new PriorityQueue<>(this.mesh.getAvailableNodes());
 
         // find node with best matching id number
-        int node_id = nodes.iterator().next();
-        for (int node : nodes) if (node > node_id && node < block_id) node_id = node;
+        Iterator<Integer> iter = nodes.iterator();
+        int node_id = iter.next();
+        while (iter.hasNext()) {
+            int next = iter.next();
+            if (next > block_id) {
+                break;
+
+            } else {
+                node_id = next;
+            }
+        }
+
 
         //this.clientLog.debug("[getBestId] Best node_id for block_id " + block_id + " is " + node_id);
         return node_id;
