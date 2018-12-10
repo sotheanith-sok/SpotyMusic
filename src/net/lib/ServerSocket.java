@@ -35,6 +35,7 @@ public class ServerSocket {
 
     public ServerSocket(SocketAddress address, SocketHandler handler) throws SocketException {
         this.socket = new DatagramSocket(address);
+        this.socket.setSoTimeout((int) Constants.TIMEOUT_DELAY / 2);
         this.handler = handler;
         this.socketLock = new Object();
 
@@ -61,14 +62,16 @@ public class ServerSocket {
     }
 
     private void listener() {
+        System.out.println("[ServerSocket][listener] Listener thread starting");
         while (this.running.get()) {
             DatagramPacket packet = new DatagramPacket(new byte[Constants.PACKET_SIZE + Constants.HEADER_OVERHEAD], Constants.PACKET_SIZE + Constants.HEADER_OVERHEAD);
             try {
+                //System.out.println("[ServerSocket][listener] Waiting to receive packet...");
                 this.socket.receive(packet);
 
                 int key = packet.getAddress().hashCode() ^ packet.getPort();
 
-                //System.out.println("[ServerSocket][listener] Received packet from " + packet.getAddress() + ":" + packet.getPort());
+                System.out.println("[ServerSocket][listener] Received packet from " + packet.getAddress() + ":" + packet.getPort());
 
                 synchronized (this.socketsLock) {
                     if (this.sockets.containsKey(key)) {
@@ -100,6 +103,7 @@ public class ServerSocket {
                 e.printStackTrace();
             }
         }
+        System.out.println("[ServerSocket][listener] Listener thread shutting down");
     }
 
     protected void socketClosed(SlaveSocket socket) {
