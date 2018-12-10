@@ -71,7 +71,7 @@ public class ServerSocket {
 
                 int key = packet.getAddress().hashCode() ^ packet.getPort();
 
-                System.out.println("[ServerSocket][listener] Received packet from " + packet.getAddress() + ":" + packet.getPort());
+                //System.out.println("[ServerSocket][listener] Received packet from " + packet.getAddress() + ":" + packet.getPort());
 
                 synchronized (this.socketsLock) {
                     if (this.sockets.containsKey(key)) {
@@ -97,6 +97,8 @@ public class ServerSocket {
 
 
                 }
+
+            } catch (SocketTimeoutException e) {
 
             } catch (IOException e) {
                 System.err.println("[ServerSocket][listener] IOException while waiting to receive packets");
