@@ -427,6 +427,7 @@ public class DFS {
     }
 
     private void blockStatsHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        long time = System.currentTimeMillis();
         String blockName = request.getStringProperty(PROPERTY_BLOCK_NAME);
         this.serverLog.log("[blockStatsHandler] Request for stats of block " + blockName);
         if (this.blocks.containsKey(blockName)) {
@@ -465,6 +466,8 @@ public class DFS {
                 socketplexer.terminate();
             }
         }
+        time = System.currentTimeMillis() - time;
+        if (time > 1000) this.serverLog.info("[blockStatsHandler] Took " + time + "ms to handle request for block " + blockName);
     }
 
     private void fileQueryHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
@@ -673,7 +676,7 @@ public class DFS {
                 return;
             }
 
-            plexer.setLogFilter(Constants.TRACE);
+            //plexer.setLogFilter(Constants.TRACE);
 
             this.clientLog.finer("[requestFileBlock] Parsing response header");
             (new JsonStreamParser(headerStream, false, (field) -> {
