@@ -75,7 +75,9 @@ public class MeshNode {
 
         if (this.config.getNodeCount() < 0){
             int id = id_generator.nextInt();
-            this.config = new MeshConfiguration(id, id, 1);
+            this.config.setMasterId(id);
+            this.config.setNodeId(id);
+            this.config.setNodeCount(1);
             this.logger.log("[init] Generated new node id: " + this.config.getNodeId());
         }
 
@@ -192,31 +194,7 @@ public class MeshNode {
 
         this.logger.debug("[sendNetQuery] NetQuery packet sent");
     }
-/*
-    private void sendNetJoin() {
-        this.logger.fine("[sendNetJoin] Sending NetJoin packet");
-        this.multicastSocket.send((gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NET_JOIN);
-            gen.writeEndObject();
-        });
 
-        this.logger.debug("[sendNetJoin] NetJoin packet sent");
-    }
-
-    private void sendNodeConfig(InetAddress address) {
-        this.logger.fine("[sendNodeConfig] Sending NodeConfig packet");
-        this.multicastSocket.send((gen) -> {
-            gen.writeStartObject();
-            gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_CONFIG);
-            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.id_generator.nextInt());
-            gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_COUNT, this.node_count.incrementAndGet());
-            gen.writeEndObject();
-        }, address);
-
-        this.logger.debug("[sendNodeConfig] NodeConfig packet sent");
-    }
-*/
     private void sendNodeActive() {
         this.logger.fine("[sendNodeActive] Sending NodeActive packet. node_id=" + this.config.getNodeId());
         this.multicastSocket.send((gen) -> {
@@ -275,36 +253,7 @@ public class MeshNode {
 
         this.logger.debug("[onNetQuery] NetQuery packet handled");
     }
-/*
-    private void onNetJoin(JsonField.ObjectField packet, InetAddress address) {
-        this.logger.fine("[onNetJoin] Received net join request");
-        if (this.config.isMaster()) {
-            // if master, reply with node configuration
-            this.sendNodeConfig(address);
-        }
 
-        this.logger.debug("[onNetJoin] NetJoin packet handled");
-    }
-
-    private void onNodeConfig(JsonField.ObjectField packet, InetAddress address) {
-        this.logger.log("[onNodeConfig] Received node configuration");
-        if (this.config.getNodeId() < 0) {
-            // if not part of a network, use configuration
-            this.config.setNodeId((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID));
-            this.node_count.set((int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_COUNT));
-            this.config.setNodeCount(this.node_count.get());
-            // add config to known configs so that it gets saved
-            this.configs.put(this.config.getNetwork_id(), this.config);
-
-            this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
-
-            // announce activity
-            this.sendNodeActive();
-        }
-
-        this.logger.debug("[onNodeConfig] NodeConfig packet handled");
-    }
-*/
     private void onNodeActive(JsonField.ObjectField packet, InetAddress address) {
         this.logger.fine("[onNodeActive] Received NodeActive packet");
         // add advertised node to list of known nodes
