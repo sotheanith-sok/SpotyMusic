@@ -272,17 +272,24 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
             JsonGenerator gen = _factory.createGenerator(cout, JsonEncoding.UTF8);
             gen.writeStartObject();
 
+            int favs = 0;
+            int attrs = 0;
+            int lists = 0;
+
             {   // favorites array
                 gen.writeFieldName("favs");
                 gen.writeStartArray();
                 for (MeshClientSong song : this.songs) {
                     gen.writeString(song.getTitle());
+                    favs++;
                 }
                 for (MeshClientAlbum album : this.albums) {
                     gen.writeString(album.getTitle());
+                    favs++;
                 }
                 for (String artist : this.artists) {
                     gen.writeString(artist);
+                    favs++;
                 }
                 gen.writeEndArray();
             }
@@ -292,9 +299,9 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
                 gen.writeStartObject();
                 for (Map.Entry<String, String> attribute : this.attributes.entrySet()) {
                     gen.writeStringField(attribute.getKey(), attribute.getValue());
+                    attrs++;
                 }
                 gen.writeEndObject();
-                System.out.println("[MeshClientUser][do_save] Wrote " + this.attributes.size() + " user attributes");
             }
 
             {   // playlists object
@@ -309,10 +316,15 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
                     }
 
                     gen.writeEndArray();
+                    lists++;
                 }
 
                 gen.writeEndObject();
             }
+
+            System.out.println("[MeshClientUser][do_save] Wrote " + attrs + " attributes, " +
+                    favs + " favorites, and " +
+                    lists + " playlists");
 
             gen.writeEndObject();
             gen.close();
@@ -398,6 +410,7 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
         MeshClientPlaylist newList = new MeshClientPlaylist(title, this.library);
         newList.setChangeListener(this);
         this.playlists.add(newList);
+        this.save();
         return newList;
     }
 
@@ -452,7 +465,7 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
     @Override
     public void onSongAdded(Song added) {
         try {
-            this.addSongFavorite((MeshClientSong) added);
+            this.save();
 
         } catch (ClassCastException e) {
             System.err.println("[MeshClientUser][onSongAdded] Non-mesh song added to mesh playlist?");
@@ -461,6 +474,6 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
 
     @Override
     public void onSongRemoved(Song removed) {
-
+        this.save();
     }
 }
