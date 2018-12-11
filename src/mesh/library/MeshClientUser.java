@@ -164,7 +164,7 @@ public class MeshClientUser implements MeshLibraryActivityListener, MeshClientPl
                         }
                     }
 
-                    if (root.containsKey("playlsits")) {
+                    if (root.containsKey("playlists")) {
                         JsonField playlist_field = root.getProperty("playlists");
                         if (playlist_field.isObject()) {
                             for (Map.Entry<String, JsonField> entry : playlist_field.getProperties().entrySet()) {

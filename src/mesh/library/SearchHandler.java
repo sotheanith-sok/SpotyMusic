@@ -97,15 +97,24 @@ public class SearchHandler implements Runnable {
                     (new JsonStreamParser(socketplexer.waitInputChannel(2).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field1) -> {
                         if (!field1.isObject()) return;
                         JsonField.ObjectField song = (JsonField.ObjectField) field1;
-                        this.library.addSong(new MeshClientSong(
-                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE),
-                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_ARTIST),
-                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_ALBUM),
-                                song.getLongProperty(MeshLibrary.PROPERTY_SONG_DURATION),
-                                song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME),
-                                this.library
-                        ));
+
+                        //System.out.println("[SearchHandler][parse] Getting title");
+                        String title = song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE);
+                        //System.out.println("[SearchHandler][parse] Getting artist");
+                        String artist = song.getStringProperty(MeshLibrary.PROPERTY_SONG_ARTIST);
+                        //System.out.println("[SearchHandler][parse] Getting album");
+                        String album = song.getStringProperty(MeshLibrary.PROPERTY_SONG_ALBUM);
+                        //System.out.println("[SearchHandler][parse] Getting duration");
+                        long duration = Long.parseLong(song.getStringProperty(MeshLibrary.PROPERTY_SONG_DURATION));
+                        //System.out.println("[SearchHandler][parse] Getting file name");
+                        String file = song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME);
+
+                        MeshClientSong mcs = new MeshClientSong(title, artist, album, duration, file, this.library
+                        );
+                        this.library.addSong(mcs);
+                        //System.out.println("[SearchHandler] Received response from remote: " + song.getStringProperty(MeshLibrary.PROPERTY_SONG_TITLE));
                     }, true)).run();
+                    System.out.println("[SearchHandler] End of response data");
 
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     System.err.println("[SearchHandler] Unable to parse search query response");
@@ -167,7 +176,7 @@ public class SearchHandler implements Runnable {
         synchronized (connectionsLock) {
             while (!connections.isEmpty()) {
                 try {
-                    Thread.sleep(150);
+                    Thread.sleep(1500);
                 } catch (InterruptedException e) {
                 }
 

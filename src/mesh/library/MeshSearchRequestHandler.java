@@ -59,6 +59,9 @@ public class MeshSearchRequestHandler implements Runnable {
         this.library.executor.submit(generator);
         generator.enqueue((gen) -> gen.writeStartArray());
 
+        int matches = 0;
+        int entries = 0;
+
         for (BlockDescriptor block : blocks) {
             if (!socketplexer.isOpened()) return;
 
@@ -80,6 +83,7 @@ public class MeshSearchRequestHandler implements Runnable {
                 while ((line = reader.readLine()) != null) {
                     String[] fields = line.split(";");
                     for (String field : fields) {
+                        entries++;
                         if (field.trim().toLowerCase().contains(searchParam)) {
                             generator.enqueue((gen) -> {
                                 gen.writeStartObject();
@@ -90,6 +94,7 @@ public class MeshSearchRequestHandler implements Runnable {
                                 gen.writeStringField(MeshLibrary.PROPERTY_SONG_FILE_NAME, fields[4]);
                                 gen.writeEndObject();
                             });
+                            matches++;
                             break;
                         }
                     }
@@ -108,6 +113,8 @@ public class MeshSearchRequestHandler implements Runnable {
                 continue;
             }
         }
+
+        System.out.println("[MeshSearchRequestHandler] Scanned " + entries + " in " + blocks.size() + " local blocks, found " + matches + " matches");
 
         generator.enqueue((gen) -> gen.writeEndArray());
         generator.close();
