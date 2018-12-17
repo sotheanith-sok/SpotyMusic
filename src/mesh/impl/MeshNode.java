@@ -2,15 +2,18 @@ package mesh.impl;
 
 import net.Constants;
 import net.common.DeferredJsonGenerator;
+import net.common.DeferredStreamJsonGenerator;
 import net.common.JsonField;
 import net.lib.ClientSocket;
 import net.lib.ServerSocket;
 import net.lib.Socket;
 import net.reqres.RequestHandler;
 import net.reqres.RequestServer;
+import net.reqres.Socketplexer;
 import utils.Logger;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -35,6 +38,9 @@ public class MeshNode {
     private Map<Integer, InetSocketAddress> nodes;
 
     private List<NodeConnectListener> nodeConnectListeners;
+
+    private int monitorTarget = 0;
+    private Socket monitorConnection = null;
 
     public MeshNode(MeshConfiguration config, InetSocketAddress multicastAddress, SocketAddress serverAddress) throws IOException {
         this(config, new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), 64, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>()), multicastAddress, serverAddress);
@@ -344,6 +350,75 @@ public class MeshNode {
         for (NodeConnectListener listener : this.nodeConnectListeners) {
             listener.onNodeConnected(node_id);
         }
+
+        if (this.monitorTarget == 0 || node_id < this.monitorTarget) {
+            this.monitor(node_id);
+        }
+    }
+
+    private void monitor(int target) {
+        this.executor.submit(() -> {
+            if (this.monitorConnection != null) {
+                this.logger.fine("[monitor] Closing monitoring link to " + this.monitorTarget);
+                this.monitorConnection.close();
+            }
+            this.monitorTarget = target;
+
+            try {
+                this.logger.finer("[monitor] Establishing monitoring link with node " + target);
+                this.monitorConnection = this.tryConnect(target);
+                this.logger.trace("[monitor] Monitoring connection established");
+
+            } catch (NodeUnavailableException | SocketException | SocketTimeoutException e) {
+                this.logger.warn("[monitor] There was a problem setting up monitoring for node " + target);
+                e.printStackTrace();
+            }
+
+            Socketplexer socketplexer = new Socketplexer(this.monitorConnection, this.executor);
+
+            this.logger.finer("[monitor] Sending monitor request header");
+            try {
+                this.logger.debug("[monitor] Getting request header output stream");
+                OutputStream headersOut = socketplexer.openOutputChannel(1);
+                this.logger.trace("[monitor] Got header output stream");
+
+                this.logger.debug("[monitor] Writing monitor request headers");
+                (new DeferredStreamJsonGenerator(headersOut, false, (gen) -> {
+                    gen.writeStartObject();
+                    gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_MONITOR);
+                    gen.writeEndObject();
+                })).run();
+                this.logger.trace("[monitor] Request headers written");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            this.monitorConnection.addTimeoutListener(this::monitorDisconnect);
+            this.logger.fine("[monitor] Monitoring connection to " + target);
+        });
+    }
+
+    private void monitorDisconnect() {
+        this.logger.info("[monitorDisconnect] Monitored node " + monitorTarget + " stopped responding");
+        this.sendNodeGone(this.monitorTarget);
+        this.nodes.remove(this.monitorTarget);
+        if (this.nodes.size() > 1) {
+            Iterator<Integer> iter = this.nodes.keySet().iterator();
+            int newTarget = iter.next();
+            int me = this.config.getNodeId();
+            while (iter.hasNext()) {
+                int temp = iter.next();
+                if (newTarget < me) {
+                    newTarget = temp;
+
+                } else if (temp > me && temp < newTarget) {
+                    newTarget = temp;
+                }
+            }
+
+            this.monitor(newTarget);
+        }
     }
 
     /*
@@ -366,6 +441,8 @@ public class MeshNode {
 
     // the port number of the node's RequestServer
     public static final String PROPERTY_PORT_NUMBER = "PROP_PORT_NUM";
+
+    public static final String REQUEST_MONITOR = "REQ_MONITOR";
 
     @FunctionalInterface
     public interface NodeConnectListener {
