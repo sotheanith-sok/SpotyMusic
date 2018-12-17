@@ -386,6 +386,7 @@ public class MeshNode {
                 (new DeferredStreamJsonGenerator(headersOut, false, (gen) -> {
                     gen.writeStartObject();
                     gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_MONITOR);
+                    gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
                     gen.writeEndObject();
                 })).run();
                 this.logger.trace("[monitor] Request headers written");
@@ -419,6 +420,10 @@ public class MeshNode {
 
             this.monitor(newTarget);
         }
+    }
+
+    private void monitorHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
+        this.logger.log("[monitorHandler] Handling monitor request from node " + request.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID));
     }
 
     /*
