@@ -65,6 +65,8 @@ public class MeshNode {
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_GONE, this::onNodeGone);
         this.multicastSocket.addHandler(PACKET_TYPE_NODE_ADVERT, this::onNodeAdvert);
 
+        this.server.registerHandler(REQUEST_MONITOR, this::monitorHandler);
+
         this.node_count = new AtomicInteger(0);
 
         this.config = config;
