@@ -80,7 +80,8 @@ public class MeshLibrary implements Library {
         this.mesh.registerRequestHandler(REQUEST_SORT_STATUS, this::sortStatusHandler);
         this.mesh.registerRequestHandler(REQUEST_SORT_EMIT, this::sortEmitHandler);
         this.mesh.registerPacketHandler(REQUEST_DO_SORT, (packet, source) -> {
-            if (!this.isSorting.get()) this.doSortTask.run();
+            this.logger.log(" Received DO_SORT request");
+            this.doSortTask.run();
         });
         this.mesh.addNodeConnectListener((id) -> this.doSortTask.run());
 
@@ -334,8 +335,10 @@ public class MeshLibrary implements Library {
                 } else {
                     Socket socket;
 
+                    this.logger.debug("[doSort] Connecting to node " + remoteId);
                     try {
                         socket = this.mesh.tryConnect(remoteId);
+                        this.logger.trace("[doSort] Connected to remote node successfully");
 
                     } catch (NodeUnavailableException | SocketException | SocketTimeoutException e) {
                         this.logger.warn("[doSort] Unable to connect to node " + remoteId);
@@ -345,12 +348,18 @@ public class MeshLibrary implements Library {
 
                     Socketplexer socketplexer = new Socketplexer(socket, this.executor);
 
+                    this.logger.debug("[doSort] Sending request headers");
                     try {
-                        (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
+                        this.logger.trace("[doSort] Opening request channel");
+                        OutputStream headersOut = socketplexer.openOutputChannel(1);
+                        this.logger.trace("[doSort] Request header channel opened");
+
+                        (new DeferredStreamJsonGenerator(headersOut, false, (gen) -> {
                             gen.writeStartObject();
                             gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, REQUEST_SORT_EMIT);
                             gen.writeEndObject();
                         })).run();
+                        this.logger.trace("[doSort] Request headers written");
 
                     } catch (IOException e) {
                         this.logger.warn("[doSort] Unable to open request header channel");
@@ -359,8 +368,13 @@ public class MeshLibrary implements Library {
 
                     AtomicBoolean ok = new AtomicBoolean(false);
 
+                    this.logger.debug("[doSort] parsing response headers");
                     try {
-                        (new JsonStreamParser(socketplexer.waitInputChannel(1).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), false, (field) -> {
+                        this.logger.trace("[doSort] Getting response channel");
+                        InputStream responseIn = socketplexer.waitInputChannel(1).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
+                        this.logger.trace("[doSort] Got response header channel");
+
+                        (new JsonStreamParser(responseIn, false, (field) -> {
                             if (!field.isObject()) return;
                             JsonField.ObjectField header = (JsonField.ObjectField) field;
 
@@ -368,13 +382,18 @@ public class MeshLibrary implements Library {
                                 ok.set(true);
                             }
                         })).run();
+                        this.logger.trace("[doSort] Response headers parsed");
 
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         this.logger.warn("[doSort] Unable to open response header channel");
                         e.printStackTrace();
+                        socketplexer.terminate();
+                        continue;
                     }
 
+                    this.logger.debug("[doSort] Connection status ok=" + ok.get());
                     if (!ok.get()) continue;
+                    this.logger.trace("[doSort] Connected to node " + remoteId);
 
                     OutputStream requestBody;
 
@@ -392,6 +411,8 @@ public class MeshLibrary implements Library {
                     generator.enqueue((gen) -> gen.writeStartArray());
                     generators.put(remoteId, generator);
                 }
+
+                this.logger.debug("[doSort] Emitting index entry " + entry.getKey());
 
                 String[] fields = entry.getValue();
                 generator.enqueue((gen) -> {
@@ -418,6 +439,8 @@ public class MeshLibrary implements Library {
         for (Socketplexer socketplexer : connections.values()) {
             socketplexer.terminate();
         }
+
+        this.isSorting.set(false);
     }
 
     private void doSave() {
@@ -446,11 +469,14 @@ public class MeshLibrary implements Library {
 
     private void sortEmitHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executorService) {
         if (!request.isObject()) return;
+        this.logger.log("[sortEmitHandler] Handling sort emit request");
 
         OutputStream responseHeader;
 
+        this.logger.trace("[sortEmitHandler] Opening response header channel");
         try {
             responseHeader = socketplexer.openOutputChannel(1);
+            this.logger.trace("[sortEmitHandler] Opened response header channel");
 
         } catch (IOException e) {
             this.logger.warn("[sortEmitHandler] Unable to open response header channel");
@@ -460,28 +486,36 @@ public class MeshLibrary implements Library {
         }
 
         if (this.isSorting.get()) {
+            this.logger.debug("[sortEmitHandler] Currently sorting");
+            this.logger.debug("[sortEmitHandler] Sending response headers");
             (new DeferredStreamJsonGenerator(responseHeader, true, (gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_SORT_EMIT);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, Constants.RESPONSE_STATUS_OK);
                 gen.writeEndObject();
             })).run();
+            this.logger.trace("[sortEmitHandler] Response headers sent");
 
         } else {
+            this.logger.debug("[sortEmitHandler] Not Currently sorting sorting, denying request");
+            this.logger.debug("[sortEmitHandler] Sending response headers");
             (new DeferredStreamJsonGenerator(responseHeader, true, (gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_SORT_EMIT);
                 gen.writeStringField(Constants.PROPERTY_RESPONSE_STATUS, "NOT_SORTING");
                 gen.writeEndObject();
             })).run();
+            this.logger.trace("[sortEmitHandler] Response headers sent");
             socketplexer.terminate();
             return;
         }
 
         InputStream bodyStream;
 
+        this.logger.debug("[sortEmitHandler] Opening request body channel");
         try {
             bodyStream = socketplexer.waitInputChannel(2).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS);
+            this.logger.trace("[sortEmitHandler] Got request body channel");
 
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             this.logger.warn("[sortEmitHandler] Unable to open emit channel");
@@ -503,10 +537,15 @@ public class MeshLibrary implements Library {
             String duration = song.getStringProperty(MeshLibrary.PROPERTY_SONG_DURATION);
             //System.out.println("[SearchHandler][parse] Getting file name");
             String file = song.getStringProperty(MeshLibrary.PROPERTY_SONG_FILE_NAME);
+
+            this.logger.debug("[sortEmitHandler] Received " + file + " from sorting node");
+
             String[] entry = new String[]{artist, album, title, duration, file};
             if (this.index.putIfAbsent(file, entry) == null) this.doSaveTask.run();
 
         }, true);
+        this.logger.debug("[sortEmitHandler] Parsing request body");
+        parser.run();
     }
 
     public Future<Boolean> getSortStatus() {
@@ -548,12 +587,17 @@ public class MeshLibrary implements Library {
 
             this.logger.debug("[getSortStatus] Parsing response headers");
             try {
-                (new JsonStreamParser(responseFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field) -> {
-                    if (field.isObject()) return;
+                (new JsonStreamParser(responseFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), false, (field) -> {
+                    if (!field.isObject()) return;
                     JsonField.ObjectField headers = (JsonField.ObjectField) field;
-                    boolean status = headers.getBooleanProperty(PROPERTY_SORT_STATUS);
-                    future.complete(status);
-                    this.logger.fine("[getSortStatus] Network sort status = " + status);
+                    try {
+                        boolean status = headers.getBooleanProperty(PROPERTY_SORT_STATUS);
+                        future.complete(status);
+                        this.logger.fine("[getSortStatus] Network sort status = " + status);
+
+                    } catch (Exception e) {
+                        future.completeExceptionally(e);
+                    }
                 })).run();
                 this.logger.trace("[getSortStatus] Parsed response headers");
 
