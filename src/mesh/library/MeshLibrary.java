@@ -411,6 +411,7 @@ public class MeshLibrary implements Library {
 
                     connections.put(remoteId, socketplexer);
                     generator = new AsyncJsonStreamGenerator(requestBody);
+                    this.executor.submit(generator);
                     generator.enqueue((gen) -> gen.writeStartArray());
                     generators.put(remoteId, generator);
                 }
@@ -532,6 +533,7 @@ public class MeshLibrary implements Library {
         }
 
         JsonStreamParser parser = new JsonStreamParser(bodyStream, true, (field) -> {
+            this.logger.debug("[sortEmitHandler] Received emitted data from sorting node " + field.toString());
             JsonField.ObjectField song = (JsonField.ObjectField) field;
 
             //System.out.println("[SearchHandler][parse] Getting title");
@@ -553,6 +555,7 @@ public class MeshLibrary implements Library {
         }, true);
         this.logger.debug("[sortEmitHandler] Parsing request body");
         parser.run();
+        this.logger.debug("[sortEmitHandler] End of emit stream");
     }
 
     public Future<Boolean> getSortStatus() {
