@@ -67,6 +67,8 @@ public abstract class Socket {
 
     private LinkedList<TimeoutListener> timeoutListeners;
 
+    private LinkedList<SocketCloseListener> socketCloseListeners;
+
     public Socket(InetAddress remote, int port) {
         this(remote, port, Constants.BUFFER_SIZE, Constants.BUFFER_SIZE);
     }
@@ -94,6 +96,7 @@ public abstract class Socket {
         this.receiver.setName("[Socket][receiver]");
 
         this.timeoutListeners = new LinkedList<>();
+        this.socketCloseListeners = new LinkedList<>();
 
         this.logger = new Logger("Socket", Constants.WARN);
         this.sendPacketLogger = new Logger("Socket][sendPacket", Constants.WARN);
@@ -146,6 +149,18 @@ public abstract class Socket {
 
     public void addTimeoutListener(TimeoutListener listener) {
         this.timeoutListeners.add(listener);
+    }
+
+    public void removeTimeoutListener(TimeoutListener listener) {
+        this.timeoutListeners.remove(listener);
+    }
+
+    public void addSocketCloseListener(SocketCloseListener listener) {
+        this.socketCloseListeners.add(listener);
+    }
+
+    public void removeSocketCloseListener(SocketCloseListener listener) {
+        this.socketCloseListeners.remove(listener);
     }
 
     public void reversePoke() {
@@ -655,7 +670,13 @@ public abstract class Socket {
     }
 
     // lifecycle functions
-    protected abstract void onClosed();
+    protected void onClosed() {
+        for (SocketCloseListener listener : this.socketCloseListeners) {
+            try {
+                listener.onClosed();
+            } catch (Exception e) {}
+        }
+    }
 
     protected void onTimeout() {
         for (TimeoutListener listener : this.timeoutListeners) {
@@ -681,6 +702,10 @@ public abstract class Socket {
 
     public interface TimeoutListener {
         void onTimeout();
+    }
+
+    public interface SocketCloseListener {
+        void onClosed();
     }
 
     public static final int LISTEN = 1;

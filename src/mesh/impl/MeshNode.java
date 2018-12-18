@@ -431,6 +431,7 @@ public class MeshNode {
         this.executor.submit(() -> {
             if (this.monitorConnection != null) {
                 this.logger.fine("[monitor] Closing monitoring link to " + this.monitorTarget);
+                this.monitorConnection.removeSocketCloseListener(this::monitorDisconnect);
                 this.monitorConnection.close();
             }
             this.monitorTarget = target;
@@ -467,6 +468,7 @@ public class MeshNode {
             }
 
             this.monitorConnection.addTimeoutListener(this::monitorDisconnect);
+            this.monitorConnection.addSocketCloseListener(this::monitorDisconnect);
             this.logger.fine("[monitor] Monitoring connection to " + target);
         });
     }

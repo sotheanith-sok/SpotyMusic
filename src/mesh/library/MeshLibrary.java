@@ -298,8 +298,9 @@ public class MeshLibrary implements Library {
 
     private void sortStatusHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
         this.logger.log("[sortStatusHandler] Request for sort status");
+        socketplexer.setLogFilter(Constants.TRACE);
         try {
-            (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), true, (gen) -> {
+            (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
                 gen.writeStartObject();
                 gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, RESPONSE_SORT_STATUS);
                 gen.writeBooleanField(PROPERTY_SORT_STATUS, this.isSorting.get());
@@ -310,6 +311,7 @@ public class MeshLibrary implements Library {
         } catch (IOException e) {
             this.logger.warn("[sortStatusHandler] Unable to obtain response stream");
             e.printStackTrace();
+            socketplexer.terminate();
         }
     }
 
@@ -525,6 +527,8 @@ public class MeshLibrary implements Library {
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
+            Future<InputStream> responseFuture = socketplexer.waitInputChannel(1);
+
             this.logger.debug("[getSortStatus] Sending request headers");
             try {
                 (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
@@ -544,7 +548,7 @@ public class MeshLibrary implements Library {
 
             this.logger.debug("[getSortStatus] Parsing response headers");
             try {
-                (new JsonStreamParser(socketplexer.waitInputChannel(1).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field) -> {
+                (new JsonStreamParser(responseFuture.get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field) -> {
                     if (field.isObject()) return;
                     JsonField.ObjectField headers = (JsonField.ObjectField) field;
                     boolean status = headers.getBooleanProperty(PROPERTY_SORT_STATUS);
@@ -555,6 +559,7 @@ public class MeshLibrary implements Library {
 
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 this.logger.warn("[getSortStatus] Unable to obtain response header stream");
+                future.completeExceptionally(e);
                 e.printStackTrace();
             }
 

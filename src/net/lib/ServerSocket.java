@@ -197,6 +197,7 @@ public class ServerSocket {
         @Override
         protected void onClosed() {
             this.logger.log("[SlaveSocket][onClosed] SlaveSocket closed.");
+            super.onClosed();
             //System.out.println("[SlaveSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
             //System.out.println("[SlaveSocket][onClosed] this.isReceiveClosed() = " + this.isReceiveClosed());
             socketClosed(this);

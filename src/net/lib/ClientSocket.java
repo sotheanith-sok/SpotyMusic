@@ -90,6 +90,7 @@ public class ClientSocket extends Socket {
     @Override
     protected void onClosed() {
         this.socket.close();
+        super.onClosed();
         this.logger.log("[ClientSocket][onClosed] ClientSocket closed successfully");
         //System.out.println("[ClientSocket][onClosed] receiveBuffer.isReadOpened() = " + this.sendBuffer.isReadOpened());
     }
