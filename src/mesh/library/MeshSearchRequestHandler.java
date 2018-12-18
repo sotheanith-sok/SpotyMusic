@@ -114,6 +114,25 @@ public class MeshSearchRequestHandler implements Runnable {
             }
         }
 
+        for (String[] fields : this.library.index.values()) {
+            for (String field : fields) {
+                entries++;
+                if (field.trim().toLowerCase().contains(searchParam)) {
+                    generator.enqueue((gen) -> {
+                        gen.writeStartObject();
+                        gen.writeStringField(MeshLibrary.PROPERTY_SONG_ARTIST, fields[0]);
+                        gen.writeStringField(MeshLibrary.PROPERTY_SONG_ALBUM, fields[1]);
+                        gen.writeStringField(MeshLibrary.PROPERTY_SONG_TITLE, fields[2]);
+                        gen.writeStringField(MeshLibrary.PROPERTY_SONG_DURATION, fields[3]);
+                        gen.writeStringField(MeshLibrary.PROPERTY_SONG_FILE_NAME, fields[4]);
+                        gen.writeEndObject();
+                    });
+                    matches++;
+                    break;
+                }
+            }
+        }
+
         System.out.println("[MeshSearchRequestHandler] Scanned " + entries + " in " + blocks.size() + " local blocks, found " + matches + " matches");
 
         generator.enqueue((gen) -> gen.writeEndArray());

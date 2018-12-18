@@ -36,6 +36,7 @@ public class MeshNode {
     private RequestServer server;
 
     private Map<Integer, InetSocketAddress> nodes;
+    private PriorityQueue<Integer> nodeIds;
 
     private List<NodeConnectListener> nodeConnectListeners;
 
@@ -49,6 +50,7 @@ public class MeshNode {
     public MeshNode(MeshConfiguration config, ExecutorService executor, InetSocketAddress multicastAddress, SocketAddress serverAddress) throws IOException {
         this.executor = executor;
         this.nodes = new ConcurrentHashMap<>();
+        this.nodeIds = new PriorityQueue<>();
         this.multicastSocket = new MulticastPacketSocket(multicastAddress, executor);
         this.server = new RequestServer(this.executor, serverAddress);
 
@@ -91,6 +93,7 @@ public class MeshNode {
 
         this.node_count.set(config.getNodeCount());
         this.nodes.put(this.config.getNodeId(), new InetSocketAddress(this.server.getServerSocket().localAddress(), this.server.getServerSocket().getPort()));
+        this.nodeIds.add(this.config.getNodeId());
 
         // look for an existing mesh
         this.logger.log("[init] Looking for existing mesh networks");
@@ -139,8 +142,8 @@ public class MeshNode {
         this.multicastSocket.send(packet);
     }
 
-    public Set<Integer> getAvailableNodes() {
-        return nodes.keySet();
+    public PriorityQueue<Integer> getAvailableNodes() {
+        return this.nodeIds;
     }
 
     public Socket tryConnect(int nodeId) throws NodeUnavailableException, SocketException, SocketTimeoutException {
@@ -156,6 +159,7 @@ public class MeshNode {
 
             } catch (SocketException e) {
                 this.nodes.remove(nodeId);
+                this.nodeIds.remove(nodeId);
                 this.sendNodeGone(nodeId);
                 this.logger.warn("[tryConnect] Connection timed out.");
                 throw e;
@@ -177,6 +181,67 @@ public class MeshNode {
 
     public int getNodeId() {
         return this.config.getNodeId();
+    }
+
+    public boolean isMaster() {
+        return this.config.isMaster();
+    }
+
+    public int getNextNode() {
+        Iterator<Integer> iter = this.nodeIds.iterator();
+        int nextNode = iter.next();
+        int me = this.config.getNodeId();
+        // nodeIds is sorted, so the first ID that's greater than me
+        // is guaranteed to be the next node
+        // if I am the greatest, then nextNode will never be
+        // overwritten, and the lowest active node ID will be returned
+        while (iter.hasNext()) {
+            int temp = iter.next();
+            if (temp > me) {
+                nextNode = temp;
+                break;
+            }
+        }
+
+        return nextNode;
+    }
+
+    public int getPreviousNode() {
+        Iterator<Integer> iter = this.nodeIds.iterator();
+        int prev = iter.next();
+        int t = 0;
+
+        int me = this.config.getNodeId();
+
+        while (iter.hasNext()) {
+            t = iter.next();
+            if (t > prev && t < me) {
+                prev = t;
+            }
+        }
+
+        // after iterating over all nodes, if prev > me, then me is
+        // lowest node, so return t which will be the highest node
+        if (prev > me) return t;
+        // otherwise return the largest id that's less than me
+        return prev;
+    }
+
+    public int getBestId(int block_id) {
+        // find node with best matching id number
+        Iterator<Integer> iter = this.nodeIds.iterator();
+        int node_id = iter.next();
+        while (iter.hasNext()) {
+            int next = iter.next();
+            if (next > block_id) {
+                break;
+
+            } else {
+                node_id = next;
+            }
+        }
+
+        return node_id;
     }
 
     private void sendNetInfo() {
@@ -280,6 +345,7 @@ public class MeshNode {
 
         this.logger.trace("[onNodeActive] Adding node to known nodes");
         this.nodes.put(id, new InetSocketAddress(address, port));
+        if (!alreadyKnew) this.nodeIds.add(id);
 
         if (this.node_count.get() < count) {
             this.logger.trace("[onNodeActive] Updating node count");
@@ -310,23 +376,10 @@ public class MeshNode {
         int id = (int) packet.getLongProperty(MeshConfiguration.PROPERTY_NODE_ID);
         if (id == this.config.getNodeId()){
             // resend activity notification if someone said we didn't respond
-            this.multicastSocket.send((gen) -> {
-                gen.writeStartObject();
-                gen.writeStringField(Constants.REQUEST_TYPE_PROPERTY, PACKET_TYPE_NODE_ACTIVE);
-                gen.writeNumberField(MeshConfiguration.PROPERTY_NODE_ID, this.config.getNodeId());
-                gen.writeEndObject();
-            });
+            this.sendNodeActive();
 
         } else {
-            // remove node from list of known nodes
-            this.nodes.remove(id);
-
-            // change master_id if necessary
-            if (this.config.getMasterId() == id) {
-                int min = this.config.getNodeId();
-                for (int nid : this.getAvailableNodes()) min = Math.min(min, nid);
-                this.config.setMasterId(min);
-            }
+            this.nodeDisconnected(id);
         }
 
         this.logger.debug("[onNodeGone] NodeGone packet handled");
@@ -340,6 +393,7 @@ public class MeshNode {
         InetSocketAddress serverAddress = new InetSocketAddress(address, port);
         boolean alreadyKnew = this.nodes.containsKey(id);
         this.nodes.put(id, serverAddress);
+        if (!alreadyKnew) this.nodeIds.add(id);
         if (id < this.config.getMasterId()) this.config.setMasterId(id);
 
         if (!alreadyKnew) this.onNewNode(id);
@@ -349,12 +403,27 @@ public class MeshNode {
     private void onNewNode(int node_id) {
         this.logger.finer("[onNewNode] New node connected: " + node_id);
         this.logger.finest("[onNewNode] There are now " + this.nodes.size() + " active nodes");
+        if (node_id < this.config.getMasterId()) this.config.setMasterId(node_id);
+
         for (NodeConnectListener listener : this.nodeConnectListeners) {
             listener.onNodeConnected(node_id);
         }
 
         if (this.monitorTarget == 0 || node_id < this.monitorTarget) {
             this.monitor(node_id);
+        }
+    }
+
+    private void nodeDisconnected(int node_id) {
+        // remove node from list of known nodes
+        this.nodes.remove(node_id);
+        this.nodeIds.remove(node_id);
+
+        // change master_id if necessary
+        if (this.config.getMasterId() == node_id) {
+            int min = this.config.getNodeId();
+            for (int nid : this.getAvailableNodes()) min = Math.min(min, nid);
+            this.config.setMasterId(min);
         }
     }
 
@@ -405,22 +474,9 @@ public class MeshNode {
     private void monitorDisconnect() {
         this.logger.info("[monitorDisconnect] Monitored node " + monitorTarget + " stopped responding");
         this.sendNodeGone(this.monitorTarget);
-        this.nodes.remove(this.monitorTarget);
+        this.nodeDisconnected(this.monitorTarget);
         if (this.nodes.size() > 1) {
-            Iterator<Integer> iter = this.nodes.keySet().iterator();
-            int newTarget = iter.next();
-            int me = this.config.getNodeId();
-            while (iter.hasNext()) {
-                int temp = iter.next();
-                if (newTarget < me) {
-                    newTarget = temp;
-
-                } else if (temp > me && temp < newTarget) {
-                    newTarget = temp;
-                }
-            }
-
-            this.monitor(newTarget);
+            this.monitor(this.getNextNode());
         }
     }
 

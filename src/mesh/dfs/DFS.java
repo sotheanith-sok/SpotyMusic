@@ -366,24 +366,7 @@ public class DFS {
     }
 
     private int getBestId(int block_id) {
-        PriorityQueue<Integer> nodes = new PriorityQueue<>(this.mesh.getAvailableNodes());
-
-        // find node with best matching id number
-        Iterator<Integer> iter = nodes.iterator();
-        int node_id = iter.next();
-        while (iter.hasNext()) {
-            int next = iter.next();
-            if (next > block_id) {
-                break;
-
-            } else {
-                node_id = next;
-            }
-        }
-
-
-        //this.clientLog.debug("[getBestId] Best node_id for block_id " + block_id + " is " + node_id);
-        return node_id;
+        return this.mesh.getBestId(block_id);
     }
 
     private void readBlockHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
@@ -1246,6 +1229,7 @@ public class DFS {
     // add logging
     public Future<?> putFileMetadata(FileDescriptor fileDescriptor, int node_id) {
         CompletableFuture<String> future = new CompletableFuture<>();
+        this.clientLog.log("[putFileMetadata] Putting metadata for file " + fileDescriptor.getFileName());
 
         this.executor.submit(() -> {
             Socket connection;
@@ -1253,14 +1237,17 @@ public class DFS {
             if (node_id == this.mesh.getNodeId()) {
                 this.files.put(fileDescriptor.getFileName(), fileDescriptor);
                 future.complete("Success");
+                this.clientLog.debug("[putFileMetadata] File metadata stored locally");
                 return;
             }
 
+            this.clientLog.debug("[putFileMetadata] Connecting to node " + node_id);
             try {
                 connection = this.mesh.tryConnect(node_id);
+                this.clientLog.trace("[putFileMetadata] Connected successfully");
 
             } catch (SocketException | NodeUnavailableException | SocketTimeoutException e) {
-                System.err.println("[DFS][getBlockStats] Unable to connect to node " + node_id);
+                this.clientLog.warn("[getBlockStats] Unable to connect to node " + node_id);
                 e.printStackTrace();
                 future.completeExceptionally(e);
                 return;
@@ -1268,6 +1255,7 @@ public class DFS {
 
             Socketplexer socketplexer = new Socketplexer(connection, this.executor);
 
+            this.clientLog.debug("[putFileMetadata] Sending request headers");
             try {
                 (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
                     gen.writeStartObject();
@@ -1275,6 +1263,8 @@ public class DFS {
                     fileDescriptor.serialize(gen, true);
                     gen.writeEndObject();
                 })).run();
+                this.clientLog.trace("[putFileMetadata] Request headers sent");
+
             } catch (IOException e) {
                 this.clientLog.warn("[getBlockStats] Unable to obtain request header stream");
                 socketplexer.terminate();
@@ -1282,16 +1272,19 @@ public class DFS {
                 return;
             }
 
+            this.clientLog.debug("[putFileMetadata] Parsing response headers");
             try {
-                (new JsonStreamParser(socketplexer.waitInputChannel(1).get(5000, TimeUnit.MILLISECONDS), true, (field) -> {
+                (new JsonStreamParser(socketplexer.waitInputChannel(1).get(Constants.MAX_CHANNEL_WAIT, TimeUnit.MILLISECONDS), true, (field) -> {
                     if (!field.isObject()) return;
                     JsonField.ObjectField packet = (JsonField.ObjectField) field;
                     String status = packet.getStringProperty(Constants.PROPERTY_RESPONSE_STATUS);
                     if (status.equals(Constants.RESPONSE_STATUS_OK)) {
                         future.complete(status);
+                        this.clientLog.debug("[putFileMetadata] File metadata sent successfully");
 
                     } else {
                         future.completeExceptionally(new Exception("Server returned status code " + status));
+                        this.clientLog.warn("[putFileMetadata] Server responded " + status);
                     }
                 })).run();
                 socketplexer.terminate();

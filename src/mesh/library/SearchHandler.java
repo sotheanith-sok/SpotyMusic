@@ -7,13 +7,11 @@ import net.common.*;
 import net.lib.Socket;
 import net.reqres.Socketplexer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -34,7 +32,7 @@ public class SearchHandler implements Runnable {
 
     @Override
     public void run() {
-        Set<Integer> nodes = this.library.mesh.getAvailableNodes();
+        PriorityQueue<Integer> nodes = this.library.mesh.getAvailableNodes();
 
         final Object connectionsLock = new Object();
         LinkedList<Socketplexer> connections = new LinkedList<>();
@@ -168,6 +166,43 @@ public class SearchHandler implements Runnable {
                 } catch (IOException e1) {
                 }
                 continue;
+            }
+        }
+
+
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(MeshLibrary.INDEX_FILE)));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split(";");
+                entries++;
+                for (String field : fields) {
+                    if (field.trim().toLowerCase().contains(searchParam)) {
+                        matches++;
+                        this.library.addSong(new MeshClientSong(fields[2], fields[0], fields[1], Long.parseLong(fields[3]), fields[4], this.library));
+                        break;
+                    }
+                }
+            }
+
+            reader.close();
+
+        } catch (FileNotFoundException e) {
+            System.err.println("[MeshSearchRequestHandler] Auxiliary index file not found");
+
+        } catch (IOException e) {
+            System.err.println("[MeshSearchRequestHandler] IOException while scanning auxiliary index file");
+            e.printStackTrace();
+        }
+
+        for (String[] fields : this.library.index.values()) {
+            for (String field : fields) {
+                entries++;
+                if (field.trim().toLowerCase().contains(searchParam)) {
+                    this.library.addSong(new MeshClientSong(fields[2], fields[0], fields[1], Long.parseLong(fields[3]), fields[4], this.library));
+                    matches++;
+                    break;
+                }
             }
         }
 
