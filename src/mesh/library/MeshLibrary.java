@@ -54,6 +54,8 @@ public class MeshLibrary implements Library {
 
     private AtomicBoolean isSorting;
 
+    private final Object sortingLock;
+
     protected ConcurrentHashMap<String, String[]> index;
 
     public MeshLibrary(MeshNode mesh, DFS dfs, ScheduledExecutorService executor) {
@@ -73,6 +75,7 @@ public class MeshLibrary implements Library {
         this.doSaveTask = new DebouncedRunnable(this::doSave, 1000, TimeUnit.MILLISECONDS, true, this.executor);
         this.doSortTask = new DebouncedRunnable(this::doSortIfMaster, 750, TimeUnit.MILLISECONDS, true, this.executor);
         this.isSorting = new AtomicBoolean(false);
+        this.sortingLock = new Object();
     }
 
     public void init() {
@@ -81,7 +84,7 @@ public class MeshLibrary implements Library {
         this.mesh.registerRequestHandler(REQUEST_SORT_EMIT, this::sortEmitHandler);
         this.mesh.registerPacketHandler(REQUEST_DO_SORT, (packet, source) -> {
             this.logger.log(" Received DO_SORT request");
-            this.doSortTask.run();
+            this.doSort();
         });
         this.mesh.addNodeConnectListener((id) -> this.doSortTask.run());
 
@@ -299,7 +302,7 @@ public class MeshLibrary implements Library {
 
     private void sortStatusHandler(Socketplexer socketplexer, JsonField.ObjectField request, ExecutorService executor) {
         this.logger.log("[sortStatusHandler] Request for sort status");
-        socketplexer.setLogFilter(Constants.TRACE);
+        //socketplexer.setLogFilter(Constants.TRACE);
         try {
             (new DeferredStreamJsonGenerator(socketplexer.openOutputChannel(1), false, (gen) -> {
                 gen.writeStartObject();
@@ -429,16 +432,20 @@ public class MeshLibrary implements Library {
             }
         }
 
-        this.doSaveTask.run();
-
         for (AsyncJsonStreamGenerator generator : generators.values()) {
             generator.enqueue((gen) -> gen.writeEndArray());
             generator.close();
         }
 
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException e) {}
+
         for (Socketplexer socketplexer : connections.values()) {
             socketplexer.terminate();
         }
+
+        this.doSaveTask.run();
 
         this.isSorting.set(false);
     }

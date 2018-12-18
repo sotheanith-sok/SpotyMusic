@@ -171,7 +171,8 @@ public class MulticastPacketSocket {
     }
 
     private void send(byte[] data, int offset, int length, InetAddress dest) throws IOException {
-        DatagramPacket packet = new DatagramPacket(data, offset, length, dest, multicastGroup.getPort());
+        //DatagramPacket packet = new DatagramPacket(data, offset, length, dest, multicastGroup.getPort());
+        DatagramPacket packet = new DatagramPacket(data, offset, length, this.multicastGroup);
         synchronized (this.lock) {
             //this.multicastSocket.setBroadcast(false);
             this.multicastSocket.send(packet);
