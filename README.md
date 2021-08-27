@@ -1,7 +1,7 @@
 <h1 align="center" style="border: none">SpotyMusic</h1>
 
 ## Overview
-An implementation of decentralized music players over TCP.
+An implementation of a decentralized music player over TCP.
 
 ## Prerequisites
  - [Java](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html)
