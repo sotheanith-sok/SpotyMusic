@@ -7,7 +7,7 @@ An implementation of a decentralized music player over TCP.
  - [Java](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html)
  - [CSS](https://www.w3schools.com/css/)
  
-## Author
+## Authors
  - [Sotheanith Sok](https://github.com/sotheanith)
  - [Nicholas Utz](https://github.com/utznicholas)
  - [Brian Powell](https://github.com/BriianPowell)
