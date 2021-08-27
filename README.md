@@ -5,6 +5,7 @@ An implementation of a decentralized music player over TCP.
 
 ## Prerequisites
  - [Java](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html)
+ - [CSS](https://www.w3schools.com/css/)
  
 ## Author
  - [Sotheanith Sok](https://github.com/sotheanith)
