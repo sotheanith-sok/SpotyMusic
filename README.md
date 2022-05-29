@@ -8,7 +8,7 @@ An implementation of a decentralized music player over TCP.
  - [CSS](https://www.w3schools.com/css/)
  
 ## Authors
- - [Sotheanith Sok](https://github.com/sotheanith)
+ - [Sotheanith Sok](https://github.com/sotheanith-sok)
  - [Nicholas Utz](https://github.com/utznicholas)
  - [Brian Powell](https://github.com/BriianPowell)
  - [Kelly Freet](https://github.com/kellyfreet13)
